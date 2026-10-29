@@ -1,0 +1,16 @@
+{
+  "values": [
+    "#seasonsrework:year_round_crops",
+    "minecraft:birch_sapling",
+    "minecraft:spruce_sapling",
+    "minecraft:dark_oak_sapling",
+    "minecraft:wheat",
+    "minecraft:pumpkin_stem",
+    "minecraft:beetroots",
+    "minecraft:carrots",
+    {
+      "id": "#sereneseasons:autumn_crops",
+      "required": false
+    }
+  ]
+}

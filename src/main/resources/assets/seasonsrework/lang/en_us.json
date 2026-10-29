@@ -1,0 +1,22 @@
+{
+  "commands.seasonsrework.season.show": "%s %s: day %s of %s, year %s",
+  "commands.seasonsrework.season.climate": "Temperature change %s; here %s (%s)",
+  "commands.seasonsrework.season.unknown": "Unknown season: %s",
+  "commands.seasonsrework.season.none": "There are no seasons in this dimension",
+  "seasonsrework.season.spring": "Spring",
+  "seasonsrework.season.summer": "Summer",
+  "seasonsrework.season.autumn": "Autumn",
+  "seasonsrework.season.winter": "Winter",
+  "seasonsrework.part.early": "Early",
+  "seasonsrework.part.mid": "Mid",
+  "seasonsrework.part.late": "Late",
+  "seasonsrework.climate.seasonal": "seasonal",
+  "seasonsrework.climate.tropical": "tropical",
+  "seasonsrework.climate.tropical_wet": "tropical, wet season",
+  "seasonsrework.climate.tropical_dry": "tropical, dry season",
+  "seasonsrework.climate.none": "no seasons",
+  "seasonsrework.climate.hot": "hot, no seasons",
+  "seasonsrework.tooltip.grows_in": "Grows in: ",
+  "seasonsrework.tooltip.all_year": "all year",
+  "commands.seasonsrework.season.daylight": "Daylight %s hours (vanilla 13.6)"
+}
