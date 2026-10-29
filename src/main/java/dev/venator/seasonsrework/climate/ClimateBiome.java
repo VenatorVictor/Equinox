@@ -14,6 +14,11 @@ public interface ClimateBiome {
 
     void seasonsrework$setClimate(byte climate, float shift);
 
+    /** The biome's color profile (seasonal colors, client side). */
+    ColorProfile seasonsrework$colorProfile();
+
+    void seasonsrework$setColorProfile(ColorProfile profile);
+
     /** Biome.getTemperature (private): the temperature at a position, seasons included. */
     float seasonsrework$temperature(BlockPos pos);
 }

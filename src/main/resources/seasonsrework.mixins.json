@@ -7,6 +7,9 @@
     "BiomeMixin",
     "LevelMixin"
   ],
+  "client": [
+    "client.BiomeColorMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

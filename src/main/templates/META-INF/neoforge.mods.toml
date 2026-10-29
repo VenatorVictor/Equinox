@@ -12,6 +12,13 @@ description="""Seasons for Venator's Modpack: four seasons (early, mid, late) wi
 [[mixins]]
     config="${mod_id}.mixins.json"
 
+# Distant Horizons and Snow! Real Magic hooks; skipped when those mods aren't installed.
+[[mixins]]
+    config="${mod_id}.compat.mixins.json"
+
+[[accessTransformers]]
+    file="META-INF/accesstransformer.cfg"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"
@@ -39,6 +46,39 @@ description="""Seasons for Venator's Modpack: four seasons (early, mid, late) wi
     modId="eclipticseasons"
     type="incompatible"
     reason="Seasons Rework replaces Ecliptic Seasons. Remove it."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
+# Built against 3.3.3; LOD colors and snow use DH internals, so other versions may log a warning and skip them.
+[[dependencies.${mod_id}]]
+    modId="distanthorizons"
+    type="optional"
+    versionRange="[3.3.3,)"
+    ordering="AFTER"
+    side="CLIENT"
+
+# Built against 12.2.3; the snow cover uses its API to make plants snowy.
+[[dependencies.${mod_id}]]
+    modId="snowrealmagic"
+    type="optional"
+    versionRange="[12.2.3,)"
+    ordering="NONE"
+    side="BOTH"
+
+# Same job as our snow cover; both running would fight over the same blocks.
+[[dependencies.${mod_id}]]
+    modId="immersive_snow_reloaded"
+    type="incompatible"
+    reason="Seasons Rework already has a snow cover. Remove Immersive Snow (Reloaded)."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="serenetweaks"
+    type="incompatible"
+    reason="Seasons Rework now includes Serene Tweaks. Remove it."
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"

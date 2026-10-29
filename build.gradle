@@ -49,7 +49,27 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+repositories {
+    // Optional mods we hook into, compile time only.
+    exclusiveContent {
+        forRepository { maven { url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup "maven.modrinth" }
+    }
+    exclusiveContent {
+        forRepository { maven { url = "https://maven.su5ed.dev/releases" } }
+        filter { includeGroup "org.sinytra.forgified-fabric-api" }
+    }
+}
+
 dependencies {
+    // All optional: their classes are only touched from code that runs when they're installed.
+    // Distant Horizons 3.3.3 (LOD colors and snow; uses its internals).
+    compileOnly("maven.modrinth:uCdwusMi:9w34y8ai") { transitive = false }
+    // Snow! Real Magic 12.2.3 and its library Kiwi 15.8.7 (snowy plants).
+    compileOnly("maven.modrinth:iJNje1E8:XXjs6tNa") { transitive = false }
+    compileOnly("maven.modrinth:ufdDoWPd:tfwJWC8g") { transitive = false }
+    // Forgified Fabric Renderer API, bundled in Snow! Real Magic (its renderer hook works on Fabric quads).
+    compileOnly("org.sinytra.forgified-fabric-api:fabric-renderer-api-v1:3.4.0+9c40919e19") { transitive = false }
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
