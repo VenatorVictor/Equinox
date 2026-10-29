@@ -1,4 +1,4 @@
-"""Builds the "Serene Tweaks Seasonal Plants" resource pack.
+"""Builds the "Seasons Rework Seasonal Plants" resource pack.
 
 Usage: python make_plants.py <output folder> <jar> [<jar> ...] [--preview <png>]
 Jars: the Minecraft client resources jar, plus Vanilla Backport, Blooming Nature and Immersive Weathering (Renewed)
@@ -462,8 +462,8 @@ def slices_for(states):
 class Pack:
     def __init__(self, out, jars):
         self.out, self.jars = out, jars
-        self.textures = out / "assets/serenetweaks/textures/block/plants"
-        self.rules = out / "assets/serenetweaks/eclipticseasons/season_textures"
+        self.textures = out / "assets/seasonsrework/textures/block/plants"
+        self.rules = out / "assets/seasonsrework/eclipticseasons/season_textures"
         self.textures.mkdir(parents=True, exist_ok=True)
         self.rules.mkdir(parents=True, exist_ok=True)
         self.preview = []  # (label, [images])
@@ -472,7 +472,7 @@ class Pack:
         ns, path = texture_id.split(":")
         name = f"{ns}_{path.rsplit('/', 1)[1]}_{suffix}"
         image.save(self.textures / f"{name}.png")
-        return f"serenetweaks:block/plants/{name}"
+        return f"seasonsrework:block/plants/{name}"
 
     def rule(self, model_id, runs, textures_for, snow_for, tint=None, untinted=None, biomes=BIOMES, snow_mode="snow_only_in_snow_layer"):
         """untinted(state): texture variables to draw without tint in that state (default: all swapped ones)."""
@@ -818,7 +818,7 @@ def main():
         skipped.append(BAMBOO_STALK)
     (out / "pack.mcmeta").write_text(json.dumps({"pack": {
         "pack_format": 34,
-        "description": "Serene Tweaks: flowers bud, bloom, seed and die back; grass dries in winter",
+        "description": "Seasons Rework: flowers bud, bloom, seed and die back; grass dries in winter",
     }}, indent=2))
     print(f"{done} plants, skipped (not in the jars): {', '.join(skipped) or 'none'}")
     if preview:

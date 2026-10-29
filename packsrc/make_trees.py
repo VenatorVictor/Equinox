@@ -1,4 +1,4 @@
-"""Builds the "Serene Tweaks Seasonal Trees" resource pack.
+"""Builds the "Seasons Rework Seasonal Trees" resource pack.
 
 Usage: python make_trees.py <minecraft client resources jar> <output folder>
 Needs Pillow. The vanilla jar is read for the leaf textures: the snowy spruce is drawn on top of spruce_leaves.png,
@@ -173,8 +173,8 @@ def season_file(target, slices, biomes=None):
 
 def main():
     jar, out = Path(sys.argv[1]), Path(sys.argv[2])
-    textures = out / "assets/serenetweaks/textures/block"
-    seasons = out / "assets/serenetweaks/eclipticseasons/season_textures"
+    textures = out / "assets/seasonsrework/textures/block"
+    seasons = out / "assets/seasonsrework/eclipticseasons/season_textures"
     textures.mkdir(parents=True, exist_ok=True)
     seasons.mkdir(parents=True, exist_ok=True)
 
@@ -185,7 +185,7 @@ def main():
     snowy_spruce(spruce).save(textures / "spruce_leaves_snowy.png")
     # Snowy spruce wherever real snow lies, all year.
     (seasons / "spruce_leaves.json").write_text(json.dumps(season_file("minecraft:block/spruce_leaves", [{
-        "snow_textures": {"all": "serenetweaks:block/spruce_leaves_snowy"},
+        "snow_textures": {"all": "seasonsrework:block/spruce_leaves_snowy"},
         "snow_tint": {"all": -1},
     }]), indent=2))
 
@@ -195,8 +195,8 @@ def main():
             mask = branch_mask(leaves[wood], variant, f"{wood}{variant}", STYLES[wood])
             branches(palette, False, mask).save(textures / f"{wood}_branches_{variant}.png")
             branches(palette, True, mask).save(textures / f"{wood}_branches_{variant}_snowy.png")
-            plain.append({"all": f"serenetweaks:block/{wood}_branches_{variant}"})
-            snowy.append({"all": f"serenetweaks:block/{wood}_branches_{variant}_snowy"})
+            plain.append({"all": f"seasonsrework:block/{wood}_branches_{variant}"})
+            snowy.append({"all": f"seasonsrework:block/{wood}_branches_{variant}_snowy"})
         # Bare from Beginning of Winter (early winter) to Rain Water (end of early spring),
         # in seasonal biomes only (jungles, savannas, deserts... keep their leaves). Snowy only under a snow layer
         # (the leaf blocks snow lies on), the ones below stay bare branches.
@@ -213,7 +213,7 @@ def main():
 
     (out / "pack.mcmeta").write_text(json.dumps({"pack": {
         "pack_format": 34,
-        "description": "Serene Tweaks: snowy spruce, bare oak/birch/dark oak in winter",
+        "description": "Seasons Rework: snowy spruce, bare oak/birch/dark oak in winter",
     }}, indent=2))
 
 
