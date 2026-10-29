@@ -2,6 +2,8 @@
   "values": [
     "#minecraft:is_nether",
     "#minecraft:is_end",
+    "#minecraft:is_ocean",
+    { "id": "#c:is_ocean", "required": false },
     { "id": "#sereneseasons:blacklisted_biomes", "required": false }
   ]
 }
