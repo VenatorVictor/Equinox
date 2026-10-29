@@ -1,0 +1,44 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="venatorvictor"
+description="""Seasons for Venator's Modpack: four seasons (early, mid, late) with seasonal colors, snow, crops and textures, all in one mod with no library dependencies."""
+
+[[mixins]]
+    config="${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Same job: both would change the same things.
+[[dependencies.${mod_id}]]
+    modId="sereneseasons"
+    type="incompatible"
+    reason="Seasons Rework replaces Serene Seasons (and Serene Tweaks, which needs it). Remove them."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="eclipticseasons"
+    type="incompatible"
+    reason="Seasons Rework replaces Ecliptic Seasons. Remove it."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"

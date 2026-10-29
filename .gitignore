@@ -1,0 +1,12 @@
+# Gradle
+.gradle/
+build/
+# Dev runs (game files, worlds, copied mods)
+run/
+runs/
+# IDE
+.idea/
+*.iml
+.vscode/
+out/
+bin/

@@ -1,0 +1,7 @@
+{
+  "values": [
+    "#minecraft:is_nether",
+    "#minecraft:is_end",
+    { "id": "#sereneseasons:blacklisted_biomes", "required": false }
+  ]
+}
