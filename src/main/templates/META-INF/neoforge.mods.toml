@@ -74,11 +74,3 @@ description="""Seasons for Venator's Modpack: four seasons (early, mid, late) wi
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"
-
-[[dependencies.${mod_id}]]
-    modId="serenetweaks"
-    type="incompatible"
-    reason="Seasons Rework now includes Serene Tweaks. Remove it."
-    versionRange="[0,)"
-    ordering="NONE"
-    side="BOTH"
