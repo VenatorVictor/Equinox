@@ -2,6 +2,7 @@ package dev.venator.seasonsrework.mixin;
 
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.ClimateBiome;
+import dev.venator.seasonsrework.climate.ColorProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,6 +22,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     private byte seasonsrework$climate = NONE;
     @Unique
     private float seasonsrework$shift;
+    @Unique
+    private ColorProfile seasonsrework$colorProfile = ColorProfile.STABLE;
 
     @Shadow
     protected abstract float getTemperature(BlockPos pos);
@@ -38,6 +41,16 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Override
     public float seasonsrework$shift() {
         return seasonsrework$shift;
+    }
+
+    @Override
+    public ColorProfile seasonsrework$colorProfile() {
+        return seasonsrework$colorProfile;
+    }
+
+    @Override
+    public void seasonsrework$setColorProfile(ColorProfile profile) {
+        seasonsrework$colorProfile = profile;
     }
 
     @Override

@@ -74,6 +74,7 @@ public final class Climate {
             if (event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) clientBiomes = biomes;
             else serverBiomes = biomes;
             biomes.forEach(Climate::categorize);
+            for (Holder<Biome> holder : biomes) ((ClimateBiome) (Object) holder.value()).seasonsrework$setColorProfile(ColorProfile.of(holder));
         });
     }
 
@@ -93,6 +94,18 @@ public final class Climate {
         else if (temperature > MAX_SEASONAL_TEMPERATURE) climate = ClimateBiome.HOT;
         else climate = ClimateBiome.SEASONAL;
         ((ClimateBiome) (Object) holder.value()).seasonsrework$setClimate(climate, temperature - own);
+    }
+
+    /** The temperature at pos without the season (snowy biomes and high peaks are cold all year). */
+    public static float baseTemperature(Biome biome, net.minecraft.core.BlockPos pos) {
+        ClimateBiome climate = (ClimateBiome) (Object) biome;
+        float temperature = climate.seasonsrework$temperature(pos);
+        return climate.seasonsrework$climate() == ClimateBiome.SEASONAL ? temperature - offset : temperature;
+    }
+
+    /** The temperature at pos now, season included (snow falls and water freezes below 0.15). */
+    public static float temperature(Biome biome, net.minecraft.core.BlockPos pos) {
+        return ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos);
     }
 
     public static byte climateOf(Biome biome) {
