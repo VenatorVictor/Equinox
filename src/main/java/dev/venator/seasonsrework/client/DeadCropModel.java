@@ -3,37 +3,60 @@ package dev.venator.seasonsrework.client;
 import dev.venator.seasonsrework.crops.CropBlocks;
 import dev.venator.seasonsrework.crops.DeadCropBlock;
 import dev.venator.seasonsrework.crops.DeadCropBlockEntity;
+import dev.venator.seasonsrework.snow.ClientSnow;
+import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Draws a dead crop as the crop it was (from its block entity), with every quad tinted: blue-ish for frost, brown for
- * heat (block colors multiply the texture). Baked into the chunk mesh like grass color. Without the crop known yet it
- * shows the plain dead_crop model (a dead bush).
+ * Draws a dead crop as the crop it was (from its block entity) with its textures swapped for the dead ones
+ * (DeadCropTextures): frosted, frosted with snow when it's outside and snow lies (glass is a roof), or withered.
+ * Without the crop known yet it shows the plain dead_crop model.
  */
 public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
-    private static final int FROST = 0x9DB8E0, HEAT = 0x8E6B3E;
+    private static final ModelProperty<DeadCropTextures.Kind> KIND = new ModelProperty<>();
+
+    // Per resource load (a new model each time): dead sprite per original sprite and kind, and swapped quads.
+    @SuppressWarnings("unchecked")
+    private final Map<TextureAtlasSprite, TextureAtlasSprite>[] sprites = new Map[DeadCropTextures.Kind.values().length];
+    @SuppressWarnings("unchecked")
+    private final Map<BakedQuad, BakedQuad>[] quads = new Map[DeadCropTextures.Kind.values().length];
 
     private DeadCropModel(BakedModel original) {
         super(original);
+        for (int i = 0; i < sprites.length; i++) {
+            sprites[i] = new ConcurrentHashMap<>();
+            quads[i] = new ConcurrentHashMap<>();
+        }
     }
 
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
@@ -44,13 +67,20 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
         }
     }
 
-    public static void registerColors(RegisterColorHandlersEvent.Block event) {
-        event.register((state, level, pos, tint) -> state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.FROST ? FROST : HEAT,
-                CropBlocks.DEAD_CROP.get());
+    @Override
+    public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
+        data = super.getModelData(region, pos, state, data);
+        DeadCropTextures.Kind kind = state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT ? DeadCropTextures.Kind.HEAT
+                : snowy(pos) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
+        return data.derive().with(KIND, kind).build();
     }
 
-    private static @Nullable BlockState crop(ModelData data) {
-        return data.get(DeadCropBlockEntity.ORIGINAL);
+    /** Snow lies on it: cold enough, after the first snowfall, and outside. */
+    private static boolean snowy(BlockPos pos) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return false;
+        Holder<Biome> biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
+        return SnowRules.cold(biome, pos) && SnowRules.snowAllowed(biome, pos, ClientSnow.coverage) && Outside.outside(level, pos);
     }
 
     private static BakedModel model(BlockState crop) {
@@ -59,24 +89,51 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
 
     @Override
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
-        BlockState crop = crop(data);
-        if (crop == null) return super.getQuads(state, side, rand, data, renderType);
-        List<BakedQuad> quads = model(crop).getQuads(crop, side, rand, ModelData.EMPTY, renderType);
-        List<BakedQuad> tinted = new ArrayList<>(quads.size());
-        for (BakedQuad quad : quads)
-            tinted.add(new BakedQuad(quad.getVertices(), 0, quad.getDirection(), quad.getSprite(), quad.isShade(), quad.hasAmbientOcclusion()));
-        return tinted;
+        BlockState crop = data.get(DeadCropBlockEntity.ORIGINAL);
+        DeadCropTextures.Kind kind = data.get(KIND);
+        if (crop == null || kind == null) return super.getQuads(state, side, rand, data, renderType);
+        List<BakedQuad> original = model(crop).getQuads(crop, side, rand, ModelData.EMPTY, renderType);
+        List<BakedQuad> swapped = new ArrayList<>(original.size());
+        Map<BakedQuad, BakedQuad> cache = quads[kind.ordinal()];
+        for (BakedQuad quad : original) swapped.add(cache.computeIfAbsent(quad, q -> retexture(q, deadSprite(q.getSprite(), kind))));
+        return swapped;
+    }
+
+    private TextureAtlasSprite deadSprite(TextureAtlasSprite sprite, DeadCropTextures.Kind kind) {
+        return sprites[kind.ordinal()].computeIfAbsent(sprite, s -> {
+            TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS);
+            TextureAtlasSprite dead = atlas.getSprite(kind.sprite(s.contents().name()));
+            return dead.contents().name().equals(MissingTextureAtlasSprite.getLocation()) ? s : dead;
+        });
+    }
+
+    /** Same quad, its UVs moved to the dead sprite's place in the atlas, no tint. */
+    private static BakedQuad retexture(BakedQuad quad, TextureAtlasSprite to) {
+        TextureAtlasSprite from = quad.getSprite();
+        if (to == from) return quad;
+        int[] vertices = quad.getVertices().clone();
+        int stride = vertices.length / 4;
+        for (int i = 0; i < 4; i++) {
+            int uv = i * stride + 4; // block vertex format: position (3), color (1), then UV
+            float u = (Float.intBitsToFloat(vertices[uv]) - from.getU0()) / (from.getU1() - from.getU0());
+            float v = (Float.intBitsToFloat(vertices[uv + 1]) - from.getV0()) / (from.getV1() - from.getV0());
+            vertices[uv] = Float.floatToRawIntBits(to.getU0() + u * (to.getU1() - to.getU0()));
+            vertices[uv + 1] = Float.floatToRawIntBits(to.getV0() + v * (to.getV1() - to.getV0()));
+        }
+        return new BakedQuad(vertices, -1, quad.getDirection(), to, quad.isShade(), quad.hasAmbientOcclusion());
     }
 
     @Override
     public @NotNull ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
-        BlockState crop = crop(data);
+        BlockState crop = data.get(DeadCropBlockEntity.ORIGINAL);
         return crop == null ? super.getRenderTypes(state, rand, data) : model(crop).getRenderTypes(crop, rand, ModelData.EMPTY);
     }
 
     @Override
     public @NotNull TextureAtlasSprite getParticleIcon(@NotNull ModelData data) {
-        BlockState crop = crop(data);
-        return crop == null ? super.getParticleIcon(data) : model(crop).getParticleIcon(ModelData.EMPTY);
+        BlockState crop = data.get(DeadCropBlockEntity.ORIGINAL);
+        DeadCropTextures.Kind kind = data.get(KIND);
+        if (crop == null || kind == null) return super.getParticleIcon(data);
+        return deadSprite(model(crop).getParticleIcon(ModelData.EMPTY), kind);
     }
 }

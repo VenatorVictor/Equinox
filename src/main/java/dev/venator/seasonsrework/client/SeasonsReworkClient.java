@@ -19,6 +19,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.event.RegisterSpriteSourceTypesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
@@ -35,7 +36,7 @@ public final class SeasonsReworkClient {
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerPlants);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SeasonalTextures::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, DeadCropModel::onModifyBakingResult);
-        modBus.addListener(RegisterColorHandlersEvent.Block.class, DeadCropModel::registerColors);
+        modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
