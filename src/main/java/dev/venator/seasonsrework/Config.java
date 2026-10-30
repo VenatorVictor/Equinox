@@ -93,16 +93,26 @@ public final class Config {
                     value -> value instanceof String s && parseBiomeTemperature(s) != null);
 
     public static final ModConfigSpec.BooleanValue SEASONAL_CROPS = BUILDER
-            .comment("Crops grow well only in their seasons (tags seasonsrework:<season>_crops, plus Serene Seasons'",
-                    "sereneseasons:<season>_crops that Farmer's Delight and others ship). Unlisted plants always grow.")
+            .comment("Crops follow the temperature in °C: each has a range (data map seasonsrework:crop_climate; crops only",
+                    "in the season tags seasonsrework:<season>_crops or Serene Seasons' get one from their seasons).",
+                    "Ideal: grows faster. Cool or warm: slow. Near the limits: stops. Past them (tonight's low, today's",
+                    "high): farmland crops die. Heaters and coolers nearby (data map seasonsrework:crop_temperature)",
+                    "change the temperature. Unlisted plants and dimensions without seasons grow as in vanilla.")
             .define("seasonal_crops", true);
-    public static final ModConfigSpec.IntValue OUT_OF_SEASON_GROWTH = BUILDER
-            .comment("Out of season, a crop grows on 1 in this many growth chances (bone meal too). 1: normal, 0: never.",
-                    "In season, under glass (up to 16 blocks above) or underground it grows normally.")
-            .defineInRange("out_of_season_growth", 6, 0, 1000);
-    public static final ModConfigSpec.IntValue UNDERGROUND_LEVEL = BUILDER
-            .comment("Below this height, crops that can't see the sky grow all year.")
-            .defineInRange("underground_level", 48, -2048, 2048);
+    public static final ModConfigSpec.IntValue SLOW_GROWTH = BUILDER
+            .comment("Cool or warm (outside the ideal range): a crop grows on 1 in this many growth chances (bone meal",
+                    "too). 1: normal, 0: never.")
+            .defineInRange("slow_growth", 6, 0, 1000);
+    public static final ModConfigSpec.DoubleValue IDEAL_BONUS = BUILDER
+            .comment("In the ideal range, this share of growth chances grows for sure (about 1.4x vanilla speed at 0.15).")
+            .defineInRange("ideal_bonus", 0.15, 0.0, 1.0);
+    public static final ModConfigSpec.DoubleValue STOP_MARGIN = BUILDER
+            .comment("°C above the cold limit and below the heat limit (day's average) where crops stop growing. In the",
+                    "heat part, crops on dry farmland die.")
+            .defineInRange("stop_margin", 5.0, 0.0, 50.0);
+    public static final ModConfigSpec.DoubleValue FARMLAND_HEAT = BUILDER
+            .comment("When today's high is at least this (°C), farmland only stays wet with water within 2 blocks, not 4.")
+            .defineInRange("farmland_heat", 30.0, -100.0, 100.0);
 
     public static final ModConfigSpec.DoubleValue LATITUDE = BUILDER
             .comment("Latitude for the seasonal day length: the sun is up longer in summer and shorter in winter, as at",
@@ -122,7 +132,8 @@ public final class Config {
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
     private static volatile boolean seasonalCrops = true;
-    private static volatile int outOfSeasonGrowth = 6, undergroundLevel = 48;
+    private static volatile int slowGrowth = 6;
+    private static volatile float idealBonus = 0.15F, stopMargin = 5, farmlandHeat = 30;
     private static volatile double latitude = 40;
 
     public static void refresh() {
@@ -143,8 +154,10 @@ public final class Config {
         variationSeed = VARIATION_SEED.get();
         biomeTemperatures = toMap(BIOME_TEMPERATURES.get());
         seasonalCrops = SEASONAL_CROPS.get();
-        outOfSeasonGrowth = OUT_OF_SEASON_GROWTH.get();
-        undergroundLevel = UNDERGROUND_LEVEL.get();
+        slowGrowth = SLOW_GROWTH.get();
+        idealBonus = IDEAL_BONUS.get().floatValue();
+        stopMargin = STOP_MARGIN.get().floatValue();
+        farmlandHeat = FARMLAND_HEAT.get().floatValue();
         latitude = LATITUDE.get();
         Climate.recategorize();
     }
@@ -272,13 +285,21 @@ public final class Config {
         return seasonalCrops;
     }
 
-    /** 1 in this many growth chances out of season; 0: never. */
-    public static int outOfSeasonGrowth() {
-        return outOfSeasonGrowth;
+    /** Cool or warm: 1 in this many growth chances; 0: never. */
+    public static int slowGrowth() {
+        return slowGrowth;
     }
 
-    public static int undergroundLevel() {
-        return undergroundLevel;
+    public static float idealBonus() {
+        return idealBonus;
+    }
+
+    public static float stopMargin() {
+        return stopMargin;
+    }
+
+    public static float farmlandHeat() {
+        return farmlandHeat;
     }
 
     public static double latitude() {
