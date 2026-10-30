@@ -9,6 +9,7 @@ import dev.venator.seasonsrework.api.Seasons;
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.ClimateBiome;
 import dev.venator.seasonsrework.climate.Zone;
+import dev.venator.seasonsrework.api.Temperatures;
 import dev.venator.seasonsrework.daylength.DayLength;
 import net.minecraft.core.BlockPos;
 import net.minecraft.commands.CommandSourceStack;
@@ -61,6 +62,10 @@ public final class SeasonCommand {
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.climate",
                 Component.translatable("seasonsrework.climate." + climate), String.format("%+.2f", Climate.change(biome)),
                 String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()), String.format("%.2f", ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos))), false);
+        Temperatures.DayRange today = Temperatures.airToday(source.getLevel(), pos);
+        source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.celsius",
+                String.format("%.1f", Temperatures.air(source.getLevel(), pos)), String.format("%.1f", today.low()),
+                String.format("%.1f", today.high()), String.format("%.1f", Temperatures.water(source.getLevel(), pos))), false);
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.daylight",
                 String.format("%.1f", DayLength.daylightHours(state.dayTime(), state.daysPerSeason()))), false);
         return state.season().ordinal() * SeasonState.PARTS + state.part() + 1;

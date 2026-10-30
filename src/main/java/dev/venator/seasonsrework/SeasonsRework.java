@@ -2,6 +2,7 @@ package dev.venator.seasonsrework;
 
 import com.mojang.logging.LogUtils;
 import dev.venator.seasonsrework.client.SeasonsReworkClient;
+import dev.venator.seasonsrework.climate.BiomeCelsius;
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.crops.Crops;
 import dev.venator.seasonsrework.daylength.DayLength;
@@ -19,6 +20,7 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -68,6 +70,7 @@ public final class SeasonsRework {
         FirstSnow.init();
         SnowCover.init(modBus);
         modBus.addListener(AddPackFindersEvent.class, SeasonsRework::addPacks);
+        modBus.addListener(RegisterDataMapTypesEvent.class, event -> event.register(BiomeCelsius.TYPE));
 
         if (FMLEnvironment.dist == Dist.CLIENT) SeasonsReworkClient.init(container, modBus);
     }
