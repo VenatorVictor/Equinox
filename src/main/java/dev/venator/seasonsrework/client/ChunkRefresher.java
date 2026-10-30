@@ -10,7 +10,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Ecliptic's light re-color: clear the tint cache and rebuild only the sections holding each column's
- * surface, instead of a full renderer reload.
+ * surface (the top block, and the ground under leaves), instead of a full renderer reload.
  */
 public final class ChunkRefresher {
     public static void refreshVisible() {
@@ -30,7 +30,9 @@ public final class ChunkRefresher {
                 for (int lx = 0; lx < 16; lx++) {
                     for (int lz = 0; lz < 16; lz++) {
                         int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, lx, lz);
+                        int ground = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz);
                         sections.add(SectionPos.blockToSectionCoord(top));
+                        sections.add(SectionPos.blockToSectionCoord(ground)); // grass and plants under trees
                     }
                 }
                 for (int y : sections) mc.levelRenderer.setSectionDirty(x, y, z);
@@ -44,6 +46,7 @@ public final class ChunkRefresher {
         ClientLevel level = mc.level;
         Entity camera = mc.getCameraEntity();
         if (level == null || camera == null) return;
+        level.clearTintCaches(); // or rebuilt sections keep the old colors
         int cx = SectionPos.blockToSectionCoord(camera.getBlockX());
         int cz = SectionPos.blockToSectionCoord(camera.getBlockZ());
         int radius = mc.options.getEffectiveRenderDistance();

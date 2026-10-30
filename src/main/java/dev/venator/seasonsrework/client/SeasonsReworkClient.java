@@ -66,8 +66,9 @@ public final class SeasonsReworkClient {
         boolean changed = ColorClock.tick(level);
         int step = ColorClock.active ? ColorClock.step : -1;
         // Textures change once per color step and can be anywhere (also after joining, when the first chunks
-        // were meshed before the season was known); colors only need the surface.
-        if (SeasonalTextures.any && step != lastStep) ChunkRefresher.refreshAll();
+        // were meshed before the season was known); snowy textures follow the daily temperature, so with those
+        // every color update redraws everything; colors only need the surface.
+        if (SeasonalTextures.any && step != lastStep || SeasonalTextures.anySnow && changed) ChunkRefresher.refreshAll();
         else if (changed) ChunkRefresher.refreshVisible();
         lastStep = step;
         if (!changed) return;

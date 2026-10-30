@@ -19,6 +19,8 @@ import java.util.Map;
  */
 public final class SeasonClock {
     private static final Map<ResourceKey<Level>, SeasonWatcher> WATCHERS = new HashMap<>();
+    /** Set while /season set moves the clock: ServerLevelTimeMixin lets it set any time, even day 0. */
+    public static boolean settingSeason;
 
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (event.getLevel() instanceof ServerLevel level) {
@@ -38,9 +40,14 @@ public final class SeasonClock {
 
     /** Sets the day time of every dimension, as /time set does (they share the overworld's clock). */
     static void setDayTime(MinecraftServer server, long dayTime) {
-        for (ServerLevel level : server.getAllLevels()) {
-            level.setDayTime(Math.max(0, dayTime));
-            Climate.update(level); // now, not next tick, so commands right after see the new climate
+        settingSeason = true;
+        try {
+            for (ServerLevel level : server.getAllLevels()) {
+                level.setDayTime(Math.max(0, dayTime));
+                Climate.update(level); // now, not next tick, so commands right after see the new climate
+            }
+        } finally {
+            settingSeason = false;
         }
     }
 
