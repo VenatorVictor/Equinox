@@ -27,15 +27,16 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Dead crop textures, made when resources load (atlas source in assets/minecraft/atlases/blocks.json), so no resource
- * pack is needed: for every texture the models of farmland crops use, a frosted copy (icy blue), a frosted copy with
- * snow on its upper edges (outside), and a withered one (dry brown). Sprite ids: seasonsrework:dead/<kind>/<namespace>/
- * <path>. A resource pack can replace any of them with its own art at textures/dead/<kind>/<namespace>/<path>.png
+ * Dead and stopped crop textures, made when resources load (atlas source in assets/minecraft/atlases/blocks.json), so
+ * no resource pack is needed: for every texture the models of farmland crops use, a frosted copy (icy blue), a frosted
+ * copy with snow on its upper edges (outside), a withered one (dry brown), and for living crops that don't grow
+ * (CropLookModel) a dormant one (cold: greyish blue-green) and a wilted one (heat: green parts dry yellow-olive).
+ * Sprite ids: seasonsrework:dead/<kind>/<namespace>/<path>. A resource pack can replace any of them with its own art at textures/dead/<kind>/<namespace>/<path>.png
  * (namespace seasonsrework).
  */
 public final class DeadCropTextures implements SpriteSource {
     public enum Kind {
-        FROST("frost"), FROST_SNOW("frost_snow"), HEAT("heat");
+        FROST("frost"), FROST_SNOW("frost_snow"), HEAT("heat"), DORMANT("dormant"), WILTED("wilted");
 
         final String id;
 
@@ -135,7 +136,11 @@ public final class DeadCropTextures implements SpriteSource {
             int width = source.getWidth(), height = Math.min(source.getHeight(), width); // first frame of animations
             NativeImage image = new NativeImage(width, height, true);
             for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, recolor(source.getPixelRGBA(x, y), kind == Kind.HEAT));
+                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, switch (kind) {
+                        case DORMANT -> dormant(source.getPixelRGBA(x, y));
+                        case WILTED -> wilted(source.getPixelRGBA(x, y));
+                        default -> recolor(source.getPixelRGBA(x, y), kind == Kind.HEAT);
+                    });
             if (kind == Kind.FROST_SNOW) snow(image);
             return new SpriteContents(id, new FrameSize(width, height), image, ResourceMetadata.EMPTY);
         } catch (Exception e) {
@@ -160,6 +165,35 @@ public final class DeadCropTextures implements SpriteSource {
         int ng = (int) (dark[1] + (bright[1] - dark[1]) * light);
         int nb = (int) (dark[2] + (bright[2] - dark[2]) * light);
         return alpha << 24 | nb << 16 | ng << 8 | nr;
+    }
+
+    /** Cold, not growing: most of the color gone, a little blue, a bit darker. */
+    private static int dormant(int abgr) {
+        int alpha = abgr >>> 24;
+        if (alpha == 0) return abgr;
+        float r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF, light = 0.3F * r + 0.59F * g + 0.11F * b;
+        r = (light + (r - light) * 0.35F) * 0.85F;
+        g = (light + (g - light) * 0.35F) * 0.88F;
+        b = Math.min(255, (light + (b - light) * 0.35F) * 0.95F + 14);
+        return alpha << 24 | (int) b << 16 | (int) g << 8 | (int) r;
+    }
+
+    /** Hot, not growing: green parts turn dry yellow-olive, other colors (roots, ripe ears) only fade a little. */
+    private static int wilted(int abgr) {
+        int alpha = abgr >>> 24;
+        if (alpha == 0) return abgr;
+        float r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
+        if (g > r && g > b) {
+            r = Math.min(255, r * 0.6F + g * 0.55F);
+            g = Math.min(255, g * 0.95F + 8);
+            b = b * 0.55F;
+        } else {
+            float light = 0.3F * r + 0.59F * g + 0.11F * b;
+            r = light + (r - light) * 0.8F;
+            g = light + (g - light) * 0.8F;
+            b = light + (b - light) * 0.8F;
+        }
+        return alpha << 24 | (int) b << 16 | (int) g << 8 | (int) r;
     }
 
     /** Snow on the upper edges: every pixel with nothing above it turns white, the one below it half white. */

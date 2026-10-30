@@ -45,7 +45,8 @@ public final class Crops {
     private static final TagKey<Block>[] BLOCK_TAGS = blockTags();
     private static final TagKey<Item>[] ITEM_TAGS = itemTags();
 
-    public enum Effect { VANILLA, FASTER, SLOW, STOP, FROST, HEAT }
+    /** DORMANT: too cold to grow. STOP: too hot to grow. */
+    public enum Effect { VANILLA, FASTER, SLOW, DORMANT, STOP, FROST, HEAT }
 
     private static volatile Map<Block, Byte> blockSeasons = Map.of();
     private static volatile Map<Item, Byte> itemSeasons = Map.of();
@@ -75,7 +76,7 @@ public final class Crops {
     }
 
     public static void onChunkUnload(ChunkEvent.Unload event) {
-        if (event.getLevel() instanceof Level level && !level.isClientSide) CropWarmth.onChunkUnload(level, event.getChunk().getPos());
+        if (event.getLevel() instanceof Level level) CropWarmth.onChunkUnload(level, event.getChunk().getPos());
     }
 
     /** The seasons a block grows well in (bit = Season ordinal), 0 if it isn't a seasonal crop. */
@@ -108,7 +109,7 @@ public final class Crops {
             float mean = (low + high) / 2;
             if (low < climate.min()) effect = Effect.FROST;
             else if (high > climate.max()) effect = Effect.HEAT;
-            else if (mean < climate.growsFrom()) effect = Effect.STOP; // dormant
+            else if (mean < climate.growsFrom()) effect = Effect.DORMANT;
             else if (mean > climate.growsTo()) effect = dryFarmland(level, pos) ? Effect.HEAT : Effect.STOP;
             else if (mean < climate.idealMin() || mean > climate.idealMax()) effect = Effect.SLOW;
             else effect = Effect.FASTER;

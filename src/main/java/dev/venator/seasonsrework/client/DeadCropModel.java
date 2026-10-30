@@ -81,20 +81,25 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
         List<BakedQuad> original = model(crop).getQuads(crop, side, rand, ModelData.EMPTY, renderType);
         List<BakedQuad> swapped = new ArrayList<>(original.size());
         Map<BakedQuad, BakedQuad> cache = quads[kind.ordinal()];
-        for (BakedQuad quad : original) swapped.add(cache.computeIfAbsent(quad, q -> retexture(q, deadSprite(q.getSprite(), kind))));
+        for (BakedQuad quad : original) swapped.add(cache.computeIfAbsent(quad, q -> retexture(q, deadSprite(q.getSprite(), kind), false)));
         return swapped;
     }
 
     private TextureAtlasSprite deadSprite(TextureAtlasSprite sprite, DeadCropTextures.Kind kind) {
-        return sprites[kind.ordinal()].computeIfAbsent(sprite, s -> {
+        return sprite(sprites[kind.ordinal()], sprite, kind);
+    }
+
+    /** The kind's sprite for a crop sprite (cached in cache), or the same sprite if there is none. */
+    static TextureAtlasSprite sprite(Map<TextureAtlasSprite, TextureAtlasSprite> cache, TextureAtlasSprite sprite, DeadCropTextures.Kind kind) {
+        return cache.computeIfAbsent(sprite, s -> {
             TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS);
             TextureAtlasSprite dead = atlas.getSprite(kind.sprite(s.contents().name()));
             return dead.contents().name().equals(MissingTextureAtlasSprite.getLocation()) ? s : dead;
         });
     }
 
-    /** Same quad, its UVs moved to the dead sprite's place in the atlas, no tint. */
-    private static BakedQuad retexture(BakedQuad quad, TextureAtlasSprite to) {
+    /** Same quad, its UVs moved to the new sprite's place in the atlas; tinted only if keepTint. */
+    static BakedQuad retexture(BakedQuad quad, TextureAtlasSprite to, boolean keepTint) {
         TextureAtlasSprite from = quad.getSprite();
         if (to == from) return quad;
         int[] vertices = quad.getVertices().clone();
@@ -106,7 +111,7 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
             vertices[uv] = Float.floatToRawIntBits(to.getU0() + u * (to.getU1() - to.getU0()));
             vertices[uv + 1] = Float.floatToRawIntBits(to.getV0() + v * (to.getV1() - to.getV0()));
         }
-        return new BakedQuad(vertices, -1, quad.getDirection(), to, quad.isShade(), quad.hasAmbientOcclusion());
+        return new BakedQuad(vertices, keepTint ? quad.getTintIndex() : -1, quad.getDirection(), to, quad.isShade(), quad.hasAmbientOcclusion());
     }
 
     @Override
