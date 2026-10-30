@@ -34,6 +34,7 @@ import net.neoforged.neoforge.event.level.BlockGrowFeatureEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import org.slf4j.Logger;
@@ -53,6 +54,7 @@ public final class SeasonsRework {
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SeasonClock::onLevelTick);
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, SeasonClock::onServerStopped);
+        NeoForge.EVENT_BUS.addListener(ServerAboutToStartEvent.class, Config::onServerAboutToStart);
         NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Climate::categorize);
         NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Crops::onTagsUpdated);
         NeoForge.EVENT_BUS.addListener(CropGrowEvent.Pre.class, Crops::onCropGrow);

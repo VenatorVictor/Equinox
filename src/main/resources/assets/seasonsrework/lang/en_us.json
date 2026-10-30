@@ -1,6 +1,6 @@
 {
   "commands.seasonsrework.season.show": "%s %s: day %s of %s, year %s",
-  "commands.seasonsrework.season.climate": "Temperature change %s; here %s (%s)",
+  "commands.seasonsrework.season.climate": "Temperature change %s (variation %s); here %s (%s)",
   "commands.seasonsrework.season.unknown": "Unknown season: %s",
   "commands.seasonsrework.season.none": "There are no seasons in this dimension",
   "seasonsrework.season.spring": "Spring",

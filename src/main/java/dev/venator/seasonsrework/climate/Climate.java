@@ -16,7 +16,8 @@ import java.util.List;
 
 /**
  * The seasonal climate. One temperature change for the whole world (global, like the weather), blended between the
- * config's values for each season part so the snow line moves a little every tick instead of jumping. Seasonal
+ * config's values for each season part so the snow line moves a little every tick instead of jumping. On top, each
+ * season gets a random variation (warmer or colder than usual), the same for a world on both sides. Seasonal
  * biomes get it added to their temperature; tropical biomes keep their temperature and get a wet and a dry season.
  * The config can also give a biome another temperature for the climate only (grass colors read the biome's own value),
  * for biome mods that change temperatures to tint grass (WWOO: beach 2.0, old growth pine taiga 2.0...).
@@ -28,13 +29,18 @@ public final class Climate {
     private static final float MAX_SEASONAL_TEMPERATURE = 0.8F;
 
     // Read by the Biome hooks on any thread; written once per tick.
-    private static volatile float offset;
+    private static volatile float offset, variation;
     private static volatile boolean wet, dry;
     // The biomes of the last tag load on each side, to sort again when the config changes.
     private static volatile List<Holder<Biome>> serverBiomes = List.of(), clientBiomes = List.of();
 
     public static float offset() {
         return offset;
+    }
+
+    /** The random part of offset(): this season warmer (above 0) or colder than usual. */
+    public static float variation() {
+        return variation;
     }
 
     /** Tropical wet season (summer): tropical biomes always get rain. */
@@ -51,7 +57,8 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        offset = offsetAt(state);
+        variation = variationAt(state);
+        offset = offsetAt(state) + variation;
         wet = state.season() == Season.SUMMER;
         dry = state.season() == Season.WINTER;
     }
@@ -65,6 +72,35 @@ public final class Climate {
         float blend = (float) (position - index);
         float from = values[Math.floorMod(index, parts)], to = values[Math.floorMod(index + 1, parts)];
         return from + (to - from) * blend;
+    }
+
+    /**
+     * Each season's variation peaks at its middle and blends into the next one's (smoothstep), so it never jumps.
+     * Worked out from the variation seed and the season's number, so server and clients get the same without syncing.
+     */
+    static float variationAt(SeasonState state) {
+        float amount = Config.seasonVariation();
+        if (amount == 0) return 0;
+        double position = (double) state.dayTime() / state.seasonTicks() - 0.5; // 0: middle of the first spring
+        long index = (long) Math.floor(position);
+        float blend = (float) (position - index);
+        blend = blend * blend * (3 - 2 * blend);
+        float from = randomSeason(index), to = randomSeason(index + 1);
+        return amount * (from + (to - from) * blend);
+    }
+
+    /** -1 .. 1 for a season (seasons since the start); two random halves added, so near 0 more often than the ends. */
+    private static float randomSeason(long season) {
+        long hash = mix(Config.variationSeed() ^ mix(season + 0x9E3779B97F4A7C15L));
+        float a = (hash >>> 40) / (float) (1 << 24), b = ((hash >>> 16) & 0xFFFFFF) / (float) (1 << 24);
+        return a + b - 1;
+    }
+
+    /** SplitMix64's mixer. */
+    private static long mix(long z) {
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
     }
 
     /** Sorts the biomes of the (server or client) registry when tags load. */
