@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 import java.util.Map;
@@ -43,6 +44,13 @@ public record CropWarmth(float target, float strength, int radius) {
 
     private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
     private static int maxRadius;
+    /** Client: a block that can change snow looks changed (a heater or cooler, lit or not, or a roof). */
+    public static volatile SnowChange clientChanged;
+
+    public interface SnowChange {
+        /** radius: the heater's or cooler's reach, 0 for a roof change (the column below pos). */
+        void changed(BlockPos pos, int radius);
+    }
 
     /** The data reloaded: forget every chunk's list. */
     static synchronized void reset() {
@@ -58,8 +66,23 @@ public record CropWarmth(float target, float strength, int radius) {
     }
 
     /** A block changed (LevelChunkMixin): keep the chunk's list right if it has one. */
-    public static synchronized void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        if (data(old) == null && data(now) == null) return;
+    public static void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
+        int radius = Math.max(radius(old), radius(now));
+        // A roof: the top of the column (leaves aside) appeared or went; mining underground isn't one.
+        boolean roof = (old.blocksMotion() != now.blocksMotion() || old.getFluidState().isEmpty() != now.getFluidState().isEmpty())
+                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
+        if (radius > 0 || roof) {
+            if (level.isClientSide) {
+                SnowChange listener = clientChanged;
+                if (listener != null) listener.changed(pos, radius);
+            } else {
+                DeadCropBlock.snowChanged(level, pos, radius);
+            }
+        }
+        if (radius > 0) updateIndex(level, pos, now);
+    }
+
+    private static synchronized void updateIndex(Level level, BlockPos pos, BlockState now) {
         Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
         LongArrayList list = chunks == null ? null : chunks.get(ChunkPos.asLong(pos));
         if (list == null) return;
@@ -94,8 +117,8 @@ public record CropWarmth(float target, float strength, int radius) {
         return t;
     }
 
-    /** A lit heater reaches pos (melts the snow on dead crops). */
-    static boolean heated(Level level, BlockPos pos) {
+    /** A lit heater reaches pos (no snow on crops there). */
+    public static boolean heated(Level level, BlockPos pos) {
         return apply(level, pos, -1000) > -1000;
     }
 
@@ -120,6 +143,12 @@ public record CropWarmth(float target, float strength, int radius) {
         }
         chunks.put(key, list);
         return list;
+    }
+
+    /** A heater's or cooler's reach, 0 for other blocks. */
+    private static int radius(BlockState state) {
+        CropWarmth warmth = data(state);
+        return warmth == null ? 0 : warmth.radius;
     }
 
     private static CropWarmth data(BlockState state) {

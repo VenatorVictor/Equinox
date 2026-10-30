@@ -59,6 +59,7 @@ public final class SeasonsRework {
         container.registerConfig(ModConfig.Type.COMMON, SnowConfig.SPEC);
 
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SeasonClock::onLevelTick);
+        NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, dev.venator.seasonsrework.crops.DeadCropBlock::onLevelTick);
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, SeasonClock::onServerStopped);
         NeoForge.EVENT_BUS.addListener(ServerAboutToStartEvent.class, Config::onServerAboutToStart);
