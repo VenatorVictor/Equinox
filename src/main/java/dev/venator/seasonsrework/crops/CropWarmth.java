@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -29,7 +28,8 @@ import java.util.WeakHashMap;
  *
  * No scans per crop: each chunk keeps the positions of its sources, built the first time a crop near it asks (a
  * section whose block palette has no source is skipped), updated when blocks change (LevelChunkMixin), dropped when
- * the chunk unloads or the data reloads. Server thread only.
+ * the chunk unloads or the data reloads. Synced: the client uses it too for the crop looks (CropLookModel), from the
+ * chunk mesh threads, so every access locks the index.
  */
 public record CropWarmth(float target, float strength, int radius) {
     public static final Codec<CropWarmth> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -39,27 +39,32 @@ public record CropWarmth(float target, float strength, int radius) {
     ).apply(instance, CropWarmth::new));
 
     public static final DataMapType<Block, CropWarmth> TYPE = DataMapType.builder(
-            ResourceLocation.fromNamespaceAndPath("seasonsrework", "crop_temperature"), Registries.BLOCK, CODEC).build();
+            ResourceLocation.fromNamespaceAndPath("seasonsrework", "crop_temperature"), Registries.BLOCK, CODEC).synced(CODEC, false).build();
 
     private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
     private static int maxRadius;
+    /** Client: a heater or cooler appeared or went (pos, its radius), so the crops around it can be redrawn. */
+    public static volatile java.util.function.ObjIntConsumer<BlockPos> clientChanged;
 
     /** The data reloaded: forget every chunk's list. */
-    static void reset() {
+    static synchronized void reset() {
         INDEX.clear();
         int max = 0;
         for (Map.Entry<?, CropWarmth> entry : BuiltInRegistries.BLOCK.getDataMap(TYPE).entrySet()) max = Math.max(max, entry.getValue().radius);
         maxRadius = max;
     }
 
-    static void onChunkUnload(Level level, ChunkPos pos) {
+    static synchronized void onChunkUnload(Level level, ChunkPos pos) {
         Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
         if (chunks != null) chunks.remove(pos.toLong());
     }
 
     /** A block changed (LevelChunkMixin): keep the chunk's list right if it has one. */
-    public static void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        if (!(level instanceof ServerLevel) || (data(old) == null && data(now) == null)) return;
+    public static synchronized void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
+        CropWarmth before = data(old), after = data(now);
+        if (before == null && after == null) return;
+        if (level.isClientSide && clientChanged != null && (before != after || old.hasProperty(BlockStateProperties.LIT)))
+            clientChanged.accept(pos, Math.max(before == null ? 0 : before.radius, after == null ? 0 : after.radius));
         Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
         LongArrayList list = chunks == null ? null : chunks.get(ChunkPos.asLong(pos));
         if (list == null) return;
@@ -68,7 +73,7 @@ public record CropWarmth(float target, float strength, int radius) {
     }
 
     /** The temperature t at pos with the strongest heater and cooler around applied. */
-    static float apply(Level level, BlockPos pos, float t) {
+    static synchronized float apply(Level level, BlockPos pos, float t) {
         CropWarmth heater = null, cooler = null;
         if (maxRadius == 0) return t;
         int minX = (pos.getX() - maxRadius) >> 4, maxX = (pos.getX() + maxRadius) >> 4;

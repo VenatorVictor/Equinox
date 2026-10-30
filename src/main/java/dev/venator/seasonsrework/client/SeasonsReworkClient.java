@@ -6,6 +6,7 @@ import dev.venator.seasonsrework.client.colors.SeasonColors;
 import dev.venator.seasonsrework.client.dh.DhRefresher;
 import dev.venator.seasonsrework.client.textures.SeasonalTextures;
 import dev.venator.seasonsrework.climate.Climate;
+import dev.venator.seasonsrework.crops.CropWarmth;
 import dev.venator.seasonsrework.season.SeasonWatcher;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import net.minecraft.client.Minecraft;
@@ -36,11 +37,14 @@ public final class SeasonsReworkClient {
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerPlants);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SeasonalTextures::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, DeadCropModel::onModifyBakingResult);
+        modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
+        CropWarmth.clientChanged = CropLookModel::heaterChanged;
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
             ColorClock.reset();
+            CropLookModel.reset();
             lastStep = -1;
             if (dhLoaded) DhRefresher.clearCache();
         });
@@ -59,6 +63,7 @@ public final class SeasonsReworkClient {
         // Remote servers: the client follows its own day time. In single player both sides set the same values.
         WATCHER.tick(level);
         Climate.update(level);
+        CropLookModel.tick(level);
 
         boolean changed = ColorClock.tick(level);
         int step = ColorClock.active ? ColorClock.step : -1;
