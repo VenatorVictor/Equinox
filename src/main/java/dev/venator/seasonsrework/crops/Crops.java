@@ -33,10 +33,11 @@ import java.util.Map;
 
 /**
  * Crops by temperature in °C (dev.venator.seasonsrework.api.Temperatures, plus heaters and coolers, CropWarmth). Each
- * crop has a range (CropClimate: data map, else from its season tags). On the day's average: ideal = faster, cool or
- * warm = 1 in slow_growth chances, within stop_margin of a limit = stops. Tonight's low below the cold limit or today's
- * high above the heat limit (or the heat stop zone on dry farmland) kills farmland crops (CropBlock, StemBlock): they
- * become a dead crop. Other plants (saplings, berries, cane, cocoa...) only grow slower or stop. Hooked into the growth
+ * crop has a range (CropClimate: data map, else from its season tags). On the day's average: below grows_from =
+ * dormant, ideal = faster, cool or warm = 1 in slow_growth chances, within stop_margin of the heat limit = stops.
+ * Tonight's low below the cold limit or today's high above the heat limit (or the heat stop zone on dry farmland)
+ * kills crops standing on farmland (CropBlock, StemBlock; others like rice panicles or tomatoes on rope only stop):
+ * they become a dead crop. Other plants (saplings, berries, cane, cocoa...) only grow slower or stop. Hooked into the growth
  * events, bone meal and the crop's own random tick (RandomTickMixin); ripe crops random tick too (CropBlockMixin) so
  * frost reaches them. Dimensions without seasons and plants without a range grow as in vanilla.
  */
@@ -107,7 +108,7 @@ public final class Crops {
             float mean = (low + high) / 2, margin = Config.stopMargin();
             if (low < climate.min()) effect = Effect.FROST;
             else if (high > climate.max()) effect = Effect.HEAT;
-            else if (mean < climate.min() + margin) effect = Effect.STOP;
+            else if (mean < climate.growsFrom()) effect = Effect.STOP; // dormant
             else if (mean > climate.max() - margin) effect = dryFarmland(level, pos) ? Effect.HEAT : Effect.STOP;
             else if (mean < climate.idealMin() || mean > climate.idealMax()) effect = Effect.SLOW;
             else effect = Effect.FASTER;
@@ -127,12 +128,13 @@ public final class Crops {
 
     /** RandomTickMixin, before every random tick of a block: kills a farmland crop past its limits. True = it died. */
     public static boolean onRandomTick(BlockState state, ServerLevel level, BlockPos pos) {
-        if (!mortal(state.getBlock())) return false;
+        if (!mortal(state.getBlock()) || !(level.getBlockState(pos.below()).getBlock() instanceof FarmBlock)) return false;
         Effect effect = effect(level, pos, state);
         if (effect != Effect.FROST && effect != Effect.HEAT) return false;
         DeadCropBlock.Cause cause = effect == Effect.FROST ? DeadCropBlock.Cause.FROST : DeadCropBlock.Cause.HEAT;
-        level.setBlock(pos, CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause), Block.UPDATE_ALL);
-        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity dead) dead.setOriginal(state);
+        BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause);
+        level.setBlock(pos, dead.setValue(DeadCropBlock.SNOWY, DeadCropBlock.snowy(dead, level, pos)), Block.UPDATE_ALL);
+        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
         return true;
     }
 

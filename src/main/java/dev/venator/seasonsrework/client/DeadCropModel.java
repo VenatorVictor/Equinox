@@ -3,10 +3,7 @@ package dev.venator.seasonsrework.client;
 import dev.venator.seasonsrework.crops.CropBlocks;
 import dev.venator.seasonsrework.crops.DeadCropBlock;
 import dev.venator.seasonsrework.crops.DeadCropBlockEntity;
-import dev.venator.seasonsrework.snow.ClientSnow;
-import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -17,12 +14,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
-import net.minecraft.core.QuartPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.ModelEvent;
@@ -39,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Draws a dead crop as the crop it was (from its block entity) with its textures swapped for the dead ones
- * (DeadCropTextures): frosted, frosted with snow when it's outside and snow lies (glass is a roof), or withered.
+ * (DeadCropTextures): frosted, frosted with snow (block state snowy, set by the server), or withered.
  * Without the crop known yet it shows the plain dead_crop model.
  */
 public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
@@ -71,16 +65,8 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
         data = super.getModelData(region, pos, state, data);
         DeadCropTextures.Kind kind = state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT ? DeadCropTextures.Kind.HEAT
-                : snowy(pos) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
+                : state.getValue(DeadCropBlock.SNOWY) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
         return data.derive().with(KIND, kind).build();
-    }
-
-    /** Snow lies on it: cold enough, after the first snowfall, and outside. */
-    private static boolean snowy(BlockPos pos) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) return false;
-        Holder<Biome> biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
-        return SnowRules.cold(biome, pos) && SnowRules.snowAllowed(biome, pos, ClientSnow.coverage) && Outside.outside(level, pos);
     }
 
     private static BakedModel model(BlockState crop) {

@@ -17,7 +17,7 @@ public final class CropBlocks {
 
     public static final DeferredBlock<DeadCropBlock> DEAD_CROP = BLOCKS.register("dead_crop", () -> new DeadCropBlock(
             BlockBehaviour.Properties.of().noCollission().instabreak().sound(SoundType.CROP).pushReaction(PushReaction.DESTROY)
-                    .replaceable().noLootTable()));
+                    .replaceable().noLootTable().randomTicks()));
     @SuppressWarnings("DataFlowIssue")
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DeadCropBlockEntity>> DEAD_CROP_ENTITY = BLOCK_ENTITIES.register("dead_crop",
             () -> BlockEntityType.Builder.of(DeadCropBlockEntity::new, DEAD_CROP.get()).build(null));

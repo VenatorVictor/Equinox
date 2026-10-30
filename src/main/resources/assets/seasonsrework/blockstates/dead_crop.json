@@ -1,9 +1,15 @@
 {
   "variants": {
-    "cause=frost": {
+    "cause=frost,snowy=false": {
       "model": "seasonsrework:block/dead_crop"
     },
-    "cause=heat": {
+    "cause=frost,snowy=true": {
+      "model": "seasonsrework:block/dead_crop"
+    },
+    "cause=heat,snowy=false": {
+      "model": "seasonsrework:block/dead_crop"
+    },
+    "cause=heat,snowy=true": {
       "model": "seasonsrework:block/dead_crop"
     }
   }
