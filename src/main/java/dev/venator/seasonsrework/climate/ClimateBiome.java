@@ -4,15 +4,20 @@ import net.minecraft.core.BlockPos;
 
 /** Added to Biome by BiomeMixin: the biome's climate, set when tags or the config load (Climate.categorize). */
 public interface ClimateBiome {
-    /** NONE: no seasons at all. HOT: too hot to change (deserts); crops grow as in the tropics. */
+    /** NONE: no seasons at all. HOT: too hot to change (untagged hot biomes); crops grow as in the tropics. */
     byte NONE = 0, SEASONAL = 1, TROPICAL = 2, HOT = 3;
 
     byte seasonsrework$climate();
 
+    Zone seasonsrework$zone();
+
     /** Added to the biome's temperature: the config's climate temperature minus the biome's own one. */
     float seasonsrework$shift();
 
-    void seasonsrework$setClimate(byte climate, float shift);
+    /** The biome's change at mid spring, summer, autumn, winter, or null without seasons (Climate.change). */
+    float[] seasonsrework$changes();
+
+    void seasonsrework$setClimate(Zone zone, float shift, float[] changes);
 
     /** The biome's color profile (seasonal colors, client side). */
     ColorProfile seasonsrework$colorProfile();

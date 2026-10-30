@@ -26,8 +26,9 @@ public final class SnowConfig {
                 .push("first_snow");
         FIRST_SNOW = BUILDER.comment("false = cover everything as soon as it's cold enough, without waiting for snowfall.")
                 .define("enabled", true);
-        SNOWY_SEASON = BUILDER.comment("The snowy season is when the seasonal temperature change (server config temperature_offsets) is below this.")
-                .defineInRange("snowy_season", -0.25, -5.0, 5.0);
+        SNOWY_SEASON = BUILDER.comment("The snowy season is when the temperate zone's temperature change (server config climate_changes,",
+                        "-0.3 in mid autumn, -0.65 in mid winter) is below this. -0.5: from the start of winter.")
+                .defineInRange("snowy_season", -0.5, -5.0, 5.0);
         FORCE_SNOWFALL = BUILDER.comment("Start a snowfall when the snowy season begins, so the first snow comes right away.")
                 .define("force_snowfall", true);
         SNOWFALL_TICKS = BUILDER.comment("How long that forced snowfall lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")

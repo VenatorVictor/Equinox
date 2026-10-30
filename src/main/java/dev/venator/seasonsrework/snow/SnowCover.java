@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 /**
  * Brings loaded chunks up to the season's snow and ice in one pass: vanilla snowfall only adds snow near players and
  * never melts it.
- * Work only happens when the target changes (the temperature change moved by STEP, or the first snowfall of the cold season),
+ * Work only happens when the target changes (any climate zone's temperature change moved by STEP, or the first snowfall of the cold season),
  * or when a chunk loads that was last done for an older target. Nothing re-checks chunks on a timer,
  * and each tick only spends the configured time budget. Overworld only.
  */
@@ -113,9 +113,9 @@ public final class SnowCover {
         } while (!QUEUE.isEmpty() && Util.getNanos() < deadline);
     }
 
-    /** The target is the temperature change (in STEPs) plus whether the first snow has fallen. A change redoes every loaded chunk. */
+    /** The target is the zones' temperature changes (in STEPs) plus whether the first snow has fallen. A change redoes every loaded chunk. */
     private static void checkTarget(ServerLevel level, Data data) {
-        float adjustment = Math.round(Climate.offset() / STEP) * STEP;
+        int adjustment = Climate.snowTarget(STEP);
         float coverage = FirstSnow.coverage;
         if (data.version != 0 && adjustment == data.adjustment && coverage == data.coverage) return;
         data.version = data.version == Integer.MAX_VALUE ? 1 : data.version + 1;
@@ -233,13 +233,13 @@ public final class SnowCover {
 
     private static final class Data extends SavedData {
         int version;
-        float adjustment;
+        int adjustment;
         float coverage;
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
             Data data = new Data();
             data.version = tag.getInt("version");
-            data.adjustment = tag.getFloat("adjustment");
+            data.adjustment = tag.getInt("climate");
             data.coverage = tag.getFloat("coverage");
             return data;
         }
@@ -247,7 +247,7 @@ public final class SnowCover {
         @Override
         public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
             tag.putInt("version", version);
-            tag.putFloat("adjustment", adjustment);
+            tag.putInt("climate", adjustment);
             tag.putFloat("coverage", coverage);
             return tag;
         }
