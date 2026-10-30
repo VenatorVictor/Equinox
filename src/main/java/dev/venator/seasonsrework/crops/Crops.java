@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * Crops by temperature in °C (dev.venator.seasonsrework.api.Temperatures, plus heaters and coolers, CropWarmth). Each
  * crop has a range (CropClimate: data map, else from its season tags). On the day's average: below grows_from =
- * dormant, ideal = faster, cool or warm = 1 in slow_growth chances, within stop_margin of the heat limit = stops.
+ * dormant, ideal = faster, cool or warm = 1 in slow_growth chances, above grows_to = stops (dies on dry farmland).
  * Tonight's low below the cold limit or today's high above the heat limit (or the heat stop zone on dry farmland)
  * kills crops standing on farmland (CropBlock, StemBlock; others like rice panicles or tomatoes on rope only stop):
  * they become a dead crop. Other plants (saplings, berries, cane, cocoa...) only grow slower or stop. Hooked into the growth
@@ -105,11 +105,11 @@ public final class Crops {
         if (climate != null) {
             Temperatures.DayRange today = Temperatures.airToday(level, pos);
             float low = CropWarmth.apply(level, pos, today.low()), high = CropWarmth.apply(level, pos, today.high());
-            float mean = (low + high) / 2, margin = Config.stopMargin();
+            float mean = (low + high) / 2;
             if (low < climate.min()) effect = Effect.FROST;
             else if (high > climate.max()) effect = Effect.HEAT;
             else if (mean < climate.growsFrom()) effect = Effect.STOP; // dormant
-            else if (mean > climate.max() - margin) effect = dryFarmland(level, pos) ? Effect.HEAT : Effect.STOP;
+            else if (mean > climate.growsTo()) effect = dryFarmland(level, pos) ? Effect.HEAT : Effect.STOP;
             else if (mean < climate.idealMin() || mean > climate.idealMax()) effect = Effect.SLOW;
             else effect = Effect.FASTER;
         }
