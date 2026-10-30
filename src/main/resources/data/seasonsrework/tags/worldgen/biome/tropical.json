@@ -1,8 +1,8 @@
 {
   "values": [
-    "#minecraft:is_jungle",
-    "#minecraft:is_savanna",
-    "minecraft:mangrove_swamp",
-    { "id": "#sereneseasons:tropical_biomes", "required": false }
+    {
+      "id": "#sereneseasons:tropical_biomes",
+      "required": false
+    }
   ]
 }

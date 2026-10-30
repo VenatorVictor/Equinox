@@ -3,6 +3,7 @@ package dev.venator.seasonsrework.mixin;
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.ClimateBiome;
 import dev.venator.seasonsrework.climate.ColorProfile;
+import dev.venator.seasonsrework.climate.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,9 +20,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Biome.class)
 public abstract class BiomeMixin implements ClimateBiome {
     @Unique
-    private byte seasonsrework$climate = NONE;
+    private Zone seasonsrework$zone = Zone.NONE;
     @Unique
     private float seasonsrework$shift;
+    @Unique
+    private float[] seasonsrework$changes;
     @Unique
     private ColorProfile seasonsrework$colorProfile = ColorProfile.STABLE;
 
@@ -35,7 +38,17 @@ public abstract class BiomeMixin implements ClimateBiome {
 
     @Override
     public byte seasonsrework$climate() {
-        return seasonsrework$climate;
+        return seasonsrework$zone.kind;
+    }
+
+    @Override
+    public Zone seasonsrework$zone() {
+        return seasonsrework$zone;
+    }
+
+    @Override
+    public float[] seasonsrework$changes() {
+        return seasonsrework$changes;
     }
 
     @Override
@@ -54,23 +67,23 @@ public abstract class BiomeMixin implements ClimateBiome {
     }
 
     @Override
-    public void seasonsrework$setClimate(byte climate, float shift) {
-        seasonsrework$climate = climate;
+    public void seasonsrework$setClimate(Zone zone, float shift, float[] changes) {
+        seasonsrework$zone = zone;
         seasonsrework$shift = shift;
+        seasonsrework$changes = changes;
     }
 
     // At RETURN, so vanilla's per-position cache keeps the plain value and the offset is always the current one.
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
-        float shift = seasonsrework$climate == SEASONAL ? seasonsrework$shift + Climate.offset() : seasonsrework$shift;
+        float[] changes = seasonsrework$changes;
+        float shift = changes != null ? seasonsrework$shift + Climate.change(changes) : seasonsrework$shift;
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
     }
 
     @Inject(method = "hasPrecipitation", at = @At("HEAD"), cancellable = true)
     private void seasonsrework$wetAndDry(CallbackInfoReturnable<Boolean> cir) {
-        if (seasonsrework$climate == TROPICAL) {
-            if (Climate.wet()) cir.setReturnValue(true);
-            else if (Climate.dry()) cir.setReturnValue(false);
-        }
+        Boolean rain = Climate.precipitation(seasonsrework$zone);
+        if (rain != null) cir.setReturnValue(rain);
     }
 }

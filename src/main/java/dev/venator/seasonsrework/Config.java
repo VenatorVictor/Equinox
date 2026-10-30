@@ -1,6 +1,7 @@
 package dev.venator.seasonsrework;
 
 import dev.venator.seasonsrework.climate.Climate;
+import dev.venator.seasonsrework.climate.Zone;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -8,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,11 +19,8 @@ import java.util.Set;
 /** Server config (per world; NeoForge sends it to clients, so both sides count the year the same way). */
 public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
-    private static final List<Double> DEFAULT_OFFSETS = List.of(
-            -0.35, -0.15, 0.0, // spring
-            0.1, 0.15, 0.1,    // summer
-            0.0, -0.15, -0.35, // autumn
-            -0.6, -0.8, -0.6); // winter
+    private static final List<String> DEFAULT_CLIMATE_CHANGES = Arrays.stream(Zone.values())
+            .filter(Zone::seasonal).map(Zone::defaultEntry).toList();
     // Vanilla temperatures of the biomes WWOO changes (it uses temperature to tint grass and leaves).
     private static final List<String> DEFAULT_BIOME_TEMPERATURES = List.of(
             "minecraft:badlands=2.0", "minecraft:eroded_badlands=2.0", "minecraft:bamboo_jungle=0.95",
@@ -31,7 +30,7 @@ public final class Config {
             "minecraft:old_growth_pine_taiga=0.3", "minecraft:old_growth_spruce_taiga=0.25", "minecraft:river=0.5",
             "minecraft:frozen_river=0.0", "minecraft:ice_spikes=0.0", "minecraft:grove=-0.2",
             "minecraft:snowy_slopes=-0.3", "minecraft:snowy_taiga=-0.5", "minecraft:snowy_beach=0.05",
-            "minecraft:stony_peaks=1.0", "minecraft:windswept_hills=0.2", "minecraft:deep_frozen_ocean=0.5");
+            "minecraft:stony_peaks=1.0", "minecraft:windswept_hills=0.2", "minecraft:deep_frozen_ocean=0.05");
 
     public static final ModConfigSpec.IntValue DAYS_PER_SEASON = BUILDER
             .comment("Days in one season (a year is 4 seasons; 42 days: 168-day year). Each season has an early, mid",
@@ -42,12 +41,13 @@ public final class Config {
             .defineListAllowEmpty("dimensions", List.of("minecraft:overworld"), () -> "minecraft:overworld",
                     value -> value instanceof String s && ResourceLocation.tryParse(s) != null);
 
-    public static final ModConfigSpec.ConfigValue<List<? extends Double>> TEMPERATURE_OFFSETS = BUILDER
-            .comment("Temperature change of seasonal biomes at the middle of each season part, 12 values: early, mid,",
-                    "late spring, then summer, autumn, winter. Blended in between. Snow falls and water freezes below",
-                    "0.15 (plains 0.8, forest 0.7, taiga 0.25). Tropical and hot biomes (above 0.8) don't change.")
-            .defineList("temperature_offsets", DEFAULT_OFFSETS, () -> 0.0,
-                    value -> value instanceof Double d && d >= -5 && d <= 5);
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> CLIMATE_CHANGES = BUILDER
+            .comment("Temperature change of each seasonal climate zone (biome tags seasonsrework:climate/<zone>) at the",
+                    "middle of spring, summer, autumn and winter, as \"zone=spring,summer,autumn,winter\". Blended in",
+                    "between. Snow falls and water freezes below 0.15 (plains 0.8, forest 0.7, taiga 0.25). Tundra and",
+                    "polar seas reach at least 0.3 in summer, so they thaw. Missing zones keep their default.")
+            .defineListAllowEmpty("climate_changes", DEFAULT_CLIMATE_CHANGES, () -> "temperate=0,0,0,0",
+                    value -> value instanceof String s && parseClimateChange(s) != null);
 
     public static final ModConfigSpec.IntValue TEMPERATURE_LAG_DAYS = BUILDER
             .comment("The temperature, crop seasons and the grass, leaf and texture colors run this many days behind the",
@@ -95,7 +95,7 @@ public final class Config {
     // Copies for hot paths and for before the config loads: set when it (re)loads.
     private static volatile int daysPerSeason = 42;
     private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
-    private static volatile float[] temperatureOffsets = toArray(DEFAULT_OFFSETS);
+    private static volatile Map<Zone, float[]> climateChanges = Map.of();
     private static volatile int temperatureLagDays = 14;
     private static volatile float seasonVariation = 0.1F;
     private static volatile long variationSeed;
@@ -109,8 +109,12 @@ public final class Config {
         for (String id : DIMENSIONS.get()) set.add(ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(id)));
         dimensions = Set.copyOf(set);
         daysPerSeason = DAYS_PER_SEASON.get();
-        List<? extends Double> offsets = TEMPERATURE_OFFSETS.get();
-        temperatureOffsets = toArray(offsets.size() == DEFAULT_OFFSETS.size() ? offsets : DEFAULT_OFFSETS);
+        Map<Zone, float[]> changes = new HashMap<>();
+        for (String entry : CLIMATE_CHANGES.get()) {
+            Map.Entry<Zone, float[]> parsed = parseClimateChange(entry);
+            if (parsed != null) changes.put(parsed.getKey(), parsed.getValue());
+        }
+        climateChanges = Map.copyOf(changes);
         temperatureLagDays = TEMPERATURE_LAG_DAYS.get();
         seasonVariation = SEASON_VARIATION.get().floatValue();
         variationSeed = VARIATION_SEED.get();
@@ -151,10 +155,21 @@ public final class Config {
         }
     }
 
-    private static float[] toArray(List<? extends Double> list) {
-        float[] array = new float[list.size()];
-        for (int i = 0; i < array.length; i++) array[i] = list.get(i).floatValue();
-        return array;
+    /** "temperate=-0.3,0.25,-0.3,-0.65": a seasonal zone and its 4 changes (each -5..5), or null. */
+    private static Map.Entry<Zone, float[]> parseClimateChange(String entry) {
+        int split = entry.indexOf('=');
+        if (split < 0) return null;
+        Zone zone = Zone.byId(entry.substring(0, split).trim());
+        String[] values = entry.substring(split + 1).split(",");
+        if (zone == null || !zone.seasonal() || values.length != 4) return null;
+        float[] changes = new float[4];
+        try {
+            for (int i = 0; i < 4; i++) changes[i] = Float.parseFloat(values[i].trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        for (float change : changes) if (!(change >= -5 && change <= 5)) return null;
+        return Map.entry(zone, changes);
     }
 
     public static boolean hasSeasons(ResourceKey<Level> dimension) {
@@ -165,9 +180,10 @@ public final class Config {
         return daysPerSeason;
     }
 
-    /** 12 values, early spring to late winter. */
-    public static float[] temperatureOffsets() {
-        return temperatureOffsets;
+    /** A seasonal zone's change at mid spring, summer, autumn, winter (the config's, else the default). */
+    public static float[] climateChanges(Zone zone) {
+        float[] changes = climateChanges.get(zone);
+        return changes != null ? changes : zone.defaultChanges();
     }
 
     /** Days the temperature and colors run behind the calendar. */
