@@ -106,10 +106,6 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue IDEAL_BONUS = BUILDER
             .comment("In the ideal range, this share of growth chances grows for sure (about 1.4x vanilla speed at 0.15).")
             .defineInRange("ideal_bonus", 0.15, 0.0, 1.0);
-    public static final ModConfigSpec.DoubleValue STOP_MARGIN = BUILDER
-            .comment("°C below the heat limit (day's average) where crops stop growing; crops on dry farmland die there.",
-                    "On the cold side each crop has its own grows_from (dormant below it).")
-            .defineInRange("stop_margin", 5.0, 0.0, 50.0);
     public static final ModConfigSpec.DoubleValue FARMLAND_HEAT = BUILDER
             .comment("When today's high is at least this (°C), farmland only stays wet with water within 2 blocks, not 4.")
             .defineInRange("farmland_heat", 30.0, -100.0, 100.0);
@@ -133,7 +129,7 @@ public final class Config {
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
     private static volatile boolean seasonalCrops = true;
     private static volatile int slowGrowth = 6;
-    private static volatile float idealBonus = 0.15F, stopMargin = 5, farmlandHeat = 30;
+    private static volatile float idealBonus = 0.15F, farmlandHeat = 30;
     private static volatile double latitude = 40;
 
     public static void refresh() {
@@ -156,7 +152,6 @@ public final class Config {
         seasonalCrops = SEASONAL_CROPS.get();
         slowGrowth = SLOW_GROWTH.get();
         idealBonus = IDEAL_BONUS.get().floatValue();
-        stopMargin = STOP_MARGIN.get().floatValue();
         farmlandHeat = FARMLAND_HEAT.get().floatValue();
         latitude = LATITUDE.get();
         Climate.recategorize();
@@ -292,10 +287,6 @@ public final class Config {
 
     public static float idealBonus() {
         return idealBonus;
-    }
-
-    public static float stopMargin() {
-        return stopMargin;
     }
 
     public static float farmlandHeat() {
