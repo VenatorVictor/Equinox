@@ -36,5 +36,6 @@
   "seasonsrework.tooltip.grows_in": "Grows in: ",
   "seasonsrework.tooltip.all_year": "all year",
   "commands.seasonsrework.season.daylight": "Daylight %s hours (vanilla 13.6)",
-  "block.seasonsrework.dead_crop": "Dead Crop"
+  "block.seasonsrework.dead_crop": "Dead Crop",
+  "block.seasonsrework.dead_fruit": "Spoiled Fruit"
 }

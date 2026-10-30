@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Living farmland crops that don't grow show it: dormant (cold) or wilted (heat) textures from DeadCropTextures, in 4
+ * Living farmland crops that don't grow show it (and the pumpkin or melon an attached stem holds, like its stem): dormant (cold) or wilted (heat) textures from DeadCropTextures, in 4
  * strengths (a hint while growing slowly near a limit, then stronger past it; Crops.look). Worked out on the client
  * from the same °C as the server, when the chunk section is meshed. Sections holding crops are redrawn every
  * REFRESH_TICKS, and each crop's look moves at most one strength per redraw toward its current one, both ways, so it
@@ -61,8 +61,9 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     }
 
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        java.util.Set<Block> fruits = Crops.fruits();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!Crops.mortal(block)) continue;
+            if (!Crops.mortal(block) && !fruits.contains(block)) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
                 BakedModel model = event.getModels().get(location);
@@ -80,7 +81,13 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
             SECTIONS.add(SectionPos.asLong(pos));
         }
         if (!ClientConfig.CROP_LOOKS.get()) return data;
-        DeadCropTextures.Kind kind = DeadCropTextures.Kind.ofLook(shown(pos.asLong(), Crops.look(level, pos, state)));
+        int look;
+        if (Crops.mortal(state.getBlock())) look = Crops.look(level, pos, state);
+        else { // a pumpkin or melon: its stem's look, if a stem holds it
+            BlockPos stem = Crops.stemOf(level, pos, state.getBlock());
+            look = stem == null ? 0 : Crops.look(level, stem, level.getBlockState(stem));
+        }
+        DeadCropTextures.Kind kind = DeadCropTextures.Kind.ofLook(shown(pos.asLong(), look));
         return kind == null ? data : data.derive().with(KIND, kind).build();
     }
 

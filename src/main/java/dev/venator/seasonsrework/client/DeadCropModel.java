@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Draws a dead crop as the crop it was (from its block entity) with its textures swapped for the dead ones
+ * Draws a dead crop (or dead fruit) as the crop it was (from its block entity) with its textures swapped for the dead ones
  * (DeadCropTextures): frosted, frosted with snow (block state snowy, set by the server), or withered.
  * Without the crop known yet it shows the plain dead_crop model.
  */
@@ -54,7 +54,9 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
     }
 
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
-        for (BlockState state : CropBlocks.DEAD_CROP.get().getStateDefinition().getPossibleStates()) {
+        List<BlockState> states = new ArrayList<>(CropBlocks.DEAD_CROP.get().getStateDefinition().getPossibleStates());
+        states.addAll(CropBlocks.DEAD_FRUIT.get().getStateDefinition().getPossibleStates());
+        for (BlockState state : states) {
             ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
             BakedModel model = event.getModels().get(location);
             if (model != null) event.getModels().put(location, new DeadCropModel(model));
@@ -65,7 +67,7 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
         data = super.getModelData(region, pos, state, data);
         DeadCropTextures.Kind kind = state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT ? DeadCropTextures.Kind.HEAT
-                : state.getValue(DeadCropBlock.SNOWY) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
+                : state.hasProperty(DeadCropBlock.SNOWY) && state.getValue(DeadCropBlock.SNOWY) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
         return data.derive().with(KIND, kind).build();
     }
 
