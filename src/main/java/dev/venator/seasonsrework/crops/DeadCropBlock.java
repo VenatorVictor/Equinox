@@ -14,7 +14,9 @@ import dev.venator.seasonsrework.snow.FirstSnow;
 import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
@@ -89,6 +91,42 @@ public final class DeadCropBlock extends Block implements EntityBlock {
         return SnowRules.cold(biome, pos) && SnowRules.snowAllowed(biome, pos, FirstSnow.coverage)
                 && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ())
                 && !CropWarmth.heated(level, pos);
+    }
+
+    /** Roof and heater changes waiting for the end of the tick (server thread; not while a block is being set). */
+    private static final java.util.Map<Level, java.util.List<long[]>> PENDING = new java.util.WeakHashMap<>();
+    /** How far below a new or removed roof dead crops are checked. */
+    private static final int ROOF_DEPTH = 32;
+
+    /** CropWarmth: a heater or cooler (radius) or a roof (radius 0) changed at pos. */
+    static void snowChanged(Level level, BlockPos pos, int radius) {
+        PENDING.computeIfAbsent(level, l -> new java.util.ArrayList<>()).add(new long[]{pos.asLong(), radius});
+    }
+
+    /** End of the level tick: dead crops around the changes get their snow right now instead of on a random tick. */
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        java.util.List<long[]> changes = PENDING.remove(level);
+        if (changes == null) return;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (long[] change : changes) {
+            BlockPos pos = BlockPos.of(change[0]);
+            int r = (int) change[1];
+            if (r > 0) {
+                for (BlockPos p : BlockPos.betweenClosed(pos.offset(-r, -r, -r), pos.offset(r, r, r))) update(level, p);
+            } else {
+                for (int y = pos.getY() - 1; y >= pos.getY() - ROOF_DEPTH && y >= level.getMinBuildHeight(); y--)
+                    update(level, cursor.set(pos.getX(), y, pos.getZ()));
+            }
+        }
+    }
+
+    private static void update(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return;
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof DeadCropBlock)) return;
+        boolean snowy = snowy(state, level, pos);
+        if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
     }
 
     @Override

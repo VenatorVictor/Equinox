@@ -2,6 +2,7 @@ package dev.venator.seasonsrework.client.textures;
 
 import dev.venator.seasonsrework.client.ClientConfig;
 import dev.venator.seasonsrework.client.Outside;
+import dev.venator.seasonsrework.crops.CropWarmth;
 import dev.venator.seasonsrework.client.colors.ColorClock;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import dev.venator.seasonsrework.snow.SnowRules;
@@ -87,6 +88,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_LAYER) return inSnow || upperHalfInSnow(region, pos, state);
         if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_ABOVE) return isSnow(region.getBlockState(pos.above()));
         if (!SnowRules.cold(biome, pos) || !SnowRules.snowAllowed(biome, pos, ClientSnow.coverage)) return false;
+        if (CropWarmth.heated(level, pos)) return false; // a campfire, lit furnace... melts it
         // Not under a roof (glass included; sky light passes through glass). SKY: not under leaves either.
         if (!Outside.outside(level, pos)) return false;
         return rule.snowMode() != SeasonalTextures.SnowMode.SKY || region.getBrightness(LightLayer.SKY, pos) >= 15;
