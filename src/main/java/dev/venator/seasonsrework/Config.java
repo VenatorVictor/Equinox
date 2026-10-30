@@ -56,12 +56,18 @@ public final class Config {
             .defineInRange("temperature_lag_days", 14, 0, 1000);
     public static final ModConfigSpec.DoubleValue SEASON_VARIATION = BUILDER
             .comment("Each season is warmer or colder than usual by a random amount up to this, so no two years are the",
-                    "same (0.1: a mild winter may stay above the snow line, a cold one comes early). Small changes are",
-                    "more likely than big ones. Blended from one season to the next. Grass and leaf colors don't follow",
-                    "it. 0: every year the same.")
-            .defineInRange("season_variation", 0.1, 0.0, 1.0);
+                    "same (0.067: about 2 °C). Small changes are more likely than big ones. Blended from one season to",
+                    "the next. Times the climate zone's factor (tropics 0.3, temperate and mild 1, deserts 0.8, boreal,",
+                    "tundra, alpine and polar sea 1.5). Grass and leaf colors don't follow it. 0: every year the same.")
+            .defineInRange("season_variation", 0.067, 0.0, 1.0);
+    public static final ModConfigSpec.DoubleValue DAILY_VARIATION = BUILDER
+            .comment("Each day is warmer or colder than usual by a random amount up to this, on top of the season's",
+                    "(0.133: about 4 °C; in real life days swing more than seasons). Blended from one day's noon to the",
+                    "next, so warm and cold spells last a few days. Same shape and climate factor as season_variation;",
+                    "not lagged. Grass and leaf colors don't follow it. 0: off.")
+            .defineInRange("daily_variation", 0.133, 0.0, 1.0);
     public static final ModConfigSpec.LongValue VARIATION_SEED = BUILDER
-            .comment("Seed for the season variation. 0: set from the world seed when the world loads.")
+            .comment("Seed for the season and daily variation. 0: set from the world seed when the world loads.")
             .defineInRange("variation_seed", 0L, Long.MIN_VALUE, Long.MAX_VALUE);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> BIOME_TEMPERATURES = BUILDER
@@ -97,7 +103,7 @@ public final class Config {
     private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
     private static volatile Map<Zone, float[]> climateChanges = Map.of();
     private static volatile int temperatureLagDays = 14;
-    private static volatile float seasonVariation = 0.1F;
+    private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
     private static volatile boolean seasonalCrops = true;
@@ -117,6 +123,7 @@ public final class Config {
         climateChanges = Map.copyOf(changes);
         temperatureLagDays = TEMPERATURE_LAG_DAYS.get();
         seasonVariation = SEASON_VARIATION.get().floatValue();
+        dailyVariation = DAILY_VARIATION.get().floatValue();
         variationSeed = VARIATION_SEED.get();
         biomeTemperatures = toMap(BIOME_TEMPERATURES.get());
         seasonalCrops = SEASONAL_CROPS.get();
@@ -194,6 +201,10 @@ public final class Config {
     /** Up to this much warmer or colder per season. */
     public static float seasonVariation() {
         return seasonVariation;
+    }
+
+    public static float dailyVariation() {
+        return dailyVariation;
     }
 
     public static long variationSeed() {

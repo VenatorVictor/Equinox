@@ -77,7 +77,7 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         float[] changes = seasonsrework$changes;
-        float shift = changes != null ? seasonsrework$shift + Climate.change(changes) : seasonsrework$shift;
+        float shift = changes != null ? seasonsrework$shift + Climate.change(changes, seasonsrework$zone.factor) : seasonsrework$shift;
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
     }
 

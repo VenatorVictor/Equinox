@@ -40,7 +40,7 @@ public final class FirstSnow {
         if (level.getGameTime() % 20 != 0) return;
         Data data = data(level);
         if (!Config.hasSeasons(level.dimension())) return;
-        boolean snowySeason = Climate.offset() < SnowConfig.SNOWY_SEASON.get();
+        boolean snowySeason = Climate.seasonalOffset() < SnowConfig.SNOWY_SEASON.get();
         // The snowy season just began: start the first snowfall (rain falls as snow where it's cold).
         if (snowySeason && !data.snowySeason && SnowConfig.FORCE_SNOWFALL.get() && data.coverage < 1F && !level.isRaining())
             level.setWeatherParameters(0, SnowConfig.SNOWFALL_TICKS.get(), true, false);

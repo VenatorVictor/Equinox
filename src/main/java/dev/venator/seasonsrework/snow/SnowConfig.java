@@ -27,7 +27,7 @@ public final class SnowConfig {
         FIRST_SNOW = BUILDER.comment("false = cover everything as soon as it's cold enough, without waiting for snowfall.")
                 .define("enabled", true);
         SNOWY_SEASON = BUILDER.comment("The snowy season is when the temperate zone's temperature change (server config climate_changes,",
-                        "-0.3 in mid autumn, -0.65 in mid winter) is below this. -0.5: from the start of winter.")
+                        "-0.3 in mid autumn, -0.65 in mid winter; season variation counted, the day's not) is below this. -0.5: from the start of winter.")
                 .defineInRange("snowy_season", -0.5, -5.0, 5.0);
         FORCE_SNOWFALL = BUILDER.comment("Start a snowfall when the snowy season begins, so the first snow comes right away.")
                 .define("force_snowfall", true);
