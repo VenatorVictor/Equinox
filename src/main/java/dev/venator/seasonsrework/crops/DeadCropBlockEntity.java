@@ -25,6 +25,10 @@ public final class DeadCropBlockEntity extends BlockEntity {
         super(CropBlocks.DEAD_CROP_ENTITY.get(), pos, state);
     }
 
+    public @Nullable BlockState original() {
+        return original;
+    }
+
     void setOriginal(BlockState original) {
         this.original = original;
         setChanged();
