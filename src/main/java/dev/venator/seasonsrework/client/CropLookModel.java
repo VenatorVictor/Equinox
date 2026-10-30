@@ -1,6 +1,7 @@
 package dev.venator.seasonsrework.client;
 
 import dev.venator.seasonsrework.crops.Crops;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -33,16 +34,18 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Living farmland crops that don't grow show it: dormant (cold) or wilted (heat) textures from DeadCropTextures, in 4
  * strengths (a hint while growing slowly near a limit, then stronger past it; Crops.look). Worked out on the client
- * from the same °C as the server, when the
- * chunk section is meshed. Sections holding crops are remembered and redrawn a few times a day (refresh), and around
- * a heater or cooler when it's placed, broken, lit or put out.
+ * from the same °C as the server, when the chunk section is meshed. Sections holding crops are redrawn every
+ * REFRESH_TICKS, and each crop's look moves at most one strength per redraw toward its current one, both ways, so it
+ * fades in and recovers gradually (a heater or a warm day helps growth at once; the look follows over half a day).
  */
 public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     private static final ModelProperty<DeadCropTextures.Kind> KIND = new ModelProperty<>();
     /** Ticks between redraws of the crop sections (the daily temperature drifts slowly). */
     private static final long REFRESH_TICKS = 3000;
     private static final LongOpenHashSet SECTIONS = new LongOpenHashSet();
-    private static long lastRefresh = Long.MIN_VALUE;
+    /** Per crop position: the look shown (Crops.look) and the redraw it was set in, packed by pack(). */
+    private static final Long2LongOpenHashMap SHOWN = new Long2LongOpenHashMap();
+    private static volatile long lastRefresh = Long.MIN_VALUE;
 
     @SuppressWarnings("unchecked")
     private final Map<TextureAtlasSprite, TextureAtlasSprite>[] sprites = new Map[DeadCropTextures.Kind.values().length];
@@ -77,7 +80,7 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
             SECTIONS.add(SectionPos.asLong(pos));
         }
         if (!ClientConfig.CROP_LOOKS.get()) return data;
-        DeadCropTextures.Kind kind = DeadCropTextures.Kind.ofLook(Crops.look(level, pos, state));
+        DeadCropTextures.Kind kind = DeadCropTextures.Kind.ofLook(shown(pos.asLong(), Crops.look(level, pos, state)));
         return kind == null ? data : data.derive().with(KIND, kind).build();
     }
 
@@ -94,11 +97,35 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         return swapped;
     }
 
+    /** The look to show: the target the first time a crop is seen, else one step from the last one per redraw. */
+    private static int shown(long pos, int target) {
+        long refresh = lastRefresh;
+        synchronized (SHOWN) {
+            if (!SHOWN.containsKey(pos)) {
+                SHOWN.put(pos, pack(target, refresh));
+                return target;
+            }
+            long entry = SHOWN.get(pos);
+            int last = (int) (entry & 0xFF) - 8;
+            if (entry >> 8 == refresh) return last;
+            int look = last + Integer.signum(target - last);
+            SHOWN.put(pos, pack(look, refresh));
+            return look;
+        }
+    }
+
+    private static long pack(int look, long refresh) {
+        return refresh << 8 | (look + 8);
+    }
+
     /** Client tick: every REFRESH_TICKS of day time, redraw the sections with crops (they re-register when meshed). */
     public static void tick(ClientLevel level) {
         long now = level.getDayTime() / REFRESH_TICKS;
         if (now == lastRefresh) return;
         lastRefresh = now;
+        synchronized (SHOWN) { // forget crops not drawn for two redraws (unloaded, out of view, broken)
+            SHOWN.values().removeIf(entry -> entry >> 8 < now - 2);
+        }
         long[] sections;
         synchronized (SECTIONS) {
             sections = SECTIONS.toLongArray();
@@ -109,23 +136,12 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
             mc.levelRenderer.setSectionDirty(SectionPos.x(section), SectionPos.y(section), SectionPos.z(section));
     }
 
-    /** A heater or cooler changed at pos: redraw the crop sections within its radius. */
-    public static void heaterChanged(BlockPos pos, int radius) {
-        Minecraft mc = Minecraft.getInstance();
-        int minX = SectionPos.blockToSectionCoord(pos.getX() - radius), maxX = SectionPos.blockToSectionCoord(pos.getX() + radius);
-        int minY = SectionPos.blockToSectionCoord(pos.getY() - radius), maxY = SectionPos.blockToSectionCoord(pos.getY() + radius);
-        int minZ = SectionPos.blockToSectionCoord(pos.getZ() - radius), maxZ = SectionPos.blockToSectionCoord(pos.getZ() + radius);
-        synchronized (SECTIONS) {
-            for (int x = minX; x <= maxX; x++)
-                for (int y = minY; y <= maxY; y++)
-                    for (int z = minZ; z <= maxZ; z++)
-                        if (SECTIONS.contains(SectionPos.asLong(x, y, z))) mc.levelRenderer.setSectionDirty(x, y, z);
-        }
-    }
-
     public static void reset() {
         synchronized (SECTIONS) {
             SECTIONS.clear();
+        }
+        synchronized (SHOWN) {
+            SHOWN.clear();
         }
         lastRefresh = Long.MIN_VALUE;
     }

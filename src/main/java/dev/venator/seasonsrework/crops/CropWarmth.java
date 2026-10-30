@@ -43,8 +43,6 @@ public record CropWarmth(float target, float strength, int radius) {
 
     private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
     private static int maxRadius;
-    /** Client: a heater or cooler appeared or went (pos, its radius), so the crops around it can be redrawn. */
-    public static volatile java.util.function.ObjIntConsumer<BlockPos> clientChanged;
 
     /** The data reloaded: forget every chunk's list. */
     static synchronized void reset() {
@@ -61,10 +59,7 @@ public record CropWarmth(float target, float strength, int radius) {
 
     /** A block changed (LevelChunkMixin): keep the chunk's list right if it has one. */
     public static synchronized void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        CropWarmth before = data(old), after = data(now);
-        if (before == null && after == null) return;
-        if (level.isClientSide && clientChanged != null && (before != after || old.hasProperty(BlockStateProperties.LIT)))
-            clientChanged.accept(pos, Math.max(before == null ? 0 : before.radius, after == null ? 0 : after.radius));
+        if (data(old) == null && data(now) == null) return;
         Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
         LongArrayList list = chunks == null ? null : chunks.get(ChunkPos.asLong(pos));
         if (list == null) return;
