@@ -68,8 +68,13 @@ public final class DeadCropBlock extends Block implements EntityBlock {
         builder.add(CAUSE, SNOWY);
     }
 
+    /** The crop it was: a dead young stem is as small as the living one. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) {
+            BlockState original = entity.original();
+            if (original != null && !(original.getBlock() instanceof DeadCropBlock)) return original.getShape(level, pos, context);
+        }
         return SHAPE;
     }
 
