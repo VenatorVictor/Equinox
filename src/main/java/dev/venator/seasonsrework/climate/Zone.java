@@ -27,11 +27,16 @@ public enum Zone {
     MONSOON(ClimateBiome.TROPICAL, false, 0.3F),
     /** Wet summer, dry from late autumn to early spring. */
     SAVANNA(ClimateBiome.TROPICAL, false, 0.3F),
+    /** Oceans: no seasons in Minecraft (snow, ice), but the °C climate changes a little (sea lags, tropics barely). */
+    WARM_OCEAN(ClimateBiome.NONE, false, 0.3F),
+    LUKEWARM_OCEAN(ClimateBiome.NONE, false, 0.3F),
+    OCEAN(ClimateBiome.NONE, false, 0.3F),
+    COLD_OCEAN(ClimateBiome.NONE, false, 0.3F),
     /** Cave biomes: no seasons underground. */
     CAVE(ClimateBiome.NONE, false, 0F),
     /** Untagged biomes hotter than 0.8: no seasons; crops grow as in the tropics. */
     HOT(ClimateBiome.HOT, false, 0.3F),
-    /** Nether, end, oceans (oceans' factor: for the Cold Sweat compat later). */
+    /** Nether, end, untagged oceans. */
     NONE(ClimateBiome.NONE, false, 0.3F);
 
     /** Tundra and polar seas warm to at least this in mid summer, so the snow and the sea ice melt. */
@@ -58,6 +63,11 @@ public enum Zone {
 
     public float[] defaultChanges() {
         return defaults;
+    }
+
+    /** Salt water: freezes at −2 °C instead of 0. */
+    public boolean sea() {
+        return this == WARM_OCEAN || this == LUKEWARM_OCEAN || this == OCEAN || this == COLD_OCEAN || this == POLAR_SEA;
     }
 
     public boolean seasonal() {

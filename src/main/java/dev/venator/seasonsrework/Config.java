@@ -21,6 +21,12 @@ public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
     private static final List<String> DEFAULT_CLIMATE_CHANGES = Arrays.stream(Zone.values())
             .filter(Zone::seasonal).map(Zone::defaultEntry).toList();
+    // °C change per zone (dev/specs/seasons-rework-plan.md, "Seasonal change per climate"); temperate matches Vienna.
+    private static final List<String> DEFAULT_CELSIUS_CHANGES = List.of(
+            "temperate=0..1,9..11,0..-1,-9..-12", "mild=0,7,0,-9", "boreal=0,13,0,-10", "tundra=-5,16,5,-14",
+            "alpine=-2,7,2,-6", "polar_sea=-3,13,3,-5", "hot_desert=-1,11,1,-10", "cold_desert=0,14,0,-14",
+            "rainforest=0,0,0,0", "monsoon=1,0,-1,-10", "savanna=0,0,0,-4", "warm_ocean=0,1,0,-1",
+            "lukewarm_ocean=-2,3,2,-3", "ocean=-2,4,2,-4", "cold_ocean=-2,4,2,-4");
     // Vanilla temperatures of the biomes WWOO changes (it uses temperature to tint grass and leaves).
     private static final List<String> DEFAULT_BIOME_TEMPERATURES = List.of(
             "minecraft:badlands=2.0", "minecraft:eroded_badlands=2.0", "minecraft:bamboo_jungle=0.95",
@@ -48,6 +54,14 @@ public final class Config {
                     "polar seas reach at least 0.3 in summer, so they thaw. Missing zones keep their default.")
             .defineListAllowEmpty("climate_changes", DEFAULT_CLIMATE_CHANGES, () -> "temperate=0,0,0,0",
                     value -> value instanceof String s && parseClimateChange(s) != null);
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
+            .comment("°C climate (for the temperature API: crops, Cold Sweat, survival mods): change of each climate zone",
+                    "at the middle of spring, summer, autumn and winter, added to the biome's spring/autumn °C (data map",
+                    "seasonsrework:celsius). One value = same at midnight and noon; \"a..b\" = midnight..noon, so the",
+                    "day-night gap can change with the season. Missing zones (and cave, hot, none) don't change.")
+            .defineListAllowEmpty("celsius_changes", DEFAULT_CELSIUS_CHANGES, () -> "temperate=0,0,0,0",
+                    value -> value instanceof String s && parseCelsiusChange(s) != null);
 
     public static final ModConfigSpec.IntValue TEMPERATURE_LAG_DAYS = BUILDER
             .comment("The temperature, crop seasons and the grass, leaf and texture colors run this many days behind the",
@@ -102,6 +116,7 @@ public final class Config {
     private static volatile int daysPerSeason = 42;
     private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
     private static volatile Map<Zone, float[]> climateChanges = Map.of();
+    private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
     private static volatile int temperatureLagDays = 14;
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
     private static volatile long variationSeed;
@@ -121,6 +136,7 @@ public final class Config {
             if (parsed != null) changes.put(parsed.getKey(), parsed.getValue());
         }
         climateChanges = Map.copyOf(changes);
+        celsiusChanges = toCelsiusMap(CELSIUS_CHANGES.get());
         temperatureLagDays = TEMPERATURE_LAG_DAYS.get();
         seasonVariation = SEASON_VARIATION.get().floatValue();
         dailyVariation = DAILY_VARIATION.get().floatValue();
@@ -162,6 +178,37 @@ public final class Config {
         }
     }
 
+    private static Map<Zone, float[]> toCelsiusMap(List<? extends String> entries) {
+        Map<Zone, float[]> map = new HashMap<>();
+        for (String entry : entries) {
+            Map.Entry<Zone, float[]> parsed = parseCelsiusChange(entry);
+            if (parsed != null) map.put(parsed.getKey(), parsed.getValue());
+        }
+        return Map.copyOf(map);
+    }
+
+    /** "temperate=0..1,9..11,0..-1,-9..-12": a zone and its 8 values (midnight, noon per season), or null. */
+    private static Map.Entry<Zone, float[]> parseCelsiusChange(String entry) {
+        int split = entry.indexOf('=');
+        if (split < 0) return null;
+        Zone zone = Zone.byId(entry.substring(0, split).trim());
+        String[] values = entry.substring(split + 1).split(",");
+        if (zone == null || values.length != 4) return null;
+        float[] changes = new float[8];
+        try {
+            for (int i = 0; i < 4; i++) {
+                String value = values[i].trim();
+                int range = value.indexOf("..");
+                changes[i * 2] = Float.parseFloat(range < 0 ? value : value.substring(0, range).trim());
+                changes[i * 2 + 1] = Float.parseFloat(range < 0 ? value : value.substring(range + 2).trim());
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        for (float change : changes) if (!(change >= -100 && change <= 100)) return null;
+        return Map.entry(zone, changes);
+    }
+
     /** "temperate=-0.3,0.25,-0.3,-0.65": a seasonal zone and its 4 changes (each -5..5), or null. */
     private static Map.Entry<Zone, float[]> parseClimateChange(String entry) {
         int split = entry.indexOf('=');
@@ -185,6 +232,11 @@ public final class Config {
 
     public static int daysPerSeason() {
         return daysPerSeason;
+    }
+
+    /** A zone's °C change: midnight and noon at mid spring, summer, autumn, winter (8 values), or null for none. */
+    public static float[] celsiusChanges(Zone zone) {
+        return celsiusChanges.get(zone);
     }
 
     /** A seasonal zone's change at mid spring, summer, autumn, winter (the config's, else the default). */

@@ -1,5 +1,6 @@
 {
   "commands.seasonsrework.season.show": "%s %s: day %s of %s, year %s",
+  "commands.seasonsrework.season.celsius": "Air here %s °C (today %s..%s °C), water %s °C",
   "commands.seasonsrework.season.climate": "Climate %s: temperature change %s (variation: season %s, day %s); here %s",
   "commands.seasonsrework.season.unknown": "Unknown season: %s",
   "commands.seasonsrework.season.none": "There are no seasons in this dimension",
@@ -25,6 +26,10 @@
   "seasonsrework.climate.savanna": "savanna",
   "seasonsrework.climate.savanna_wet": "savanna, wet season",
   "seasonsrework.climate.savanna_dry": "savanna, dry season",
+  "seasonsrework.climate.warm_ocean": "warm ocean",
+  "seasonsrework.climate.lukewarm_ocean": "lukewarm ocean",
+  "seasonsrework.climate.ocean": "ocean",
+  "seasonsrework.climate.cold_ocean": "cold ocean",
   "seasonsrework.climate.cave": "cave, no seasons",
   "seasonsrework.climate.hot": "hot, no seasons",
   "seasonsrework.climate.none": "no seasons",

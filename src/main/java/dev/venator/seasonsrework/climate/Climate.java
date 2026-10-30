@@ -31,10 +31,27 @@ public final class Climate {
     private static final float MAX_SEASONAL_TEMPERATURE = 0.8F;
     /** Zones are checked in this order (a biome in two tags gets the first). */
     private static final Zone[] TAGGED = {Zone.CAVE, Zone.POLAR_SEA, Zone.TEMPERATE, Zone.MILD, Zone.BOREAL, Zone.TUNDRA,
-            Zone.ALPINE, Zone.HOT_DESERT, Zone.COLD_DESERT, Zone.RAINFOREST, Zone.MONSOON, Zone.SAVANNA};
+            Zone.ALPINE, Zone.HOT_DESERT, Zone.COLD_DESERT, Zone.RAINFOREST, Zone.MONSOON, Zone.SAVANNA,
+            Zone.WARM_OCEAN, Zone.LUKEWARM_OCEAN, Zone.OCEAN, Zone.COLD_OCEAN};
 
     /** Where the (lagged) year is between two season middles, plus the season's and the day's variation. */
-    private record Phase(int from, int to, float blend, float season, float daily) {}
+    record Phase(int from, int to, float blend, float season, float daily) {
+        /** Between two season middles of a lagged state (0 = mid spring, wrapping winter to spring). */
+        static Phase of(SeasonState lagged, float season, float daily) {
+            double position = lagged.yearProgress() * Season.COUNT - 0.5;
+            int index = (int) Math.floor(position);
+            return new Phase(Math.floorMod(index, Season.COUNT), Math.floorMod(index + 1, Season.COUNT),
+                    (float) (position - index), season, daily);
+        }
+
+        float blend(float[] values) {
+            return values[from] + (values[to] - values[from]) * blend;
+        }
+    }
+
+    static Phase phase() {
+        return phase;
+    }
 
     /** A seasonal curve and its variation factor. */
     private record Curve(float[] changes, float factor) {}
@@ -112,11 +129,7 @@ public final class Climate {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
         SeasonState lagged = state.lagged(Config.temperatureLagDays());
-        // 0 at mid spring, 1 at mid summer... (season middles), wrapping winter to spring.
-        double position = lagged.yearProgress() * Season.COUNT - 0.5;
-        int index = (int) Math.floor(position);
-        phase = new Phase(Math.floorMod(index, Season.COUNT), Math.floorMod(index + 1, Season.COUNT),
-                (float) (position - index), variationAt(lagged), dailyVariationAt(state));
+        phase = Phase.of(lagged, variationAt(lagged), dailyVariationAt(state));
         Season season = state.season();
         summer = season == Season.SUMMER;
         winter = season == Season.WINTER;
