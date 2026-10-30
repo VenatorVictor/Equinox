@@ -17,6 +17,11 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue SEASONAL_TEXTURES;
     public static final ModConfigSpec.BooleanValue DH_REFRESH;
     public static final ModConfigSpec.BooleanValue DH_SNOW;
+    public static final ModConfigSpec.BooleanValue CROP_LOOKS;
+    public static final ModConfigSpec.EnumValue<CropColors> CROP_COLORS;
+
+    /** Colors of crops that don't grow. ECLIPTIC: Ecliptic Seasons' winter beige and autumn dry orange. */
+    public enum CropColors { DEFAULT, ECLIPTIC }
 
     static {
         BUILDER.comment(
@@ -41,6 +46,13 @@ public final class ClientConfig {
         SEASONAL_TEXTURES = BUILDER.comment("Seasonal block textures from resource packs in Ecliptic Seasons' format",
                         "(assets/<namespace>/eclipticseasons/season_textures/*.json), e.g. Seasonal Plants and Seasonal Trees.")
                 .define("seasonal_textures", true);
+        BUILDER.pop().push("crops");
+        CROP_LOOKS = BUILDER.comment("Crops that don't grow show it, in 4 steps: a hint while they grow slowly near a limit,",
+                        "then stronger the further past it (dormant from cold, wilted from heat).")
+                .define("crop_looks", true);
+        CROP_COLORS = BUILDER.comment("DEFAULT: greyish blue-green (cold), dark yellow (heat).",
+                        "ECLIPTIC: Ecliptic Seasons' colors, winter beige (cold) and dry orange (heat). Needs a resource reload (F3+T).")
+                .defineEnum("crop_colors", CropColors.DEFAULT);
         BUILDER.pop().push("distant_horizons");
         DH_REFRESH = BUILDER.comment("Re-color Distant Horizons LODs when the season colors change (nearest first).")
                 .define("refresh_lods", true);

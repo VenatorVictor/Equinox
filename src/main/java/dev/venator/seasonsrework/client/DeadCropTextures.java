@@ -30,18 +30,39 @@ import java.util.Set;
  * Dead and stopped crop textures, made when resources load (atlas source in assets/minecraft/atlases/blocks.json), so
  * no resource pack is needed: for every texture the models of farmland crops use, a frosted copy (icy blue), a frosted
  * copy with snow on its upper edges (outside), a withered one (dry brown), and for living crops that don't grow
- * (CropLookModel) a dormant one (cold: greyish blue-green) and a wilted one (heat: green parts dry yellow-olive).
+ * (CropLookModel) dormant (cold) and wilted (heat) ones in 4 strengths, blended 25..100% over the crop's own colors.
+ * Colors from the client config crop_colors: default greyish blue-green / dark yellow, or Ecliptic Seasons' winter
+ * beige / dry orange (leaves only).
  * Sprite ids: seasonsrework:dead/<kind>/<namespace>/<path>. A resource pack can replace any of them with its own art at textures/dead/<kind>/<namespace>/<path>.png
  * (namespace seasonsrework).
  */
 public final class DeadCropTextures implements SpriteSource {
     public enum Kind {
-        FROST("frost"), FROST_SNOW("frost_snow"), HEAT("heat"), DORMANT("dormant"), WILTED("wilted");
+        FROST("frost", 0), FROST_SNOW("frost_snow", 0), HEAT("heat", 0),
+        DORMANT_1("dormant_1", 1), DORMANT_2("dormant_2", 2), DORMANT_3("dormant_3", 3), DORMANT_4("dormant_4", 4),
+        WILTED_1("wilted_1", 1), WILTED_2("wilted_2", 2), WILTED_3("wilted_3", 3), WILTED_4("wilted_4", 4);
+
+        private static final Kind[] DORMANT = {DORMANT_1, DORMANT_2, DORMANT_3, DORMANT_4};
+        private static final Kind[] WILTED = {WILTED_1, WILTED_2, WILTED_3, WILTED_4};
 
         final String id;
+        /** Living crop looks: strength 1..4 (0 = dead crop). */
+        final int strength;
 
-        Kind(String id) {
+        Kind(String id, int strength) {
             this.id = id;
+            this.strength = strength;
+        }
+
+        boolean dormant() {
+            return name().startsWith("DORMANT");
+        }
+
+        /** Crops.look: negative = dormant, positive = wilted, 0 = none. */
+        public static Kind ofLook(int look) {
+            if (look == 0) return null;
+            int i = Math.min(4, Math.abs(look)) - 1;
+            return look < 0 ? DORMANT[i] : WILTED[i];
         }
 
         public ResourceLocation sprite(ResourceLocation texture) {
@@ -132,15 +153,12 @@ public final class DeadCropTextures implements SpriteSource {
     private static SpriteContents make(ResourceManager resources, ResourceLocation texture, ResourceLocation id, Kind kind) {
         Optional<Resource> resource = resources.getResource(TEXTURE_ID_CONVERTER.idToFile(texture));
         if (resource.isEmpty()) return null;
+        boolean ecliptic = ClientConfig.CROP_COLORS.get() == ClientConfig.CropColors.ECLIPTIC;
         try (InputStream in = resource.get().open(); NativeImage source = NativeImage.read(in)) {
             int width = source.getWidth(), height = Math.min(source.getHeight(), width); // first frame of animations
             NativeImage image = new NativeImage(width, height, true);
             for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, switch (kind) {
-                        case DORMANT -> dormant(source.getPixelRGBA(x, y));
-                        case WILTED -> wilted(source.getPixelRGBA(x, y));
-                        default -> recolor(source.getPixelRGBA(x, y), kind == Kind.HEAT);
-                    });
+                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, look(source.getPixelRGBA(x, y), kind, ecliptic));
             if (kind == Kind.FROST_SNOW) snow(image);
             return new SpriteContents(id, new FrameSize(width, height), image, ResourceMetadata.EMPTY);
         } catch (Exception e) {
@@ -152,6 +170,7 @@ public final class DeadCropTextures implements SpriteSource {
     // Colors are ABGR (NativeImage's pixel order). Dark and light ends of each palette, by brightness.
     private static final int[] FROST_DARK = {38, 64, 112}, FROST_LIGHT = {196, 226, 255};
     private static final int[] HEAT_DARK = {64, 40, 18}, HEAT_LIGHT = {196, 152, 92};
+    private static final int[] WILTED_DARK = {78, 60, 14}, WILTED_LIGHT = {214, 178, 64};
 
     /** Same shape and shading, new colors: brightness mapped onto an icy blue or a dry brown palette. */
     private static int recolor(int abgr, boolean heat) {
@@ -167,6 +186,40 @@ public final class DeadCropTextures implements SpriteSource {
         return alpha << 24 | nb << 16 | ng << 8 | nr;
     }
 
+    private static int look(int abgr, Kind kind, boolean ecliptic) {
+        if (kind.strength == 0) return recolor(abgr, kind == Kind.HEAT);
+        int full = ecliptic ? (kind.dormant() ? palette(abgr, ECLIPTIC_WINTER) : palette(abgr, ECLIPTIC_DRY))
+                : kind.dormant() ? dormant(abgr) : wilted(abgr);
+        return blend(abgr, full, kind.strength / 4F);
+    }
+
+    // Ecliptic Seasons' base colors (RGB): winter #C1A173, dry #D1923F.
+    private static final int[] ECLIPTIC_WINTER = {193, 161, 115}, ECLIPTIC_DRY = {209, 146, 63};
+
+    /** Leaves only (not roots): the color, shaded by the pixel's brightness. */
+    private static int palette(int abgr, int[] color) {
+        int alpha = abgr >>> 24;
+        int r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
+        if (alpha == 0 || !leaf(r, g, b)) return abgr;
+        float shade = 0.4F + 0.9F * Math.min(1, (0.3F * r + 0.59F * g + 0.11F * b) / 255F * 1.25F);
+        int nr = Math.min(255, (int) (color[0] * shade)), ng = Math.min(255, (int) (color[1] * shade)), nb = Math.min(255, (int) (color[2] * shade));
+        return alpha << 24 | nb << 16 | ng << 8 | nr;
+    }
+
+    /** Not a root or fruit: carrot orange, beetroot red. */
+    private static boolean leaf(int r, int g, int b) {
+        return g >= b && r <= g * 1.3F;
+    }
+
+    private static int blend(int from, int to, float f) {
+        int out = from & 0xFF000000;
+        for (int shift = 0; shift < 24; shift += 8) {
+            int a = from >> shift & 0xFF, b = to >> shift & 0xFF;
+            out |= Math.round(a + (b - a) * f) << shift;
+        }
+        return out;
+    }
+
     /** Cold, not growing: most of the color gone, a little blue, a bit darker. */
     private static int dormant(int abgr) {
         int alpha = abgr >>> 24;
@@ -178,22 +231,17 @@ public final class DeadCropTextures implements SpriteSource {
         return alpha << 24 | (int) b << 16 | (int) g << 8 | (int) r;
     }
 
-    /** Hot, not growing: green parts turn dry yellow-olive, other colors (roots, ripe ears) only fade a little. */
+    /** Hot, not growing: leaves and ears go dark yellow (between the green and the dead brown); roots keep their color. */
     private static int wilted(int abgr) {
         int alpha = abgr >>> 24;
         if (alpha == 0) return abgr;
-        float r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
-        if (g > r && g > b) {
-            r = Math.min(255, r * 0.6F + g * 0.55F);
-            g = Math.min(255, g * 0.95F + 8);
-            b = b * 0.55F;
-        } else {
-            float light = 0.3F * r + 0.59F * g + 0.11F * b;
-            r = light + (r - light) * 0.8F;
-            g = light + (g - light) * 0.8F;
-            b = light + (b - light) * 0.8F;
-        }
-        return alpha << 24 | (int) b << 16 | (int) g << 8 | (int) r;
+        int r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
+        if (!leaf(r, g, b)) return abgr;
+        float light = Math.min(1, (0.3F * r + 0.59F * g + 0.11F * b) / 255F * 1.25F);
+        int nr = (int) (WILTED_DARK[0] + (WILTED_LIGHT[0] - WILTED_DARK[0]) * light);
+        int ng = (int) (WILTED_DARK[1] + (WILTED_LIGHT[1] - WILTED_DARK[1]) * light);
+        int nb = (int) (WILTED_DARK[2] + (WILTED_LIGHT[2] - WILTED_DARK[2]) * light);
+        return alpha << 24 | nb << 16 | ng << 8 | nr;
     }
 
     /** Snow on the upper edges: every pixel with nothing above it turns white, the one below it half white. */
