@@ -16,7 +16,9 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FarmBlock;
@@ -93,6 +95,12 @@ public final class DeadCropBlock extends Block implements EntityBlock {
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         boolean snowy = snowy(state, level, pos);
         if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
+    }
+
+    /** Frozen: breaks like ice. Dried by heat: the crop's own rustle. */
+    @Override
+    public SoundType getSoundType(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
+        return state.getValue(CAUSE) == Cause.FROST ? SoundType.GLASS : SoundType.CROP;
     }
 
     @Override

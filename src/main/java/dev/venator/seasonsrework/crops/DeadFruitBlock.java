@@ -2,7 +2,10 @@ package dev.venator.seasonsrework.crops;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +32,12 @@ public final class DeadFruitBlock extends Block implements EntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(DeadCropBlock.CAUSE);
+    }
+
+    /** Frozen: breaks like ice. Rotten from heat: a soft squish. */
+    @Override
+    public SoundType getSoundType(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
+        return state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.FROST ? SoundType.GLASS : SoundType.MUD;
     }
 
     @Override
