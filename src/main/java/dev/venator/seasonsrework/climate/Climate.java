@@ -17,8 +17,8 @@ import java.util.List;
 /**
  * The seasonal climate. Each biome has a climate zone (tags seasonsrework:climate/<zone>, Zone): seasonal zones change
  * the biome's temperature by the zone's value at the middle of each season, blended in between, so the snow line moves
- * a little every tick instead of jumping. On top, each season gets a random variation (warmer or colder than usual),
- * the same for a world on both sides. Both run some days behind the calendar (temperature lag); the tropical wet and
+ * a little every tick instead of jumping. On top, each season and each day get a random variation (warmer or colder
+ * than usual, times the zone's factor), the same for a world on both sides. Both run some days behind the calendar (temperature lag); the tropical wet and
  * dry seasons don't. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
  * biome another temperature for the climate only (grass colors read the biome's own value), for biome mods that change
  * temperatures to tint grass (WWOO: beach 2.0, old growth pine taiga 2.0...).
@@ -33,48 +33,66 @@ public final class Climate {
     private static final Zone[] TAGGED = {Zone.CAVE, Zone.POLAR_SEA, Zone.TEMPERATE, Zone.MILD, Zone.BOREAL, Zone.TUNDRA,
             Zone.ALPINE, Zone.HOT_DESERT, Zone.COLD_DESERT, Zone.RAINFOREST, Zone.MONSOON, Zone.SAVANNA};
 
-    /** Where the (lagged) year is between two season middles, plus this season's variation. */
-    private record Phase(int from, int to, float blend, float variation) {}
+    /** Where the (lagged) year is between two season middles, plus the season's and the day's variation. */
+    private record Phase(int from, int to, float blend, float season, float daily) {}
+
+    /** A seasonal curve and its variation factor. */
+    private record Curve(float[] changes, float factor) {}
 
     // Read by the Biome hooks on any thread; written once per tick.
-    private static volatile Phase phase = new Phase(0, 0, 0, 0);
+    private static volatile Phase phase = new Phase(0, 0, 0, 0, 0);
     private static volatile boolean summer, winter, savannaDry;
     // The biomes of the last tag load on each side, to sort again when the config changes.
     private static volatile List<Holder<Biome>> serverBiomes = List.of(), clientBiomes = List.of();
     // The distinct seasonal curves of the server's biomes (for SnowCover's target).
-    private static volatile List<float[]> curves = List.of();
+    private static volatile List<Curve> curves = List.of();
 
     /** The temperate zone's change now, variation included (the reference for the snowy season and /season). */
     public static float offset() {
-        return change(Zone.TEMPERATE.changes);
+        return change(Zone.TEMPERATE.changes, Zone.TEMPERATE.factor);
     }
 
-    /** The random part of the change: this season warmer (above 0) or colder than usual. */
-    public static float variation() {
-        return phase.variation;
-    }
-
-    /** The change now of a seasonal curve (mid spring, summer, autumn, winter), variation included. */
-    public static float change(float[] changes) {
+    /** The temperate zone's change without the day's variation (the snowy season: a warm day doesn't end it). */
+    public static float seasonalOffset() {
         Phase p = phase;
-        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + p.variation;
+        float[] changes = Zone.TEMPERATE.changes;
+        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + p.season * Zone.TEMPERATE.factor;
+    }
+
+    /** This season warmer (above 0) or colder than usual, before the zone's factor. */
+    public static float seasonVariation() {
+        return phase.season;
+    }
+
+    /** Today warmer (above 0) or colder than usual, before the zone's factor. */
+    public static float dailyVariation() {
+        return phase.daily;
+    }
+
+    /** The change now of a seasonal curve (mid spring, summer, autumn, winter), variation times factor included. */
+    public static float change(float[] changes, float factor) {
+        Phase p = phase;
+        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + (p.season + p.daily) * factor;
     }
 
     /** A biome's seasonal change now (0 without seasons). */
     public static float change(Biome biome) {
-        float[] changes = ((ClimateBiome) (Object) biome).seasonsrework$changes();
-        return changes == null ? 0 : change(changes);
+        ClimateBiome climate = (ClimateBiome) (Object) biome;
+        float[] changes = climate.seasonsrework$changes();
+        return changes == null ? 0 : change(changes, climate.seasonsrework$zone().factor);
     }
 
     /**
      * Rain override for a zone, or null for the biome's own. Monsoon: wet summer, dry winter. Savanna: wet summer, dry
-     * from late autumn to early spring. Cold desert: rare snow in winter (vanilla badlands never rain). On the calendar.
+     * from late autumn to early spring. Cold desert: rare snow in winter (vanilla badlands never rain). Hot desert:
+     * never (also deserts from other mods). On the calendar.
      */
     public static Boolean precipitation(Zone zone) {
         return switch (zone) {
             case MONSOON -> summer ? Boolean.TRUE : winter ? Boolean.FALSE : null;
             case SAVANNA -> summer ? Boolean.TRUE : savannaDry ? Boolean.FALSE : null;
             case COLD_DESERT -> winter ? Boolean.TRUE : null;
+            case HOT_DESERT -> Boolean.FALSE;
             default -> null;
         };
     }
@@ -98,7 +116,7 @@ public final class Climate {
         double position = lagged.yearProgress() * Season.COUNT - 0.5;
         int index = (int) Math.floor(position);
         phase = new Phase(Math.floorMod(index, Season.COUNT), Math.floorMod(index + 1, Season.COUNT),
-                (float) (position - index), variationAt(lagged));
+                (float) (position - index), variationAt(lagged), dailyVariationAt(state));
         Season season = state.season();
         summer = season == Season.SUMMER;
         winter = season == Season.WINTER;
@@ -109,7 +127,7 @@ public final class Climate {
     /** Changes with every STEP of any seasonal curve (SnowCover redoes the loaded chunks then). */
     public static int snowTarget(float step) {
         int target = 1;
-        for (float[] curve : curves) target = 31 * target + Math.round(change(curve) / step);
+        for (Curve curve : curves) target = 31 * target + Math.round(change(curve.changes, curve.factor) / step);
         return target;
     }
 
@@ -124,13 +142,30 @@ public final class Climate {
         long index = (long) Math.floor(position);
         float blend = (float) (position - index);
         blend = blend * blend * (3 - 2 * blend);
-        float from = randomSeason(index), to = randomSeason(index + 1);
+        float from = random(index, SEASON_SALT), to = random(index + 1, SEASON_SALT);
         return amount * (from + (to - from) * blend);
     }
 
-    /** -1 .. 1 for a season (seasons since the start); two random halves added, so near 0 more often than the ends. */
-    private static float randomSeason(long season) {
-        long hash = mix(Config.variationSeed() ^ mix(season + 0x9E3779B97F4A7C15L));
+    /**
+     * Each day's variation peaks at noon and blends into the next day's (smoothstep), so warm and cold spells last a
+     * few days like a real front, with no jump at midnight. On the calendar (no lag). Same seed, other salt.
+     */
+    static float dailyVariationAt(SeasonState state) {
+        float amount = Config.dailyVariation();
+        if (amount == 0) return 0;
+        double position = (state.dayTime() - 6000) / 24000.0; // 0: noon of the first day
+        long index = (long) Math.floor(position);
+        float blend = (float) (position - index);
+        blend = blend * blend * (3 - 2 * blend);
+        float from = random(index, DAY_SALT), to = random(index + 1, DAY_SALT);
+        return amount * (from + (to - from) * blend);
+    }
+
+    private static final long SEASON_SALT = 0x9E3779B97F4A7C15L, DAY_SALT = 0xD1B54A32D192ED03L;
+
+    /** -1 .. 1 for a season or day (counted from the start); two random halves added, so near 0 more often than the ends. */
+    private static float random(long number, long salt) {
+        long hash = mix(Config.variationSeed() ^ mix(number + salt));
         float a = (hash >>> 40) / (float) (1 << 24), b = ((hash >>> 16) & 0xFFFFFF) / (float) (1 << 24);
         return a + b - 1;
     }
@@ -184,11 +219,14 @@ public final class Climate {
     }
 
     /** The distinct curves of these biomes (same values = one curve). */
-    private static List<float[]> curvesOf(List<Holder<Biome>> biomes) {
-        List<float[]> list = new java.util.ArrayList<>();
+    private static List<Curve> curvesOf(List<Holder<Biome>> biomes) {
+        List<Curve> list = new java.util.ArrayList<>();
         for (Holder<Biome> holder : biomes) {
-            float[] changes = ((ClimateBiome) (Object) holder.value()).seasonsrework$changes();
-            if (changes != null && list.stream().noneMatch(c -> java.util.Arrays.equals(c, changes))) list.add(changes);
+            ClimateBiome climate = (ClimateBiome) (Object) holder.value();
+            float[] changes = climate.seasonsrework$changes();
+            float factor = climate.seasonsrework$zone().factor;
+            if (changes != null && list.stream().noneMatch(c -> c.factor == factor && java.util.Arrays.equals(c.changes, changes)))
+                list.add(new Curve(changes, factor));
         }
         return List.copyOf(list);
     }

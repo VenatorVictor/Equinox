@@ -53,14 +53,14 @@ public final class SeasonCommand {
                 Component.translatable("seasonsrework.part." + PARTS.get(state.part())),
                 Component.translatable("seasonsrework.season." + state.season().id()),
                 state.dayOfSeason() + 1, state.daysPerSeason(), state.year() + 1), false);
-        // For testing: the biome's climate zone and seasonal change (with this season's variation), and the biome's temperature here (snow and ice below 0.15).
+        // For testing: the biome's climate zone and seasonal change (with the season's and the day's variation, before the zone's factor), and the biome's temperature here (snow and ice below 0.15).
         BlockPos pos = BlockPos.containing(source.getPosition());
         Biome biome = source.getLevel().getBiome(pos).value();
         Zone zone = Climate.zoneOf(biome);
         String climate = zone.id + (Climate.wet(zone) ? "_wet" : Climate.dry(zone) ? "_dry" : "");
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.climate",
                 Component.translatable("seasonsrework.climate." + climate), String.format("%+.2f", Climate.change(biome)),
-                String.format("%+.2f", Climate.variation()), String.format("%.2f", ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos))), false);
+                String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()), String.format("%.2f", ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos))), false);
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.daylight",
                 String.format("%.1f", DayLength.daylightHours(state.dayTime(), state.daysPerSeason()))), false);
         return state.season().ordinal() * SeasonState.PARTS + state.part() + 1;

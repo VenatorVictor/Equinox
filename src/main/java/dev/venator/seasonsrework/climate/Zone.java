@@ -12,26 +12,27 @@ import net.minecraft.world.level.biome.Biome;
  * zones keep it and get wet and dry seasons instead.
  */
 public enum Zone {
-    TEMPERATE(ClimateBiome.SEASONAL, false, -0.3F, 0.25F, -0.3F, -0.65F),
-    MILD(ClimateBiome.SEASONAL, false, -0.18F, 0.09F, -0.18F, -0.48F),
-    BOREAL(ClimateBiome.SEASONAL, false, -0.1F, 0.2F, -0.1F, -0.7F),
-    TUNDRA(ClimateBiome.SEASONAL, true, -0.4F, 0.15F, -0.2F, -1.0F),
-    ALPINE(ClimateBiome.SEASONAL, false, -0.24F, 0.12F, -0.24F, -0.64F),
-    POLAR_SEA(ClimateBiome.SEASONAL, true, -0.3F, 0.15F, -0.1F, -0.6F),
-    HOT_DESERT(ClimateBiome.SEASONAL, false, -0.5F, 0F, -0.5F, -1.4F),
-    COLD_DESERT(ClimateBiome.SEASONAL, false, -0.9F, 0F, -0.9F, -1.9F),
+    TEMPERATE(ClimateBiome.SEASONAL, false, 1F, -0.3F, 0.25F, -0.3F, -0.65F),
+    MILD(ClimateBiome.SEASONAL, false, 1F, -0.18F, 0.09F, -0.18F, -0.48F),
+    BOREAL(ClimateBiome.SEASONAL, false, 1.5F, -0.1F, 0.2F, -0.1F, -0.7F),
+    TUNDRA(ClimateBiome.SEASONAL, true, 1.5F, -0.4F, 0.15F, -0.2F, -1.0F),
+    ALPINE(ClimateBiome.SEASONAL, false, 1.5F, -0.24F, 0.12F, -0.24F, -0.64F),
+    POLAR_SEA(ClimateBiome.SEASONAL, true, 1.5F, -0.3F, 0.15F, -0.1F, -0.6F),
+    /** Never rains or snows (Climate.precipitation). */
+    HOT_DESERT(ClimateBiome.SEASONAL, false, 0.8F, -0.5F, 0F, -0.5F, -1.4F),
+    COLD_DESERT(ClimateBiome.SEASONAL, false, 0.8F, -0.9F, 0F, -0.9F, -1.9F),
     /** Rain all year, no dry season. */
-    RAINFOREST(ClimateBiome.TROPICAL, false),
+    RAINFOREST(ClimateBiome.TROPICAL, false, 0.3F),
     /** Wet summer, dry winter. */
-    MONSOON(ClimateBiome.TROPICAL, false),
+    MONSOON(ClimateBiome.TROPICAL, false, 0.3F),
     /** Wet summer, dry from late autumn to early spring. */
-    SAVANNA(ClimateBiome.TROPICAL, false),
+    SAVANNA(ClimateBiome.TROPICAL, false, 0.3F),
     /** Cave biomes: no seasons underground. */
-    CAVE(ClimateBiome.NONE, false),
+    CAVE(ClimateBiome.NONE, false, 0F),
     /** Untagged biomes hotter than 0.8: no seasons; crops grow as in the tropics. */
-    HOT(ClimateBiome.HOT, false),
-    /** Nether, end, oceans. */
-    NONE(ClimateBiome.NONE, false);
+    HOT(ClimateBiome.HOT, false, 0.3F),
+    /** Nether, end, oceans (oceans' factor: for the Cold Sweat compat later). */
+    NONE(ClimateBiome.NONE, false, 0.3F);
 
     /** Tundra and polar seas warm to at least this in mid summer, so the snow and the sea ice melt. */
     public static final float THAW = 0.3F;
@@ -41,13 +42,16 @@ public enum Zone {
     /** ClimateBiome.SEASONAL, TROPICAL, HOT or NONE. */
     public final byte kind;
     public final boolean thaws;
+    /** Multiplies the season and daily variation (real-life spread: tropics small, the cold north big). */
+    public final float factor;
     final float[] defaults;
     /** Change at mid spring, summer, autumn, winter (seasonal zones; from the config). */
     public volatile float[] changes;
 
-    Zone(byte kind, boolean thaws, float... defaults) {
+    Zone(byte kind, boolean thaws, float factor, float... defaults) {
         this.kind = kind;
         this.thaws = thaws;
+        this.factor = factor;
         this.defaults = defaults;
         this.changes = defaults;
     }
