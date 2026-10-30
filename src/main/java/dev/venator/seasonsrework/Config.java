@@ -49,6 +49,11 @@ public final class Config {
             .defineList("temperature_offsets", DEFAULT_OFFSETS, () -> 0.0,
                     value -> value instanceof Double d && d >= -5 && d <= 5);
 
+    public static final ModConfigSpec.IntValue TEMPERATURE_LAG_DAYS = BUILDER
+            .comment("The temperature and the grass, leaf and texture colors run this many days behind the calendar, as in",
+                    "real life the warmest time comes about a month after the longest day (14: a third of a 42-day season).",
+                    "Day length, crop seasons, tropical wet and dry seasons and the season shown stay on the calendar.")
+            .defineInRange("temperature_lag_days", 14, 0, 1000);
     public static final ModConfigSpec.DoubleValue SEASON_VARIATION = BUILDER
             .comment("Each season is warmer or colder than usual by a random amount up to this, so no two years are the",
                     "same (0.1: a mild winter may stay above the snow line, a cold one comes early). Small changes are",
@@ -91,6 +96,7 @@ public final class Config {
     private static volatile int daysPerSeason = 42;
     private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
     private static volatile float[] temperatureOffsets = toArray(DEFAULT_OFFSETS);
+    private static volatile int temperatureLagDays = 14;
     private static volatile float seasonVariation = 0.1F;
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
@@ -105,6 +111,7 @@ public final class Config {
         daysPerSeason = DAYS_PER_SEASON.get();
         List<? extends Double> offsets = TEMPERATURE_OFFSETS.get();
         temperatureOffsets = toArray(offsets.size() == DEFAULT_OFFSETS.size() ? offsets : DEFAULT_OFFSETS);
+        temperatureLagDays = TEMPERATURE_LAG_DAYS.get();
         seasonVariation = SEASON_VARIATION.get().floatValue();
         variationSeed = VARIATION_SEED.get();
         biomeTemperatures = toMap(BIOME_TEMPERATURES.get());
@@ -161,6 +168,11 @@ public final class Config {
     /** 12 values, early spring to late winter. */
     public static float[] temperatureOffsets() {
         return temperatureOffsets;
+    }
+
+    /** Days the temperature and colors run behind the calendar. */
+    public static int temperatureLagDays() {
+        return temperatureLagDays;
     }
 
     /** Up to this much warmer or colder per season. */

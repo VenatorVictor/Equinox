@@ -17,7 +17,8 @@ import java.util.List;
 /**
  * The seasonal climate. One temperature change for the whole world (global, like the weather), blended between the
  * config's values for each season part so the snow line moves a little every tick instead of jumping. On top, each
- * season gets a random variation (warmer or colder than usual), the same for a world on both sides. Seasonal
+ * season gets a random variation (warmer or colder than usual), the same for a world on both sides. Both run some
+ * days behind the calendar (temperature lag); the tropical wet and dry seasons don't. Seasonal
  * biomes get it added to their temperature; tropical biomes keep their temperature and get a wet and a dry season.
  * The config can also give a biome another temperature for the climate only (grass colors read the biome's own value),
  * for biome mods that change temperatures to tint grass (WWOO: beach 2.0, old growth pine taiga 2.0...).
@@ -57,8 +58,9 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        variation = variationAt(state);
-        offset = offsetAt(state) + variation;
+        SeasonState lagged = state.lagged(Config.temperatureLagDays());
+        variation = variationAt(lagged);
+        offset = offsetAt(lagged) + variation;
         wet = state.season() == Season.SUMMER;
         dry = state.season() == Season.WINTER;
     }

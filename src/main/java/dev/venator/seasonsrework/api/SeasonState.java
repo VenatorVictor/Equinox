@@ -46,6 +46,11 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (int) (ticksInYear() % seasonTicks() / DAY);
     }
 
+    /** The state some days earlier: the temperature and colors run behind the calendar (Config temperature_lag_days). */
+    public SeasonState lagged(int days) {
+        return days == 0 ? this : new SeasonState(dayTime - (long) days * DAY, daysPerSeason);
+    }
+
     /** 0 for the first year. */
     public long year() {
         return Math.floorDiv(dayTime, seasonTicks() * Season.COUNT);
