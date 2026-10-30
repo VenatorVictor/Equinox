@@ -50,9 +50,9 @@ public final class Config {
                     value -> value instanceof Double d && d >= -5 && d <= 5);
 
     public static final ModConfigSpec.IntValue TEMPERATURE_LAG_DAYS = BUILDER
-            .comment("The temperature and the grass, leaf and texture colors run this many days behind the calendar, as in",
-                    "real life the warmest time comes about a month after the longest day (14: a third of a 42-day season).",
-                    "Day length, crop seasons, tropical wet and dry seasons and the season shown stay on the calendar.")
+            .comment("The temperature, crop seasons and the grass, leaf and texture colors run this many days behind the",
+                    "calendar, as in real life the warmest time comes about a month after the longest day (14: a third of a",
+                    "42-day season). Day length, tropical wet and dry seasons and the season shown stay on the calendar.")
             .defineInRange("temperature_lag_days", 14, 0, 1000);
     public static final ModConfigSpec.DoubleValue SEASON_VARIATION = BUILDER
             .comment("Each season is warmer or colder than usual by a random amount up to this, so no two years are the",
