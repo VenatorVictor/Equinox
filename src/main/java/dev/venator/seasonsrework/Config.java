@@ -107,8 +107,8 @@ public final class Config {
             .comment("In the ideal range, this share of growth chances grows for sure (about 1.4x vanilla speed at 0.15).")
             .defineInRange("ideal_bonus", 0.15, 0.0, 1.0);
     public static final ModConfigSpec.DoubleValue STOP_MARGIN = BUILDER
-            .comment("°C above the cold limit and below the heat limit (day's average) where crops stop growing. In the",
-                    "heat part, crops on dry farmland die.")
+            .comment("°C below the heat limit (day's average) where crops stop growing; crops on dry farmland die there.",
+                    "On the cold side each crop has its own grows_from (dormant below it).")
             .defineInRange("stop_margin", 5.0, 0.0, 50.0);
     public static final ModConfigSpec.DoubleValue FARMLAND_HEAT = BUILDER
             .comment("When today's high is at least this (°C), farmland only stays wet with water within 2 blocks, not 4.")

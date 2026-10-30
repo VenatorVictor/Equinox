@@ -94,6 +94,11 @@ public record CropWarmth(float target, float strength, int radius) {
         return t;
     }
 
+    /** A lit heater reaches pos (melts the snow on dead crops). */
+    static boolean heated(Level level, BlockPos pos) {
+        return apply(level, pos, -1000) > -1000;
+    }
+
     private static LongArrayList sources(Level level, int cx, int cz) {
         Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.computeIfAbsent(level, l -> new Long2ObjectOpenHashMap<>());
         long key = ChunkPos.asLong(cx, cz);

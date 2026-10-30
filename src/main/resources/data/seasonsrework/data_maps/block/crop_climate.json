@@ -1,58 +1,28 @@
 {
   "values": {
-    "minecraft:wheat": {
-      "min": -10,
-      "ideal_min": 10,
-      "ideal_max": 24,
-      "max": 35
-    },
-    "minecraft:potatoes": {
-      "min": -2,
-      "ideal_min": 15,
-      "ideal_max": 20,
-      "max": 30
-    },
-    "minecraft:carrots": {
-      "min": -5,
-      "ideal_min": 10,
-      "ideal_max": 22,
-      "max": 30
-    },
-    "minecraft:beetroots": {
-      "min": -5,
-      "ideal_min": 10,
-      "ideal_max": 22,
-      "max": 30
-    },
-    "minecraft:pumpkin_stem": {
-      "min": 2,
-      "ideal_min": 20,
-      "ideal_max": 30,
-      "max": 40
-    },
-    "minecraft:attached_pumpkin_stem": {
-      "min": 2,
-      "ideal_min": 20,
-      "ideal_max": 30,
-      "max": 40
-    },
-    "minecraft:melon_stem": {
-      "min": 2,
-      "ideal_min": 20,
-      "ideal_max": 30,
-      "max": 40
-    },
-    "minecraft:attached_melon_stem": {
-      "min": 2,
-      "ideal_min": 20,
-      "ideal_max": 30,
-      "max": 40
-    },
-    "minecraft:cocoa": {
-      "min": 8,
-      "ideal_min": 21,
-      "ideal_max": 32,
-      "max": 38
-    }
+    "minecraft:wheat": {"min": -10, "grows_from": 4, "ideal_min": 12, "ideal_max": 24, "max": 35},
+    "minecraft:potatoes": {"min": -2, "grows_from": 7, "ideal_min": 15, "ideal_max": 20, "max": 30},
+    "minecraft:carrots": {"min": -6, "grows_from": 5, "ideal_min": 16, "ideal_max": 21, "max": 30},
+    "minecraft:beetroots": {"min": -4, "grows_from": 5, "ideal_min": 15, "ideal_max": 24, "max": 32},
+    "minecraft:pumpkin_stem": {"min": 0, "grows_from": 12, "ideal_min": 21, "ideal_max": 30, "max": 38},
+    "minecraft:attached_pumpkin_stem": {"min": 0, "grows_from": 12, "ideal_min": 21, "ideal_max": 30, "max": 38},
+    "minecraft:melon_stem": {"min": 1, "grows_from": 15, "ideal_min": 24, "ideal_max": 32, "max": 40},
+    "minecraft:attached_melon_stem": {"min": 1, "grows_from": 15, "ideal_min": 24, "ideal_max": 32, "max": 40},
+    "minecraft:cocoa": {"min": 10, "grows_from": 18, "ideal_min": 21, "ideal_max": 32, "max": 38},
+    "minecraft:sweet_berry_bush": {"min": -30, "grows_from": 5, "ideal_min": 10, "ideal_max": 22, "max": 32},
+    "minecraft:sugar_cane": {"min": 0, "grows_from": 12, "ideal_min": 24, "ideal_max": 35, "max": 45},
+    "minecraft:cactus": {"min": -5, "grows_from": 15, "ideal_min": 25, "ideal_max": 40, "max": 50},
+    "minecraft:bamboo": {"min": -10, "grows_from": 10, "ideal_min": 20, "ideal_max": 30, "max": 40},
+    "minecraft:bamboo_sapling": {"min": -10, "grows_from": 10, "ideal_min": 20, "ideal_max": 30, "max": 40},
+    "farmersdelight:cabbages": {"value": {"min": -10, "grows_from": 5, "ideal_min": 15, "ideal_max": 20, "max": 30}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:onions": {"value": {"min": -10, "grows_from": 5, "ideal_min": 13, "ideal_max": 24, "max": 32}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:budding_tomatoes": {"value": {"min": 0, "grows_from": 10, "ideal_min": 21, "ideal_max": 27, "max": 35}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:tomatoes": {"value": {"min": 0, "grows_from": 10, "ideal_min": 21, "ideal_max": 27, "max": 35}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:tomatoes_on_rope": {"value": {"min": 0, "grows_from": 10, "ideal_min": 21, "ideal_max": 27, "max": 35}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:rice": {"value": {"min": 5, "grows_from": 12, "ideal_min": 25, "ideal_max": 32, "max": 40}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "farmersdelight:rice_panicles": {"value": {"min": 5, "grows_from": 12, "ideal_min": 25, "ideal_max": 32, "max": 40}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "farmersdelight"}]},
+    "supplementaries:flax": {"value": {"min": -5, "grows_from": 5, "ideal_min": 10, "ideal_max": 20, "max": 30}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "supplementaries"}]},
+    "supplementaries:rope_tomatoes": {"value": {"min": 0, "grows_from": 10, "ideal_min": 21, "ideal_max": 27, "max": 35}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "supplementaries"}]},
+    "supplementaries:stick_tomatoes": {"value": {"min": 0, "grows_from": 10, "ideal_min": 21, "ideal_max": 27, "max": 35}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "supplementaries"}]}
   }
 }
