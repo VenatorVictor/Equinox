@@ -31,8 +31,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Living farmland crops that don't grow show it: dormant (too cold, or frost tonight) or wilted (too hot)
- * textures from DeadCropTextures. Worked out on the client from the same °C as the server (Crops.effect), when the
+ * Living farmland crops that don't grow show it: dormant (cold) or wilted (heat) textures from DeadCropTextures, in 4
+ * strengths (a hint while growing slowly near a limit, then stronger past it; Crops.look). Worked out on the client
+ * from the same °C as the server, when the
  * chunk section is meshed. Sections holding crops are remembered and redrawn a few times a day (refresh), and around
  * a heater or cooler when it's placed, broken, lit or put out.
  */
@@ -75,11 +76,8 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         synchronized (SECTIONS) {
             SECTIONS.add(SectionPos.asLong(pos));
         }
-        DeadCropTextures.Kind kind = switch (Crops.effect(level, pos, state)) {
-            case DORMANT, FROST -> DeadCropTextures.Kind.DORMANT;
-            case STOP, HEAT -> DeadCropTextures.Kind.WILTED;
-            default -> null;
-        };
+        if (!ClientConfig.CROP_LOOKS.get()) return data;
+        DeadCropTextures.Kind kind = DeadCropTextures.Kind.ofLook(Crops.look(level, pos, state));
         return kind == null ? data : data.derive().with(KIND, kind).build();
     }
 

@@ -122,6 +122,33 @@ public final class Crops {
         return effect;
     }
 
+    /**
+     * How far a living crop is from growing well, for its look (client, CropLookModel): 0 = fine, 1 = growing slowly
+     * near a limit (the warning), 2..4 = stopped, further past the limit (4 = at the killing limit). Negative = cold,
+     * positive = heat.
+     */
+    public static int look(Level level, BlockPos pos, BlockState state) {
+        if (!Config.seasonalCrops() || Seasons.get(level) == null) return 0;
+        CropClimate climate = climateOf(state.getBlock());
+        if (climate == null) return 0;
+        Temperatures.DayRange today = Temperatures.airToday(level, pos);
+        float low = CropWarmth.apply(level, pos, today.low()), high = CropWarmth.apply(level, pos, today.high());
+        float mean = (low + high) / 2;
+        if (low < climate.min()) return -4;
+        if (high > climate.max()) return 4;
+        if (mean < climate.growsFrom()) return -step(climate.growsFrom() - mean, climate.growsFrom() - climate.min());
+        if (mean > climate.growsTo()) return step(mean - climate.growsTo(), climate.max() - climate.growsTo());
+        if (mean < climate.idealMin()) return -1;
+        if (mean > climate.idealMax()) return 1;
+        return 0;
+    }
+
+    /** Stopped: 2, 3 or 4 by how far past the limit, out of the room left before it dies. */
+    private static int step(float past, float room) {
+        float f = room <= 0 ? 1 : past / room;
+        return f < 1 / 3F ? 2 : f < 2 / 3F ? 3 : 4;
+    }
+
     /** Frost and heat kill only crops on farmland. */
     public static boolean mortal(Block block) {
         return block instanceof CropBlock || block instanceof StemBlock;
