@@ -4,6 +4,8 @@
   "package": "dev.venator.seasonsrework.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "AttachedStemBlockAccessor",
+    "AttachedStemTickMixin",
     "BiomeMixin",
     "LevelMixin",
     "CropBlockMixin",

@@ -85,22 +85,28 @@ public final class DeadCropTextures implements SpriteSource {
 
     @Override
     public void run(ResourceManager resources, Output output) {
-        Set<ResourceLocation> textures = cropTextures(resources);
-        for (ResourceLocation texture : textures)
+        Set<Block> fruits = Crops.fruits();
+        Set<ResourceLocation> fruitTextures = cropTextures(resources, fruits::contains);
+        Set<ResourceLocation> textures = cropTextures(resources, Crops::mortal);
+        textures.addAll(fruitTextures);
+        for (ResourceLocation texture : textures) {
+            boolean fruit = fruitTextures.contains(texture);
             for (Kind kind : Kind.values()) {
+                if (kind == Kind.FROST_SNOW && fruit) continue; // dead fruit isn't drawn snowy (snow layers lie on it)
                 ResourceLocation id = kind.sprite(texture);
                 Optional<Resource> art = resources.getResource(TEXTURE_ID_CONVERTER.idToFile(id));
                 if (art.isPresent()) output.add(id, art.get());
-                else output.add(id, loader -> make(resources, texture, id, kind));
+                else output.add(id, loader -> make(resources, texture, id, kind, fruit));
             }
+        }
         SeasonsRework.LOGGER.info("Seasons Rework: dead crop textures for {} crop textures", textures.size());
     }
 
-    /** The textures named in the block models of every crop that can die (blockstates → models → parents). */
-    private static Set<ResourceLocation> cropTextures(ResourceManager resources) {
+    /** The textures named in the block models of the blocks given, crops or fruits (blockstates → models → parents). */
+    private static Set<ResourceLocation> cropTextures(ResourceManager resources, java.util.function.Predicate<Block> blocks) {
         Set<ResourceLocation> models = new LinkedHashSet<>();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!Crops.mortal(block)) continue;
+            if (!blocks.test(block)) continue;
             ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
             JsonObject blockstate = json(resources, ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "blockstates/" + id.getPath() + ".json"));
             if (blockstate != null) collectModels(blockstate, models);
@@ -150,7 +156,8 @@ public final class DeadCropTextures implements SpriteSource {
         }
     }
 
-    private static SpriteContents make(ResourceManager resources, ResourceLocation texture, ResourceLocation id, Kind kind) {
+    /** fruit: a pumpkin or melon texture, recolored all over (crops: only the leaves for the living looks). */
+    private static SpriteContents make(ResourceManager resources, ResourceLocation texture, ResourceLocation id, Kind kind, boolean fruit) {
         Optional<Resource> resource = resources.getResource(TEXTURE_ID_CONVERTER.idToFile(texture));
         if (resource.isEmpty()) return null;
         boolean ecliptic = ClientConfig.CROP_COLORS.get() == ClientConfig.CropColors.ECLIPTIC;
@@ -158,7 +165,7 @@ public final class DeadCropTextures implements SpriteSource {
             int width = source.getWidth(), height = Math.min(source.getHeight(), width); // first frame of animations
             NativeImage image = new NativeImage(width, height, true);
             for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, look(source.getPixelRGBA(x, y), kind, ecliptic));
+                for (int x = 0; x < width; x++) image.setPixelRGBA(x, y, look(source.getPixelRGBA(x, y), kind, ecliptic, fruit));
             if (kind == Kind.FROST_SNOW) snow(image);
             return new SpriteContents(id, new FrameSize(width, height), image, ResourceMetadata.EMPTY);
         } catch (Exception e) {
@@ -186,21 +193,21 @@ public final class DeadCropTextures implements SpriteSource {
         return alpha << 24 | nb << 16 | ng << 8 | nr;
     }
 
-    private static int look(int abgr, Kind kind, boolean ecliptic) {
+    private static int look(int abgr, Kind kind, boolean ecliptic, boolean all) {
         if (kind.strength == 0) return recolor(abgr, kind == Kind.HEAT);
-        int full = ecliptic ? (kind.dormant() ? palette(abgr, ECLIPTIC_WINTER) : palette(abgr, ECLIPTIC_DRY))
-                : kind.dormant() ? dormant(abgr) : wilted(abgr);
+        int full = ecliptic ? (kind.dormant() ? palette(abgr, ECLIPTIC_WINTER, all) : palette(abgr, ECLIPTIC_DRY, all))
+                : kind.dormant() ? dormant(abgr) : wilted(abgr, all);
         return blend(abgr, full, kind.strength / 4F);
     }
 
     // Ecliptic Seasons' base colors (RGB): winter #C1A173, dry #D1923F.
     private static final int[] ECLIPTIC_WINTER = {193, 161, 115}, ECLIPTIC_DRY = {209, 146, 63};
 
-    /** Leaves only (not roots): the color, shaded by the pixel's brightness. */
-    private static int palette(int abgr, int[] color) {
+    /** Leaves only (not roots) unless all: the color, shaded by the pixel's brightness. */
+    private static int palette(int abgr, int[] color, boolean all) {
         int alpha = abgr >>> 24;
         int r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
-        if (alpha == 0 || !leaf(r, g, b)) return abgr;
+        if (alpha == 0 || !all && !leaf(r, g, b)) return abgr;
         float shade = 0.4F + 0.9F * Math.min(1, (0.3F * r + 0.59F * g + 0.11F * b) / 255F * 1.25F);
         int nr = Math.min(255, (int) (color[0] * shade)), ng = Math.min(255, (int) (color[1] * shade)), nb = Math.min(255, (int) (color[2] * shade));
         return alpha << 24 | nb << 16 | ng << 8 | nr;
@@ -232,11 +239,11 @@ public final class DeadCropTextures implements SpriteSource {
     }
 
     /** Hot, not growing: leaves and ears go dark yellow (between the green and the dead brown); roots keep their color. */
-    private static int wilted(int abgr) {
+    private static int wilted(int abgr, boolean all) {
         int alpha = abgr >>> 24;
         if (alpha == 0) return abgr;
         int r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
-        if (!leaf(r, g, b)) return abgr;
+        if (!all && !leaf(r, g, b)) return abgr;
         float light = Math.min(1, (0.3F * r + 0.59F * g + 0.11F * b) / 255F * 1.25F);
         int nr = (int) (WILTED_DARK[0] + (WILTED_LIGHT[0] - WILTED_DARK[0]) * light);
         int ng = (int) (WILTED_DARK[1] + (WILTED_LIGHT[1] - WILTED_DARK[1]) * light);

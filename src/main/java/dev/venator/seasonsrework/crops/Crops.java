@@ -4,7 +4,9 @@ import dev.venator.seasonsrework.Config;
 import dev.venator.seasonsrework.api.Season;
 import dev.venator.seasonsrework.api.Seasons;
 import dev.venator.seasonsrework.api.Temperatures;
+import dev.venator.seasonsrework.mixin.AttachedStemBlockAccessor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.AttachedStemBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
@@ -27,6 +30,8 @@ import net.neoforged.neoforge.event.level.BlockGrowFeatureEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -151,7 +156,34 @@ public final class Crops {
 
     /** Frost and heat kill only crops on farmland. */
     public static boolean mortal(Block block) {
-        return block instanceof CropBlock || block instanceof StemBlock;
+        return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock;
+    }
+
+    /** The fruit block an attached stem grows (pumpkin, melon), or null. */
+    public static @Nullable Block fruitOf(Block block) {
+        if (!(block instanceof AttachedStemBlock)) return null;
+        return BuiltInRegistries.BLOCK.getOptional(((AttachedStemBlockAccessor) block).seasonsrework$fruit()).orElse(null);
+    }
+
+    /** Every block an attached stem grows (pumpkin, melon, modded ones). */
+    public static java.util.Set<Block> fruits() {
+        java.util.Set<Block> fruits = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Block fruit = fruitOf(block);
+            if (fruit != null) fruits.add(fruit);
+        }
+        return fruits;
+    }
+
+    /** The attached stem holding the fruit at pos (a stem next to it, facing it), or null. */
+    public static @Nullable BlockPos stemOf(LevelReader level, BlockPos pos, Block fruit) {
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            BlockPos stem = pos.relative(side);
+            BlockState state = level.getBlockState(stem);
+            if (state.getBlock() instanceof AttachedStemBlock && state.getValue(AttachedStemBlock.FACING) == side.getOpposite()
+                    && fruitOf(state.getBlock()) == fruit) return stem;
+        }
+        return null;
     }
 
     /** RandomTickMixin, before every random tick of a block: kills a farmland crop past its limits. True = it died. */
@@ -163,6 +195,15 @@ public final class Crops {
         BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause);
         level.setBlock(pos, dead.setValue(DeadCropBlock.SNOWY, DeadCropBlock.snowy(dead, level, pos)), Block.UPDATE_ALL);
         if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
+        Block fruit = fruitOf(state.getBlock());
+        if (fruit != null) { // the pumpkin or melon it holds dies with it
+            BlockPos fruitPos = pos.relative(state.getValue(AttachedStemBlock.FACING));
+            BlockState fruitState = level.getBlockState(fruitPos);
+            if (fruitState.is(fruit)) {
+                level.setBlock(fruitPos, CropBlocks.DEAD_FRUIT.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause), Block.UPDATE_ALL);
+                if (level.getBlockEntity(fruitPos) instanceof DeadCropBlockEntity entity) entity.setOriginal(fruitState);
+            }
+        }
         return true;
     }
 

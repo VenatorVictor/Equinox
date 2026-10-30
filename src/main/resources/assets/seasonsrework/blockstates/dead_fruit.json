@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "cause=frost": {
+      "model": "seasonsrework:block/dead_fruit"
+    },
+    "cause=heat": {
+      "model": "seasonsrework:block/dead_fruit"
+    }
+  }
+}
