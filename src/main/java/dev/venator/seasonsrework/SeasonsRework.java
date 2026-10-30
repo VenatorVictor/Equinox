@@ -4,6 +4,9 @@ import com.mojang.logging.LogUtils;
 import dev.venator.seasonsrework.client.SeasonsReworkClient;
 import dev.venator.seasonsrework.climate.BiomeCelsius;
 import dev.venator.seasonsrework.climate.Climate;
+import dev.venator.seasonsrework.crops.CropBlocks;
+import dev.venator.seasonsrework.crops.CropClimate;
+import dev.venator.seasonsrework.crops.CropWarmth;
 import dev.venator.seasonsrework.crops.Crops;
 import dev.venator.seasonsrework.daylength.DayLength;
 import dev.venator.seasonsrework.season.SeasonClock;
@@ -20,7 +23,9 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -70,7 +75,14 @@ public final class SeasonsRework {
         FirstSnow.init();
         SnowCover.init(modBus);
         modBus.addListener(AddPackFindersEvent.class, SeasonsRework::addPacks);
-        modBus.addListener(RegisterDataMapTypesEvent.class, event -> event.register(BiomeCelsius.TYPE));
+        modBus.addListener(RegisterDataMapTypesEvent.class, event -> {
+            event.register(BiomeCelsius.TYPE);
+            event.register(CropClimate.TYPE);
+            event.register(CropWarmth.TYPE);
+        });
+        CropBlocks.register(modBus);
+        NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
+        NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, Crops::onChunkUnload);
 
         if (FMLEnvironment.dist == Dist.CLIENT) SeasonsReworkClient.init(container, modBus);
     }

@@ -43,7 +43,7 @@
     "minecraft:sparse_jungle": {"night": 23, "day": 33},
     "minecraft:stony_peaks": {"night": -2, "day": 6},
     "minecraft:stony_shore": {"night": 6, "day": 13},
-    "minecraft:sulfur_caves": {"night": 40, "day": 40},
+    "minecraft:sulfur_caves": {"value": {"night": 40, "day": 40}, "neoforge:conditions": [{"type": "neoforge:mod_loaded", "modid": "vanillabackport"}]},
     "minecraft:sunflower_plains": {"night": 10, "day": 18},
     "minecraft:swamp": {"night": 17, "day": 26, "water": 22},
     "minecraft:taiga": {"night": 1, "day": 9},

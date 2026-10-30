@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * the biome's spring/autumn midnight..noon value (data map seasonsrework:celsius), plus its zone's °C change for the
  * season (config celsius_changes, blended between season middles, lagged like the Minecraft change), plus the season
  * and daily variation times the zone's factor. Underground the season fades out over 20 blocks toward 15.6 °C, then it
- * warms toward ~32 °C near bedrock (the Nether is below), as in Cold Sweat; open sky keeps the weather. Cave biomes with
+ * warms toward ~32 °C near bedrock (the Nether is below; Cold Sweat's curve, almost linear); open sky keeps the weather. Cave biomes with
  * a value (lush caves, deep dark, sulfur caves) replace both.
  */
 public final class Celsius {
@@ -23,7 +23,7 @@ public final class Celsius {
     public static final float PER_UNIT = 30F;
     /** Where the season is gone underground, and the temperature there. */
     private static final int FADE_DEPTH = 20;
-    private static final float CAVE = 15.6F, BEDROCK = 32F;
+    private static final float CAVE = 15.6F, BEDROCK = 32.2F; // Cold Sweat's 60 °F and 90 °F
     /** The sea warms and cools later than rivers and lakes (1.5 months against 1, with 42-day seasons). */
     private static final int SEA_EXTRA_LAG_DAYS = 7;
 
@@ -47,7 +47,7 @@ public final class Celsius {
         }
         int span = surface - FADE_DEPTH - level.getMinBuildHeight();
         float deep = span <= 0 ? 1 : Mth.clamp((float) (depth - FADE_DEPTH) / span, 0, 1);
-        return CAVE + (BEDROCK - CAVE) * (float) (Math.log1p(9 * deep) / Math.log(10));
+        return CAVE + (BEDROCK - CAVE) * (float) (Math.log1p(deep) / Math.log(2)); // Cold Sweat's "logarithmic" (k = 1)
     }
 
     /** The water at pos: the biome's water plus its season (smaller swing at sea, later), never below freezing. */

@@ -5,7 +5,11 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "BiomeMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "CropBlockMixin",
+    "FarmBlockMixin",
+    "LevelChunkMixin",
+    "RandomTickMixin"
   ],
   "client": [
     "client.BiomeColorMixin"

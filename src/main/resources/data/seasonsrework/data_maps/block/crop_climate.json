@@ -1,0 +1,58 @@
+{
+  "values": {
+    "minecraft:wheat": {
+      "min": -10,
+      "ideal_min": 10,
+      "ideal_max": 24,
+      "max": 35
+    },
+    "minecraft:potatoes": {
+      "min": -2,
+      "ideal_min": 15,
+      "ideal_max": 20,
+      "max": 30
+    },
+    "minecraft:carrots": {
+      "min": -5,
+      "ideal_min": 10,
+      "ideal_max": 22,
+      "max": 30
+    },
+    "minecraft:beetroots": {
+      "min": -5,
+      "ideal_min": 10,
+      "ideal_max": 22,
+      "max": 30
+    },
+    "minecraft:pumpkin_stem": {
+      "min": 2,
+      "ideal_min": 20,
+      "ideal_max": 30,
+      "max": 40
+    },
+    "minecraft:attached_pumpkin_stem": {
+      "min": 2,
+      "ideal_min": 20,
+      "ideal_max": 30,
+      "max": 40
+    },
+    "minecraft:melon_stem": {
+      "min": 2,
+      "ideal_min": 20,
+      "ideal_max": 30,
+      "max": 40
+    },
+    "minecraft:attached_melon_stem": {
+      "min": 2,
+      "ideal_min": 20,
+      "ideal_max": 30,
+      "max": 40
+    },
+    "minecraft:cocoa": {
+      "min": 8,
+      "ideal_min": 21,
+      "ideal_max": 32,
+      "max": 38
+    }
+  }
+}
