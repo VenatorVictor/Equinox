@@ -12,7 +12,7 @@ import net.minecraft.world.level.biome.Biome;
  * zones keep it and get wet and dry seasons instead.
  */
 public enum Zone {
-    TEMPERATE(ClimateBiome.SEASONAL, false, 1F, -0.3F, 0.25F, -0.3F, -0.65F),
+    TEMPERATE(ClimateBiome.SEASONAL, false, 1F, -0.3F, 0.25F, -0.3F, -0.75F),
     MILD(ClimateBiome.SEASONAL, false, 1F, -0.18F, 0.09F, -0.18F, -0.48F),
     BOREAL(ClimateBiome.SEASONAL, false, 1.5F, -0.1F, 0.2F, -0.1F, -0.7F),
     TUNDRA(ClimateBiome.SEASONAL, true, 1.5F, -0.4F, 0.15F, -0.2F, -1.0F),

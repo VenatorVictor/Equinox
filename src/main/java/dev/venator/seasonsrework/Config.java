@@ -23,7 +23,7 @@ public final class Config {
             .filter(Zone::seasonal).map(Zone::defaultEntry).toList();
     // °C change per zone (dev/specs/seasons-rework-plan.md, "Seasonal change per climate"); temperate matches Vienna.
     private static final List<String> DEFAULT_CELSIUS_CHANGES = List.of(
-            "temperate=0..1,9..11,0..-1,-9..-12", "mild=0,7,0,-9", "boreal=0,13,0,-10", "tundra=-5,16,5,-14",
+            "temperate=0..1,9..11,0..-1,-12..-14", "mild=0,7,0,-9", "boreal=0,13,0,-10", "tundra=-5,16,5,-14",
             "alpine=-2,7,2,-6", "polar_sea=-3,13,3,-5", "hot_desert=-1,11,1,-10", "cold_desert=0,14,0,-14",
             "rainforest=0,0,0,0", "monsoon=1,0,-1,-10", "savanna=0,0,0,-4", "warm_ocean=0,1,0,-1",
             "lukewarm_ocean=-2,3,2,-3", "ocean=-2,4,2,-4", "cold_ocean=-2,4,2,-4");
@@ -200,7 +200,7 @@ public final class Config {
         return Map.copyOf(map);
     }
 
-    /** "temperate=0..1,9..11,0..-1,-9..-12": a zone and its 8 values (midnight, noon per season), or null. */
+    /** "temperate=0..1,9..11,0..-1,-12..-14": a zone and its 8 values (midnight, noon per season), or null. */
     private static Map.Entry<Zone, float[]> parseCelsiusChange(String entry) {
         int split = entry.indexOf('=');
         if (split < 0) return null;
@@ -222,7 +222,7 @@ public final class Config {
         return Map.entry(zone, changes);
     }
 
-    /** "temperate=-0.3,0.25,-0.3,-0.65": a seasonal zone and its 4 changes (each -5..5), or null. */
+    /** "temperate=-0.3,0.25,-0.3,-0.75": a seasonal zone and its 4 changes (each -5..5), or null. */
     private static Map.Entry<Zone, float[]> parseClimateChange(String entry) {
         int split = entry.indexOf('=');
         if (split < 0) return null;
