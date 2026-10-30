@@ -70,6 +70,8 @@ dependencies {
     compileOnly("maven.modrinth:ufdDoWPd:tfwJWC8g") { transitive = false }
     // Forgified Fabric Renderer API, bundled in Snow! Real Magic (its renderer hook works on Fabric quads).
     compileOnly("org.sinytra.forgified-fabric-api:fabric-renderer-api-v1:3.4.0+9c40919e19") { transitive = false }
+    // Jade 15.10.6 (crop info and icons in its tooltip).
+    compileOnly("maven.modrinth:jade:15.10.6+neoforge") { transitive = false }
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

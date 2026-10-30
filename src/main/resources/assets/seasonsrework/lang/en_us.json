@@ -37,5 +37,17 @@
   "seasonsrework.tooltip.all_year": "all year",
   "commands.seasonsrework.season.daylight": "Daylight %s hours (vanilla 13.6)",
   "block.seasonsrework.dead_crop": "Dead Crop",
-  "block.seasonsrework.dead_fruit": "Spoiled Fruit"
+  "block.seasonsrework.dead_fruit": "Spoiled Fruit",
+  "jade.seasonsrework.killed_frost": "Killed by frost",
+  "jade.seasonsrework.killed_heat": "Killed by heat",
+  "jade.seasonsrework.was": "Was: %s",
+  "jade.seasonsrework.growing_well": "Growing well",
+  "jade.seasonsrework.slow_cold": "Growing slowly (cold)",
+  "jade.seasonsrework.slow_heat": "Growing slowly (heat)",
+  "jade.seasonsrework.dormant": "Dormant: too cold (%s/4)",
+  "jade.seasonsrework.stopped": "Stopped: too hot (%s/4)",
+  "jade.seasonsrework.will_freeze": "Will freeze tonight",
+  "jade.seasonsrework.will_scorch": "Will die from heat today",
+  "config.jade.plugin_seasonsrework.dead_crop": "Dead crops",
+  "config.jade.plugin_seasonsrework.crop_state": "Crop temperature state"
 }

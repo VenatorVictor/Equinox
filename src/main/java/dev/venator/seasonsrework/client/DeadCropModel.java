@@ -61,14 +61,13 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
             BakedModel model = event.getModels().get(location);
             if (model != null) event.getModels().put(location, new DeadCropModel(model));
         }
+        clearIcons();
     }
 
     @Override
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
         data = super.getModelData(region, pos, state, data);
-        DeadCropTextures.Kind kind = state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT ? DeadCropTextures.Kind.HEAT
-                : state.hasProperty(DeadCropBlock.SNOWY) && state.getValue(DeadCropBlock.SNOWY) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
-        return data.derive().with(KIND, kind).build();
+        return data.derive().with(KIND, kind(state)).build();
     }
 
     private static BakedModel model(BlockState crop) {
@@ -89,6 +88,31 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
 
     private TextureAtlasSprite deadSprite(TextureAtlasSprite sprite, DeadCropTextures.Kind kind) {
         return sprite(sprites[kind.ordinal()], sprite, kind);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static final Map<TextureAtlasSprite, TextureAtlasSprite>[] ICONS = new Map[DeadCropTextures.Kind.values().length];
+
+    static {
+        for (int i = 0; i < ICONS.length; i++) ICONS[i] = new ConcurrentHashMap<>();
+    }
+
+    /** The dead look of a crop's main texture, for a dead block state (Jade's icon); null if the atlas has none. */
+    public static @Nullable TextureAtlasSprite deadIcon(BlockState crop, BlockState dead) {
+        DeadCropTextures.Kind kind = kind(dead);
+        TextureAtlasSprite sprite = model(crop).getParticleIcon(ModelData.EMPTY);
+        TextureAtlasSprite icon = sprite(ICONS[kind.ordinal()], sprite, kind);
+        return icon == sprite ? null : icon;
+    }
+
+    /** Clears the icon sprites (the atlas changed). */
+    public static void clearIcons() {
+        for (Map<TextureAtlasSprite, TextureAtlasSprite> icons : ICONS) icons.clear();
+    }
+
+    private static DeadCropTextures.Kind kind(BlockState state) {
+        return state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT ? DeadCropTextures.Kind.HEAT
+                : state.hasProperty(DeadCropBlock.SNOWY) && state.getValue(DeadCropBlock.SNOWY) ? DeadCropTextures.Kind.FROST_SNOW : DeadCropTextures.Kind.FROST;
     }
 
     /** The kind's sprite for a crop sprite (cached in cache), or the same sprite if there is none. */
