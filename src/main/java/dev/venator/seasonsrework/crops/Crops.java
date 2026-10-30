@@ -78,6 +78,7 @@ public final class Crops {
         if (seasons == 0 || !Config.seasonalCrops()) return true;
         var seasonState = Seasons.get(level);
         if (seasonState == null) return true;
+        seasonState = seasonState.lagged(Config.temperatureLagDays()); // crop seasons follow the temperature
         if (pos.getY() < Config.undergroundLevel() && !level.canSeeSky(pos)) return true;
         Biome biome = level.getBiome(pos).value();
         boolean inSeason = switch (Climate.climateOf(biome)) {
