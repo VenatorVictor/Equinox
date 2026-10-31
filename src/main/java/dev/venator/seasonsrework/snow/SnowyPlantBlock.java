@@ -20,6 +20,8 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -31,8 +33,8 @@ import java.util.List;
 /**
  * Snow layers with a plant inside (grass, fern, a flower), like Snow! Real Magic's but without a block entity: one
  * block per plant (SnowyPlants), so chunks store them as plainly as snow. Plants without their own block use
- * SnowyPlants.GENERIC, which keeps the plant in a block entity. The first hit takes the plant (its own drops), the
- * snow stays; melting down to no layers gives the plant back.
+ * SnowyPlants.GENERIC, which keeps the plant in a block entity. Breaking takes what the player aims at: the snow
+ * (the plant stays) or the plant (the snow stays); melting down to no layers gives the plant back.
  */
 public class SnowyPlantBlock extends SnowLayerBlock {
     /** The plant inside; null for the generic block (the plant is in its block entity). */
@@ -103,22 +105,38 @@ public class SnowyPlantBlock extends SnowLayerBlock {
         return layers == 1;
     }
 
-    /** The plant breaks first, as fast as the plant; then the snow, as snow. */
+    /** Breaks as fast as the part aimed at: the plant (instant for grass) or the snow. */
     @Override
     protected float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
         BlockState inside = plant(state, level, pos);
-        return inside.isAir() ? super.getDestroyProgress(state, player, level, pos) : inside.getDestroyProgress(player, level, pos);
+        if (inside.isAir() || aimsAtSnow(state, pos, player)) return snow(state).getDestroyProgress(player, level, pos);
+        return inside.getDestroyProgress(player, level, pos);
     }
 
-    /** A player's hit takes the plant out (its own drops) and leaves the snow. */
+    /** A player breaks the part aimed at, with its own drops: the snow (the plant stays) or the plant (the snow stays). */
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
         BlockState inside = plant(state, level, pos);
         if (inside.isAir()) return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
-        if (!level.isClientSide && !player.isCreative()) Block.dropResources(inside, level, pos, null, player, player.getMainHandItem());
-        level.levelEvent(player, 2001, pos, Block.getId(inside));
-        level.setBlock(pos, Blocks.SNOW.defaultBlockState().setValue(LAYERS, state.getValue(LAYERS)), level.isClientSide ? 11 : 3);
+        boolean snowPart = aimsAtSnow(state, pos, player);
+        BlockState broken = snowPart ? snow(state) : inside;
+        if (!level.isClientSide && !player.isCreative() && (!snowPart || player.hasCorrectToolForDrops(broken, level, pos)))
+            Block.dropResources(broken, level, pos, null, player, player.getMainHandItem());
+        level.levelEvent(player, 2001, pos, Block.getId(broken));
+        level.setBlock(pos, snowPart ? unsnowed(state, level, pos) : snow(state), level.isClientSide ? 11 : 3);
         return false;
+    }
+
+    /** Plain snow with the same layers. */
+    private static BlockState snow(BlockState state) {
+        return Blocks.SNOW.defaultBlockState().setValue(LAYERS, state.getValue(LAYERS));
+    }
+
+    /** The player looks at the snow (up to its top surface) rather than the plant sticking out of it. */
+    private static boolean aimsAtSnow(BlockState state, BlockPos pos, Player player) {
+        HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        if (!(hit instanceof BlockHitResult block) || !block.getBlockPos().equals(pos)) return true;
+        return hit.getLocation().y - pos.getY() <= state.getValue(LAYERS) * 2 / 16.0 + 1.0E-3;
     }
 
     /** Broken some other way (explosion, piston): the snow's drops and the plant's. */
