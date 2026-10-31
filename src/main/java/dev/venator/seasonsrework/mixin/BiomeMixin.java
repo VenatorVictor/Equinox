@@ -34,6 +34,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     private byte seasonsrework$blendKind = ClimateBiome.BLEND_NONE;
     @Unique
     private boolean seasonsrework$clientSide;
+    @Unique
+    private byte seasonsrework$snowLock = ClimateBiome.SNOW_FREE;
 
     @Shadow
     protected abstract float getTemperature(BlockPos pos);
@@ -94,6 +96,16 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Override
     public void seasonsrework$setBlendKind(byte kind) {
         seasonsrework$blendKind = kind;
+    }
+
+    @Override
+    public byte seasonsrework$snowLock() {
+        return seasonsrework$snowLock;
+    }
+
+    @Override
+    public void seasonsrework$setSnowLock(byte lock) {
+        seasonsrework$snowLock = lock;
     }
 
     @Override
