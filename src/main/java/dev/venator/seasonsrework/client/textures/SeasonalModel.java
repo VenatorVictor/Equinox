@@ -7,6 +7,7 @@ import dev.venator.seasonsrework.crops.SnowyCrops;
 import dev.venator.seasonsrework.client.colors.ColorClock;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import dev.venator.seasonsrework.snow.SnowRules;
+import dev.venator.seasonsrework.snow.SnowyPlants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
@@ -88,7 +89,8 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
                                  @Nullable BlockState state, boolean inSnow) {
         // Farmland crops carry their snow in the block state (set and melted by the server, SnowyCrops).
         if (state != null && state.hasProperty(SnowyCrops.SNOWY) && SnowyCrops.is(state.getBlock())) return state.getValue(SnowyCrops.SNOWY);
-        if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_LAYER) return inSnow || upperHalfInSnow(region, pos, state);
+        if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_LAYER)
+            return inSnow || (state != null && SnowyPlants.layers(state) > 0) || upperHalfInSnow(region, pos, state);
         if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_ABOVE) return isSnow(region.getBlockState(pos.above()));
         if (!SnowRules.lies(biome, pos, ClientSnow.warmest())) return false;
         if (CropWarmth.heated(level, pos)) return false; // a campfire, lit furnace... melts it
@@ -97,11 +99,11 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         return rule.snowMode() != SeasonalTextures.SnowMode.SKY || region.getBrightness(LightLayer.SKY, pos) >= 15;
     }
 
-    /** Snow! Real Magic only takes in the bottom half of a tall plant; the top half stays a plain block above it. */
+    /** Snow only goes in the bottom half of a tall plant (ours and Snow! Real Magic's); the top half looks at it. */
     private static boolean upperHalfInSnow(BlockAndTintGetter region, BlockPos pos, @Nullable BlockState state) {
         return state != null && state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
                 && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.UPPER
-                && isSnow(region.getBlockState(pos.below()));
+                && (isSnow(region.getBlockState(pos.below())) || SnowyPlants.layers(region.getBlockState(pos.below())) > 0);
     }
 
     /** A snow layer, or any Snow! Real Magic block (snow holding a plant, snowy fences, slabs...). */

@@ -200,8 +200,15 @@ public final class SnowCover {
             if (topState.isAir() && dark(level, top) && Blocks.SNOW.defaultBlockState().canSurvive(level, top)) {
                 // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
                 level.setBlock(top, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, depth), Block.UPDATE_CLIENTS);
-            } else if (dark(level, top) && SnowyPlants.cover(level, top.immutable(), topState, depth, Block.UPDATE_CLIENTS)) {
-                // grass, a fern or a flower now in the snow
+            } else if (dark(level, top) && SnowyPlants.cover(level, top.immutable(), topState, depth, Block.UPDATE_ALL)) {
+                // grass, a fern or a flower now in the snow (all updates: the grass under it turns snowy)
+            } else if (topState.isAir() && SnowyPlants.maxLayers(belowState) == 1 && dark(level, below)
+                    && SnowyPlants.cover(level, below, belowState, 1, Block.UPDATE_ALL)) {
+                // a fence or wall (the heightmap is above it), its snow on the ground around it
+            } else if (SnowConfig.SNOW_DEPTH.get() && SnowyPlants.layers(topState) > 0 && SnowyPlants.maxLayers(topState) == 8
+                    && SnowyPlants.layers(topState) != depth && SnowyPlants.layers(topState) <= SnowRules.maxLayers(biome)) {
+                int layers = SnowyPlants.layers(topState);
+                level.setBlock(top, SnowyPlants.withLayers(topState, layers + Integer.signum(depth - layers)), Block.UPDATE_CLIENTS);
             } else if (SnowConfig.SNOW_DEPTH.get() && topState.getBlock() instanceof SnowLayerBlock && topState.getValue(SnowLayerBlock.LAYERS) != depth
                     && topState.getValue(SnowLayerBlock.LAYERS) <= SnowRules.maxLayers(biome)) {
                 // a layer at a time toward the depth (deeper piles are a player's, left alone)
@@ -216,8 +223,10 @@ public final class SnowCover {
         // No snow lies here: it thawed, rained, or hasn't snowed since it got cold.
         if (topState.is(Blocks.SNOW)) {
             level.setBlock(top, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-        } else if (topState.getBlock() instanceof SnowyPlantBlock snowy) {
-            level.setBlock(top, snowy.unsnowed(topState, level, top), Block.UPDATE_ALL);
+        } else if (SnowyPlants.layers(topState) > 0) {
+            level.setBlock(top, SnowyPlants.unsnowed(topState), Block.UPDATE_ALL);
+        } else if (topState.isAir() && SnowyPlants.layers(belowState) > 0) {
+            level.setBlock(below, SnowyPlants.unsnowed(belowState), Block.UPDATE_ALL);
         } else if (SnowRules.cold(biome, top)) {
             // Water freezes without snowfall.
             freeze(level, below, belowState);

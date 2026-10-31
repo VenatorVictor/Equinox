@@ -15,7 +15,6 @@ public final class SnowConfig {
     public static final ModConfigSpec.BooleanValue SNOWY_LEAF_LITTER;
     public static final ModConfigSpec.BooleanValue SNOWY_PLANTS;
     public static final ModConfigSpec.BooleanValue SNOW_DEPTH;
-    public static final ModConfigSpec.BooleanValue RESTORE_PLANTS;
 
     static {
         BUILDER.comment(
@@ -49,16 +48,14 @@ public final class SnowConfig {
                 .worldRestart()
                 .define("snowy_leaf_litter", true);
         BUILDER.pop().comment(
-                "Snowy plants: snow lies on grass, ferns and flowers (the plant stays inside and comes back when the snow melts).",
+                "Snowy plants: snow lies in grass, ferns, flowers and other plants (a block state of the plant: it stays itself),",
+                "and one layer around fences and walls. Breaking takes the snow first. Removing the mod just takes the snow away.",
                 "Off while Snow! Real Magic is installed (it does the same).")
                 .push("snowy_plants");
-        SNOWY_PLANTS = BUILDER.comment("Snow covers plants (snow cover and snowfall).").define("enabled", true);
+        SNOWY_PLANTS = BUILDER.comment("Snow covers plants, fences and walls (snow cover and snowfall).").define("enabled", true);
         SNOW_DEPTH = BUILDER.comment("The snow cover builds deeper snow the colder the last snowfall was, up to a limit per biome",
                         "(more snowy days a year, deeper: 1 to 6 layers). false = always 1 layer (vanilla).")
                 .define("depth_by_climate", false);
-        RESTORE_PLANTS = BUILDER.comment("Before removing this mod: true turns every snowy plant in chunks that load back into its plant",
-                        "(and stops new ones), so no plants are lost. Load the places you care about, then remove the mod.")
-                .define("restore_plants", false);
         BUILDER.pop();
     }
 

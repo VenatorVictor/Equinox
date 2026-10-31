@@ -12,9 +12,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import dev.venator.seasonsrework.crops.SnowyCrops;
+import dev.venator.seasonsrework.snow.SnowyPlants;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Keeps the crop heaters and coolers list of a chunk right when blocks change, and snow on growing crops. */
+/** Keeps the crop heaters and coolers list of a chunk right when blocks change, and snow on growing crops and plants. */
 @Mixin(LevelChunk.class)
 public abstract class LevelChunkMixin {
     @Shadow
@@ -23,7 +24,8 @@ public abstract class LevelChunkMixin {
 
     @ModifyVariable(method = "setBlockState", at = @At("HEAD"), argsOnly = true)
     private BlockState seasonsrework$keepSnow(BlockState state, BlockPos pos, BlockState original, boolean isMoving) {
-        return SnowyCrops.keep(((LevelChunk) (Object) this).getBlockState(pos), state);
+        BlockState old = ((LevelChunk) (Object) this).getBlockState(pos);
+        return SnowyPlants.keep(old, SnowyCrops.keep(old, state));
     }
 
     @Inject(method = "setBlockState", at = @At("RETURN"))

@@ -74,7 +74,7 @@ public final class SeasonsRework {
         modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);
         Snowpack.init();
         SnowCover.init(modBus);
-        dev.venator.seasonsrework.snow.SnowyPlants.init(modBus);
+        dev.venator.seasonsrework.snow.SnowyPlants.init();
         modBus.addListener(AddPackFindersEvent.class, SeasonsRework::addPacks);
         modBus.addListener(RegisterDataMapTypesEvent.class, event -> {
             event.register(BiomeCelsius.TYPE);
