@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 import java.util.Map;
@@ -44,14 +43,6 @@ public record CropWarmth(float target, float strength, int radius) {
 
     private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
     private static int maxRadius;
-    /** Client: a block that can change snow looks changed (a heater or cooler, lit or not, or a roof). */
-    public static volatile SnowChange clientChanged;
-
-    public interface SnowChange {
-        /** radius: the heater's or cooler's reach, 0 for a roof change (the column below pos). */
-        void changed(BlockPos pos, int radius);
-    }
-
     /** The data reloaded: forget every chunk's list. */
     static synchronized void reset() {
         INDEX.clear();
@@ -67,19 +58,7 @@ public record CropWarmth(float target, float strength, int radius) {
 
     /** A block changed (LevelChunkMixin): keep the chunk's list right if it has one. */
     public static void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        int radius = Math.max(radius(old), radius(now));
-        // A roof: the top of the column (leaves aside) appeared or went; mining underground isn't one.
-        boolean roof = (old.blocksMotion() != now.blocksMotion() || old.getFluidState().isEmpty() != now.getFluidState().isEmpty())
-                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
-        if (radius > 0 || roof) {
-            if (level.isClientSide) {
-                SnowChange listener = clientChanged;
-                if (listener != null) listener.changed(pos, radius);
-            } else {
-                DeadCropBlock.snowChanged(level, pos, radius);
-            }
-        }
-        if (radius > 0) updateIndex(level, pos, now);
+        if (Math.max(radius(old), radius(now)) > 0) updateIndex(level, pos, now);
     }
 
     private static synchronized void updateIndex(Level level, BlockPos pos, BlockState now) {

@@ -3,6 +3,7 @@ package dev.venator.seasonsrework.client.textures;
 import dev.venator.seasonsrework.client.ClientConfig;
 import dev.venator.seasonsrework.client.Outside;
 import dev.venator.seasonsrework.crops.CropWarmth;
+import dev.venator.seasonsrework.crops.SnowyCrops;
 import dev.venator.seasonsrework.client.colors.ColorClock;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import dev.venator.seasonsrework.snow.SnowRules;
@@ -85,6 +86,8 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
 
     private static boolean snowy(SeasonalTextures.Rule rule, BlockAndTintGetter region, ClientLevel level, Holder<Biome> biome, BlockPos pos,
                                  @Nullable BlockState state, boolean inSnow) {
+        // Farmland crops carry their snow in the block state (set and melted by the server, SnowyCrops).
+        if (state != null && state.hasProperty(SnowyCrops.SNOWY) && SnowyCrops.is(state.getBlock())) return state.getValue(SnowyCrops.SNOWY);
         if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_LAYER) return inSnow || upperHalfInSnow(region, pos, state);
         if (rule.snowMode() == SeasonalTextures.SnowMode.SNOW_ABOVE) return isSnow(region.getBlockState(pos.above()));
         if (!SnowRules.cold(biome, pos) || !SnowRules.snowAllowed(biome, pos, ClientSnow.coverage)) return false;

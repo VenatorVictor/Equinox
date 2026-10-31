@@ -3,20 +3,13 @@ package dev.venator.seasonsrework.crops;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.levelgen.Heightmap;
-import dev.venator.seasonsrework.snow.FirstSnow;
-import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
@@ -89,49 +82,9 @@ public final class DeadCropBlock extends Block implements EntityBlock {
                 : super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
 
-    /** Whether snow lies on it now; the glass of a greenhouse is a roof (motion-blocking height map), leaves aren't. */
-    public static boolean snowy(BlockState state, ServerLevel level, BlockPos pos) {
-        if (state.getValue(CAUSE) != Cause.FROST) return false;
-        Holder<Biome> biome = level.getBiome(pos);
-        return SnowRules.cold(biome, pos) && SnowRules.snowAllowed(biome, pos, FirstSnow.coverage)
-                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ())
-                && !CropWarmth.heated(level, pos);
-    }
-
-    /** Roof and heater changes waiting for the end of the tick (server thread; not while a block is being set). */
-    private static final java.util.Map<Level, java.util.List<long[]>> PENDING = new java.util.WeakHashMap<>();
-    /** How far below a new or removed roof dead crops are checked. */
-    private static final int ROOF_DEPTH = 32;
-
-    /** CropWarmth: a heater or cooler (radius) or a roof (radius 0) changed at pos. */
-    static void snowChanged(Level level, BlockPos pos, int radius) {
-        PENDING.computeIfAbsent(level, l -> new java.util.ArrayList<>()).add(new long[]{pos.asLong(), radius});
-    }
-
-    /** End of the level tick: dead crops around the changes get their snow right now instead of on a random tick. */
-    public static void onLevelTick(LevelTickEvent.Post event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        java.util.List<long[]> changes = PENDING.remove(level);
-        if (changes == null) return;
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (long[] change : changes) {
-            BlockPos pos = BlockPos.of(change[0]);
-            int r = (int) change[1];
-            if (r > 0) {
-                for (BlockPos p : BlockPos.betweenClosed(pos.offset(-r, -r, -r), pos.offset(r, r, r))) update(level, p);
-            } else {
-                for (int y = pos.getY() - 1; y >= pos.getY() - ROOF_DEPTH && y >= level.getMinBuildHeight(); y--)
-                    update(level, cursor.set(pos.getX(), y, pos.getZ()));
-            }
-        }
-    }
-
-    private static void update(ServerLevel level, BlockPos pos) {
-        if (!level.isLoaded(pos)) return;
-        BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof DeadCropBlock)) return;
-        boolean snowy = snowy(state, level, pos);
-        if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
+    /** Snow settles and melts as on living crops (SnowyCrops); only on frozen ones. */
+    private static boolean snowy(BlockState state, ServerLevel level, BlockPos pos) {
+        return state.getValue(CAUSE) == Cause.FROST && SnowyCrops.snowy(state, level, pos);
     }
 
     @Override

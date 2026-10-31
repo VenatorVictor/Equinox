@@ -6,7 +6,6 @@ import dev.venator.seasonsrework.client.colors.SeasonColors;
 import dev.venator.seasonsrework.client.dh.DhRefresher;
 import dev.venator.seasonsrework.client.textures.SeasonalTextures;
 import dev.venator.seasonsrework.climate.Climate;
-import dev.venator.seasonsrework.crops.CropWarmth;
 import dev.venator.seasonsrework.season.SeasonWatcher;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import net.minecraft.client.Minecraft;
@@ -38,7 +37,6 @@ public final class SeasonsReworkClient {
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SeasonalTextures::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, DeadCropModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
-        CropWarmth.clientChanged = ChunkRefresher::snowChanged;
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
