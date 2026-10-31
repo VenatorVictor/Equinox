@@ -11,7 +11,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.SoundType;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -87,6 +93,7 @@ public final class SnowyPlants {
         BLOCK_ENTITIES.register(modBus);
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Load.class, SnowyPlants::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SnowyPlants::onLevelTick);
+        NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickBlock.class, SnowyPlants::onUseSnow);
     }
 
     /** Every snowy plant block (client: models and colors). */
@@ -126,6 +133,23 @@ public final class SnowyPlants {
         level.setBlock(pos, snowy, flags);
         if (block == GENERIC.get() && level.getBlockEntity(pos) instanceof SnowyPlantBlockEntity entity) entity.setPlant(plant);
         return true;
+    }
+
+    /** A player uses snow on grass, a fern or a flower: the plant goes inside the snow (vanilla would replace grass). */
+    private static void onUseSnow(PlayerInteractEvent.RightClickBlock event) {
+        ItemStack stack = event.getItemStack();
+        if (!stack.is(Items.SNOW) || !enabled()) return;
+        Level level = event.getLevel();
+        BlockPos pos = event.getPos();
+        BlockState plant = level.getBlockState(pos);
+        if (blockFor(plant) == null || !Blocks.SNOW.defaultBlockState().canSurvive(level, pos)) return;
+        if (!level.isClientSide && cover(level, pos, plant, 1, Block.UPDATE_ALL)) {
+            SoundType sound = Blocks.SNOW.defaultBlockState().getSoundType();
+            level.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS, (sound.getVolume() + 1) / 2, sound.getPitch() * 0.8F);
+            if (!event.getEntity().getAbilities().instabuild) stack.shrink(1);
+        }
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
     }
 
     /** ServerLevelSnowfallMixin: vanilla snowfall reached a plant (it only snows on air or snow by itself). */
