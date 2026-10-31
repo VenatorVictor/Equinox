@@ -42,14 +42,7 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
     }
 
     private void receive() {
-        int count = Math.min(biomes.size(), weights.size());
-        Biome[] array = new Biome[count];
-        float[] values = new float[count];
-        for (int i = 0; i < count; i++) {
-            array[i] = biomes.get(i).value();
-            values[i] = weights.get(i);
-        }
-        ClimateBlend.put(chunk, new ClimateBlend.Mix(array, values));
+        ClimateBlend.put(chunk, toMix(biomes, weights));
     }
 
     /** Server: work out mixes as chunks load, send them as chunks are sent; forget them when the server stops. */
@@ -65,17 +58,32 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
             if (mix == null) return;
             List<Holder<Biome>> holders = new ArrayList<>();
             List<Float> weights = new ArrayList<>();
-            var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
-            for (int i = 0; i < mix.biomes().length; i++) {
-                // Only registered biomes can be sent (by id).
-                var key = registry.getResourceKey(mix.biomes()[i]);
-                if (key.isEmpty()) continue;
-                holders.add(registry.getHolderOrThrow(key.get()));
-                weights.add(mix.weights()[i]);
-            }
-            if (holders.isEmpty()) return;
-            PacketDistributor.sendToPlayer(e.getPlayer(), new ClimateBlendPayload(pos.toLong(), holders, weights));
+            if (toHolders(level, mix, holders, weights))
+                PacketDistributor.sendToPlayer(e.getPlayer(), new ClimateBlendPayload(pos.toLong(), holders, weights));
         });
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, e -> ClimateBlend.clearServer());
+    }
+
+    /** A mix as registry holders (only registered biomes can be sent, by id). False if none is left. */
+    static boolean toHolders(ServerLevel level, ClimateBlend.Mix mix, List<Holder<Biome>> holders, List<Float> weights) {
+        var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
+        for (int i = 0; i < mix.biomes().length; i++) {
+            var key = registry.getResourceKey(mix.biomes()[i]);
+            if (key.isEmpty()) continue;
+            holders.add(registry.getHolderOrThrow(key.get()));
+            weights.add(mix.weights()[i]);
+        }
+        return !holders.isEmpty();
+    }
+
+    static ClimateBlend.Mix toMix(List<Holder<Biome>> biomes, List<Float> weights) {
+        int count = Math.min(biomes.size(), weights.size());
+        Biome[] array = new Biome[count];
+        float[] values = new float[count];
+        for (int i = 0; i < count; i++) {
+            array[i] = biomes.get(i).value();
+            values[i] = weights.get(i);
+        }
+        return new ClimateBlend.Mix(array, values);
     }
 }

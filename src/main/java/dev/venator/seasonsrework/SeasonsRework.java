@@ -76,6 +76,8 @@ public final class SeasonsRework {
         modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);
         modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venator.seasonsrework.climate.ClimateBlendPayload::register);
         dev.venator.seasonsrework.climate.ClimateBlendPayload.init();
+        modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venator.seasonsrework.climate.FarBlend::register);
+        dev.venator.seasonsrework.climate.FarBlend.init();
         Snowpack.init();
         SnowCover.init(modBus);
         dev.venator.seasonsrework.snow.SnowyPlants.init();

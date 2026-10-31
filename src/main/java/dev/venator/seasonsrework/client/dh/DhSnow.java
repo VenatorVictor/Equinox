@@ -9,15 +9,20 @@ import com.seibel.distanthorizons.core.wrapperInterfaces.block.IBlockStateWrappe
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IBiomeWrapper;
 import com.seibel.distanthorizons.core.wrapperInterfaces.world.IClientLevelWrapper;
 import dev.venator.seasonsrework.client.ClientConfig;
+import dev.venator.seasonsrework.climate.ClimateBiome;
 import dev.venator.seasonsrework.snow.ClientSnow;
 import dev.venator.seasonsrework.snow.SnowRules;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Seasonal snow and ice on Distant Horizons LODs, called from DH's column builder (worker threads).
@@ -27,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class DhSnow {
     private static final ThreadLocal<BlockPos.MutableBlockPos> POS = ThreadLocal.withInitial(BlockPos.MutableBlockPos::new);
     private static volatile int snowColor = 0;
+    private static final Map<Biome, Holder<Biome>> CLIENT_BIOMES = new ConcurrentHashMap<>();
 
     /** Freezes open water where it's cold, and melts snow/ice that DH saved while it was cold. */
     public static IBlockStateWrapper replaceBlock(IBlockStateWrapper block, IClientLevelWrapper levelWrapper, IBiomeWrapper biomeWrapper,
@@ -37,7 +43,7 @@ public final class DhSnow {
         boolean ice = state.is(Blocks.ICE);
         if (!water && !snow && !ice || !ClientConfig.DH_SNOW.get()) return block;
         if (!(levelWrapper.getWrappedMcObject() instanceof Level level)) return block;
-        Holder<Biome> biome = biome(biomeWrapper);
+        Holder<Biome> biome = biome(biomeWrapper, level);
         if (biome == null) return block;
         BlockPos pos = POS.get().set(x, y, z);
         if (snow) return SnowRules.lies(biome, pos, ClientSnow.warmest()) ? block : BlockStateWrapper_neoforge.AIR;
@@ -57,7 +63,7 @@ public final class DhSnow {
         IBlockStateWrapper above = above(column, mapping, index);
         if (above.isSolid() || above.isLiquid()) return original;
         if (!(levelWrapper.getWrappedMcObject() instanceof Level level)) return original;
-        Holder<Biome> biome = biome(biomeWrapper);
+        Holder<Biome> biome = biome(biomeWrapper, level);
         if (biome == null) return original;
         BlockPos pos = POS.get().set(dhPos.getX(), topY + levelWrapper.getMinHeight(), dhPos.getZ());
         if (!SnowRules.lies(biome, pos, ClientSnow.warmest())) return original;
@@ -66,6 +72,7 @@ public final class DhSnow {
 
     static void clearCache() {
         snowColor = 0;
+        CLIENT_BIOMES.clear();
     }
 
     /** The color DH gives real snow, so painted and real snow match. */
@@ -87,11 +94,23 @@ public final class DhSnow {
         }
     }
 
+    /**
+     * The client's biome: in single player DH may hand over the server's biome objects, which don't see the client's
+     * climate blending (ClimateBlend keeps the far mixes on the client side), so they're swapped for the client's.
+     */
     @SuppressWarnings("unchecked")
-    private static Holder<Biome> biome(IBiomeWrapper wrapper) {
+    private static Holder<Biome> biome(IBiomeWrapper wrapper, Level level) {
         Object biome = wrapper.getWrappedMcObject();
-        if (biome instanceof Holder<?> holder && holder.value() instanceof Biome) return (Holder<Biome>) holder;
-        return biome instanceof Biome raw ? Holder.direct(raw) : null;
+        Holder<Biome> holder;
+        if (biome instanceof Holder<?> h && h.value() instanceof Biome) holder = (Holder<Biome>) h;
+        else if (biome instanceof Biome raw) holder = Holder.direct(raw);
+        else return null;
+        if (((ClimateBiome) (Object) holder.value()).seasonsrework$clientSide()) return holder;
+        return CLIENT_BIOMES.computeIfAbsent(holder.value(), server -> {
+            var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
+            var key = holder.unwrapKey();
+            return key.isPresent() ? registry.getHolder(key.get()).<Holder<Biome>>map(h -> h).orElse(holder) : holder;
+        });
     }
 
     private DhSnow() {}

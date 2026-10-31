@@ -39,6 +39,18 @@ public final class DhRefresher {
         }
     }
 
+    /** DH's LOD distance in blocks (0 if it can't be read). */
+    public static int lodDistance() {
+        if (broken) return 0;
+        try {
+            Integer chunks = com.seibel.distanthorizons.api.DhApi.Delayed.configs.graphics().chunkRenderDistance().getValue();
+            return chunks == null ? 0 : chunks * 16;
+        } catch (Throwable t) {
+            fail(t);
+            return 0;
+        }
+    }
+
     public static void refresh(ClientLevel level) {
         if (broken) return;
         try {

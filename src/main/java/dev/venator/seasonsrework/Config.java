@@ -96,8 +96,8 @@ public final class Config {
     public static final ModConfigSpec.IntValue BLEND_RADIUS = BUILDER
             .comment("Climate blending: the temperature at a place mixes its biome with the biomes around it, up to this",
                     "many blocks away (nearer ones count more), so a river in the jungle is tropical, one in the taiga cold,",
-                    "and a forest next to a desert is warmer than one next to snowy plains. Snowy biomes (365 snow days) only",
-                    "get colder and biomes without snow only warmer. World generation doesn't change. 0: off.")
+                    "and a forest next to a desert is warmer than one next to snowy plains. With snow_locks (snow config),",
+                    "snowy and snowless biomes keep their own climate. World generation doesn't change. 0: off.")
             .defineInRange("blend_radius", 64, 0, 1024);
     public static final ModConfigSpec.IntValue BLEND_RADIUS_LARGE = BUILDER
             .comment("The same for Large Biomes worlds (biomes 4 times wider).")
@@ -106,6 +106,10 @@ public final class Config {
             .comment("How much a biome takes from its surroundings: 0 = its own temperature, 1 = only the surroundings'.",
                     "Rivers and beaches always take 1 (they have no climate of their own).")
             .defineInRange("blend_strength", 0.5, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue DH_BLEND_DISTANCE = BUILDER
+            .comment("Distant Horizons: players with DH get the blending out to their LOD distance, up to this many blocks,",
+                    "so far snow and ice match the blending too (worked out a little each tick, nearest first). 0: off.")
+            .defineInRange("dh_blend_distance", 4096, 0, 32768);
 
     public static final ModConfigSpec.BooleanValue SEASONAL_CROPS = BUILDER
             .comment("Crops follow the temperature in °C: each has a range (data map seasonsrework:crop_climate; crops only",
@@ -148,6 +152,7 @@ public final class Config {
     private static volatile double latitude = 40;
     private static volatile int blendRadius = 64, blendRadiusLarge = 128;
     private static volatile float blendStrength = 0.5F;
+    private static volatile int dhBlendDistance = 4096;
 
     public static void refresh() {
         Set<ResourceKey<Level>> set = new HashSet<>();
@@ -174,6 +179,7 @@ public final class Config {
         blendRadius = BLEND_RADIUS.get();
         blendRadiusLarge = BLEND_RADIUS_LARGE.get();
         blendStrength = BLEND_STRENGTH.get().floatValue();
+        dhBlendDistance = DH_BLEND_DISTANCE.get();
         Climate.recategorize();
     }
 
@@ -281,6 +287,11 @@ public final class Config {
     /** Climate blending radius in Large Biomes worlds. */
     public static int blendRadiusLarge() {
         return blendRadiusLarge;
+    }
+
+    /** Distant Horizons blending distance in blocks (0: off). */
+    public static int dhBlendDistance() {
+        return dhBlendDistance;
     }
 
     /** How much a (land) biome's temperature takes from its surroundings. */
