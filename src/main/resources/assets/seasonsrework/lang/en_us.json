@@ -48,5 +48,22 @@
   "jade.seasonsrework.will_freeze": "Will freeze tonight",
   "jade.seasonsrework.will_scorch": "Will die from heat today",
   "config.jade.plugin_seasonsrework.dead_crop": "Dead crops",
-  "config.jade.plugin_seasonsrework.crop_state": "Crop temperature state"
+  "config.jade.plugin_seasonsrework.crop_state": "Crop temperature state",
+  "block.seasonsrework.snowy_short_grass": "Snowy Short Grass",
+  "block.seasonsrework.snowy_fern": "Snowy Fern",
+  "block.seasonsrework.snowy_dead_bush": "Snowy Dead Bush",
+  "block.seasonsrework.snowy_dandelion": "Snowy Dandelion",
+  "block.seasonsrework.snowy_poppy": "Snowy Poppy",
+  "block.seasonsrework.snowy_blue_orchid": "Snowy Blue Orchid",
+  "block.seasonsrework.snowy_allium": "Snowy Allium",
+  "block.seasonsrework.snowy_azure_bluet": "Snowy Azure Bluet",
+  "block.seasonsrework.snowy_red_tulip": "Snowy Red Tulip",
+  "block.seasonsrework.snowy_orange_tulip": "Snowy Orange Tulip",
+  "block.seasonsrework.snowy_white_tulip": "Snowy White Tulip",
+  "block.seasonsrework.snowy_pink_tulip": "Snowy Pink Tulip",
+  "block.seasonsrework.snowy_oxeye_daisy": "Snowy Oxeye Daisy",
+  "block.seasonsrework.snowy_cornflower": "Snowy Cornflower",
+  "block.seasonsrework.snowy_lily_of_the_valley": "Snowy Lily of the Valley",
+  "block.seasonsrework.snowy_torchflower": "Snowy Torchflower",
+  "block.seasonsrework.snowy_plant": "Snowy Plant"
 }
