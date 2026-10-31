@@ -30,16 +30,21 @@ public final class SnowRules {
 
     /** Whether snow lies at pos. warmest: the server's (Snowpack.warmest()) or the client's (ClientSnow) values. */
     public static boolean lies(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest) {
-        return margin(biome, pos, warmest) > patch(pos.getX(), pos.getZ()) * RAMP;
+        return lies(biome, pos, warmest, Climate.temperature(biome.value(), pos));
+    }
+
+    /** lies() with the temperature at pos already known (here). */
+    public static boolean lies(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest, float here) {
+        return margin(biome, warmest, here) > patch(pos.getX(), pos.getZ()) * RAMP;
     }
 
     /**
      * Snow layers the cover builds at pos: 1, or with depth_by_climate one more per LAYER colder, up to the biome's
      * limit (more snowy days, deeper snow). Only where lies() is true.
      */
-    public static int layers(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest) {
+    public static int layers(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest, float here) {
         if (!SnowConfig.SNOW_DEPTH.get()) return 1;
-        float over = margin(biome, pos, warmest) - patch(pos.getX(), pos.getZ()) * RAMP;
+        float over = margin(biome, warmest, here) - patch(pos.getX(), pos.getZ()) * RAMP;
         return Mth.clamp(1 + Mth.floor(over / LAYER), 1, maxLayers(biome));
     }
 
@@ -55,8 +60,7 @@ public final class SnowRules {
      * How far below the snow line the column stayed since the last snowfall: the biome's warmest since then, plus
      * how much colder or warmer pos is than the biome at sea level (height). Biomes without seasons: now.
      */
-    private static float margin(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest) {
-        float here = Climate.temperature(biome.value(), pos);
+    private static float margin(Holder<Biome> biome, Map<ResourceKey<Biome>, Float> warmest, float here) {
         Float since = biome.unwrapKey().map(warmest::get).orElse(null);
         if (since == null) return Climate.SNOW_LINE - here;
         return Climate.SNOW_LINE - (since + here - Climate.surfaceTemperature(biome.value()));

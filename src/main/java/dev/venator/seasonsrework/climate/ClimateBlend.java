@@ -27,10 +27,34 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ClimateBlend {
     /** The biomes around a chunk center and their weights (summing to 1). */
-    public record Mix(Biome[] biomes, float[] weights) {
+    public static final class Mix {
+        private final Biome[] biomes;
+        private final float[] weights;
+        /** The temperature for one climate phase (it changes once per tick), read on any thread. */
+        private volatile Cached cached;
+
+        private record Cached(Climate.Phase phase, float temperature) {}
+
+        public Mix(Biome[] biomes, float[] weights) {
+            this.biomes = biomes;
+            this.weights = weights;
+        }
+
+        public Biome[] biomes() {
+            return biomes;
+        }
+
+        public float[] weights() {
+            return weights;
+        }
+
         float temperature() {
+            Climate.Phase phase = Climate.phase();
+            Cached known = cached;
+            if (known != null && known.phase == phase) return known.temperature;
             float sum = 0;
             for (int i = 0; i < biomes.length; i++) sum += weights[i] * Climate.surfaceTemperature(biomes[i]);
+            cached = new Cached(phase, sum);
             return sum;
         }
     }

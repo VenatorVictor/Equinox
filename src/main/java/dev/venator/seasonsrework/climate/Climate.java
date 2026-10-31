@@ -207,6 +207,8 @@ public final class Climate {
         serverBiomes.forEach(Climate::categorize);
         clientBiomes.forEach(Climate::categorize);
         seasonal = seasonalOf(serverBiomes);
+        // A new phase object, so cached temperatures (ClimateBlend) are worked out again.
+        phase = new Phase(phase.from(), phase.to(), phase.blend(), phase.season(), phase.daily());
     }
 
     /** The server's biomes with seasons. */
