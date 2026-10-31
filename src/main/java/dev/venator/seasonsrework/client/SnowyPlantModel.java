@@ -8,9 +8,12 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import com.mojang.math.Transformation;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
@@ -18,9 +21,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.model.IQuadTransformer;
+import net.neoforged.neoforge.client.model.QuadTransformers;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +40,8 @@ import java.util.List;
  */
 public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     private static final ChunkRenderTypeSet SOLID = ChunkRenderTypeSet.of(RenderType.solid());
+    /** Moves the snow back by the plant's random offset (grass, flowers): the renderer shifts the whole model by it. */
+    private static final ModelProperty<IQuadTransformer> UNOFFSET = new ModelProperty<>();
 
     private final int layers;
 
@@ -63,6 +73,17 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     }
 
     @Override
+    public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
+        data = super.getModelData(region, pos, state, data);
+        if (!state.hasOffsetFunction()) return data;
+        Vec3 offset = state.getOffset(region, pos);
+        if (offset.equals(Vec3.ZERO)) return data;
+        IQuadTransformer back = QuadTransformers.applying(new Transformation(
+                new Matrix4f().translation((float) -offset.x, (float) -offset.y, (float) -offset.z)));
+        return data.derive().with(UNOFFSET, back).build();
+    }
+
+    @Override
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
         // Models give their quads for whatever type is asked, so each part only in its own render types.
         boolean own = renderType == null || super.getRenderTypes(state == null ? snow() : state, rand, data).contains(renderType);
@@ -71,7 +92,9 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
         List<BakedQuad> quads = new ArrayList<>();
         if (own) quads.addAll(super.getQuads(state, side, rand, data, renderType));
         BlockState snowState = snow();
-        quads.addAll(model(snowState).getQuads(snowState, side, rand, ModelData.EMPTY, renderType));
+        List<BakedQuad> snowQuads = model(snowState).getQuads(snowState, side, rand, ModelData.EMPTY, renderType);
+        IQuadTransformer back = data.get(UNOFFSET);
+        quads.addAll(back == null ? snowQuads : back.process(snowQuads));
         return quads;
     }
 
