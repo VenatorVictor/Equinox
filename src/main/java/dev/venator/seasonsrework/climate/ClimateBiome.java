@@ -6,6 +6,8 @@ import net.minecraft.core.BlockPos;
 public interface ClimateBiome {
     /** NONE: no seasons at all. HOT: too hot to change (untagged hot biomes); crops grow as in the tropics. */
     byte NONE = 0, SEASONAL = 1, TROPICAL = 2, HOT = 3;
+    /** Climate blending (ClimateBlend): not blended (other dimensions, caves), land (Config.blendStrength), full (rivers, beaches). */
+    byte BLEND_NONE = 0, BLEND_LAND = 1, BLEND_FULL = 2;
 
     byte seasonsrework$climate();
 
@@ -21,6 +23,11 @@ public interface ClimateBiome {
     float seasonsrework$snowShift();
 
     void seasonsrework$setClimate(Zone zone, float shift, float snowShift, float[] changes);
+
+    /** How the biome takes part in climate blending (BLEND_*). */
+    byte seasonsrework$blendKind();
+
+    void seasonsrework$setBlendKind(byte kind);
 
     /** The biome's color profile (seasonal colors, client side). */
     ColorProfile seasonsrework$colorProfile();

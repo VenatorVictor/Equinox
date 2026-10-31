@@ -64,6 +64,23 @@ public final class SeasonCommand {
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.climate",
                 Component.translatable("seasonsrework.climate." + climate), String.format("%+.2f", Climate.change(biome)),
                 String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()), String.format("%.2f", ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos))), false);
+        // Climate blending: the biomes around (largest weights first) and how much warmer (+) or colder they make it here.
+        float blend = dev.venator.seasonsrework.climate.ClimateBlend.delta(biome, pos, ((ClimateBiome) (Object) biome).seasonsrework$blendKind());
+        var mix = dev.venator.seasonsrework.climate.ClimateBlend.mix(pos.getX() >> 4, pos.getZ() >> 4);
+        StringBuilder around = new StringBuilder();
+        if (mix != null) {
+            var registry = source.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
+            Integer[] order = new Integer[mix.weights().length];
+            for (int i = 0; i < order.length; i++) order[i] = i;
+            java.util.Arrays.sort(order, (a, b) -> Float.compare(mix.weights()[b], mix.weights()[a]));
+            for (int i : order) {
+                if (!around.isEmpty()) around.append(", ");
+                var key = registry.getKey(mix.biomes()[i]);
+                around.append(key != null ? key.getPath() : "?").append(' ').append(Math.round(mix.weights()[i] * 100)).append('%');
+            }
+        }
+        source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.blend",
+                String.format("%+.2f", blend), around.isEmpty() ? "-" : around.toString()), false);
         // Snow: the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15) and whether it lies here.
         var holder = source.getLevel().getBiome(pos);
         var snowDays = holder.getData(dev.venator.seasonsrework.climate.BiomeSnow.TYPE);

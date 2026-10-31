@@ -72,6 +72,8 @@ public final class SeasonsRework {
 
         // Snowpack (sent to clients for LOD snow and snowy textures) and snow cover.
         modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);
+        modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venator.seasonsrework.climate.ClimateBlendPayload::register);
+        dev.venator.seasonsrework.climate.ClimateBlendPayload.init();
         Snowpack.init();
         SnowCover.init(modBus);
         dev.venator.seasonsrework.snow.SnowyPlants.init();
