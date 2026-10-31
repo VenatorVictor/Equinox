@@ -43,8 +43,11 @@ public final class SeasonsReworkClient {
         modBus.addListener(ModelEvent.ModifyBakingResult.class, DeadCropModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyPlantModel::onModifyBakingResult);
+        modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyBlockModel::onModifyBakingResult);
+        modBus.addListener(RegisterColorHandlersEvent.Block.class, SnowyBlockModel::colors);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
+        RenderBench.init();
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> dev.venator.seasonsrework.climate.ClimateBlend.clearClient());
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {

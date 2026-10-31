@@ -41,7 +41,7 @@ public abstract class SnowStateMixin {
 
     @Inject(method = "initCache", at = @At("TAIL"))
     private void seasonsrework$cacheSnow(CallbackInfo ci) {
-        seasonsrework$snow = SnowyPlants.layers(asState());
+        seasonsrework$snow = SnowyPlants.stateLayers(asState());
         if (seasonsrework$snow > 0) isRandomlyTicking = true;
     }
 
