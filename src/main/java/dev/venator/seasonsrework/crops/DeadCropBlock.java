@@ -18,6 +18,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.IceBlock;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,6 +46,8 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
     public static final BooleanProperty SNOWY = BlockStateProperties.SNOWY;
     /** Dead rice stays in its water. */
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    /** Its water froze (SnowCover, with the water around it): the dead rice sits inside a block of ice. */
+    public static final BooleanProperty ICED = BooleanProperty.create("iced");
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 8, 16);
 
     public enum Cause implements StringRepresentable {
@@ -53,7 +61,7 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
 
     public DeadCropBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(CAUSE, Cause.FROST).setValue(SNOWY, false).setValue(WATERLOGGED, false));
+        registerDefaultState(stateDefinition.any().setValue(CAUSE, Cause.FROST).setValue(SNOWY, false).setValue(WATERLOGGED, false).setValue(ICED, false));
     }
 
     @Override
@@ -63,17 +71,59 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(CAUSE, SNOWY, WATERLOGGED);
+        builder.add(CAUSE, SNOWY, WATERLOGGED, ICED);
     }
 
     /** The crop it was: a dead young stem is as small as the living one. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (state.getValue(ICED)) return Shapes.block();
         if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) {
             BlockState original = entity.original();
             if (original != null && !(original.getBlock() instanceof DeadCropBlock)) return original.getShape(level, pos, context);
         }
         return SHAPE;
+    }
+
+    /** In ice: solid like ice; else walked through. */
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return state.getValue(ICED) ? Shapes.block() : Shapes.empty();
+    }
+
+    @Override
+    protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+        return !state.getValue(ICED) && super.canBeReplaced(state, context);
+    }
+
+    @Override
+    protected float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        return state.getValue(ICED) ? Blocks.ICE.defaultBlockState().getDestroyProgress(player, level, pos) : super.getDestroyProgress(state, player, level, pos);
+    }
+
+    @Override
+    public float getFriction(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
+        return state.getValue(ICED) ? Blocks.ICE.getFriction() : super.getFriction(state, level, pos, entity);
+    }
+
+    /** Broken in ice: the water comes back, as with ice. */
+    @Override
+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity entity, ItemStack tool) {
+        super.playerDestroy(level, player, pos, state, entity, tool);
+        if (state.getValue(ICED)) level.setBlockAndUpdate(pos, IceBlock.meltsInto());
+    }
+
+    /** In ice: no face between it and ice next to it (as between two ice blocks). */
+    @Override
+    protected boolean skipRendering(BlockState state, BlockState adjacent, Direction direction) {
+        return state.getValue(ICED) && (adjacent.is(Blocks.ICE) || adjacent.getBlock() instanceof DeadCropBlock && adjacent.getValue(ICED))
+                || super.skipRendering(state, adjacent, direction);
+    }
+
+    /** SnowCover: the water around it freezes (true) or thaws (false). Null if it isn't dead rice in water or ice. */
+    public static @Nullable BlockState freeze(BlockState state, boolean freeze) {
+        if (!(state.getBlock() instanceof DeadCropBlock) || state.getValue(ICED) == freeze || state.getValue(WATERLOGGED) != freeze) return null;
+        return state.setValue(ICED, freeze).setValue(WATERLOGGED, !freeze);
     }
 
     @Override
@@ -107,10 +157,10 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
         if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
     }
 
-    /** Frozen: breaks like ice. Dried by heat: the crop's own rustle. */
+    /** Frozen or in ice: breaks like ice. Dried by heat: the crop's own rustle. */
     @Override
     public SoundType getSoundType(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
-        return state.getValue(CAUSE) == Cause.FROST ? SoundType.GLASS : SoundType.CROP;
+        return state.getValue(CAUSE) == Cause.FROST || state.getValue(ICED) ? SoundType.GLASS : SoundType.CROP;
     }
 
     @Override

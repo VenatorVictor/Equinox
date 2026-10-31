@@ -14,7 +14,8 @@
     "RandomTickMixin",
     "ServerLevelTimeMixin",
     "BlockSnowyMixin",
-    "StateDefinitionBuilderAccessor"
+    "StateDefinitionBuilderAccessor",
+    "IceSeamMixin"
   ],
   "client": [
     "client.BiomeColorMixin"
