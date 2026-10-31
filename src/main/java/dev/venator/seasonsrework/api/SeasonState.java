@@ -46,9 +46,12 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (int) (ticksInYear() % seasonTicks() / DAY);
     }
 
-    /** The state some days earlier: the temperature, crops and colors run behind the calendar (Config temperature_lag_days). */
-    public SeasonState lagged(int days) {
-        return days == 0 ? this : new SeasonState(dayTime - (long) days * DAY, daysPerSeason);
+    /**
+     * The state a share of a season earlier (1/3: a third of a season): the temperature, crops and colors run behind
+     * the calendar (Config temperature_lag). A share, not days, so it scales with the season length.
+     */
+    public SeasonState lagged(double seasons) {
+        return seasons == 0 ? this : new SeasonState(dayTime - Math.round(seasons * seasonTicks()), daysPerSeason);
     }
 
     /** 0 for the first year. */

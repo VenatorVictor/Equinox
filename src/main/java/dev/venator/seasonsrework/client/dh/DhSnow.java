@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Seasonal snow and ice on Distant Horizons LODs, called from DH's column builder (worker threads).
  * Columns are listed top to bottom, so index - 1 is the run of blocks right above.
- * Uses the same rule as the real snow: the seasonal temperature, and after the first snowfall of the cold season.
+ * Uses the same rule as the real snow (SnowRules.lies, with the server's snowpack); ice follows the temperature.
  */
 public final class DhSnow {
     private static final ThreadLocal<BlockPos.MutableBlockPos> POS = ThreadLocal.withInitial(BlockPos.MutableBlockPos::new);
@@ -39,8 +39,9 @@ public final class DhSnow {
         if (!(levelWrapper.getWrappedMcObject() instanceof Level level)) return block;
         Holder<Biome> biome = biome(biomeWrapper);
         if (biome == null) return block;
-        boolean cold = SnowRules.cold(biome, POS.get().set(x, y, z));
-        if (snow) return cold ? block : BlockStateWrapper_neoforge.AIR;
+        BlockPos pos = POS.get().set(x, y, z);
+        if (snow) return SnowRules.lies(biome, pos, ClientSnow.warmest()) ? block : BlockStateWrapper_neoforge.AIR;
+        boolean cold = SnowRules.cold(biome, pos);
         if (!above(column, mapping, index).isAir()) return block;
         if (water && cold) return BlockStateWrapper_neoforge.getIceBlockStateWrapper(levelWrapper);
         if (ice && !cold) return BlockStateWrapper_neoforge.getWaterBlockStateWrapper(levelWrapper);
@@ -59,7 +60,7 @@ public final class DhSnow {
         Holder<Biome> biome = biome(biomeWrapper);
         if (biome == null) return original;
         BlockPos pos = POS.get().set(dhPos.getX(), topY + levelWrapper.getMinHeight(), dhPos.getZ());
-        if (!SnowRules.cold(biome, pos) || !SnowRules.snowAllowed(biome, pos, ClientSnow.coverage)) return original;
+        if (!SnowRules.lies(biome, pos, ClientSnow.warmest())) return original;
         return snowColor(levelWrapper, biomeWrapper, source, dhPos);
     }
 

@@ -63,11 +63,12 @@ public final class Config {
             .defineListAllowEmpty("celsius_changes", DEFAULT_CELSIUS_CHANGES, () -> "temperate=0,0,0,0",
                     value -> value instanceof String s && parseCelsiusChange(s) != null);
 
-    public static final ModConfigSpec.IntValue TEMPERATURE_LAG_DAYS = BUILDER
-            .comment("The temperature, crop seasons and the grass, leaf and texture colors run this many days behind the",
-                    "calendar, as in real life the warmest time comes about a month after the longest day (14: a third of a",
-                    "42-day season). Day length, tropical wet and dry seasons and the season shown stay on the calendar.")
-            .defineInRange("temperature_lag_days", 14, 0, 1000);
+    public static final ModConfigSpec.DoubleValue TEMPERATURE_LAG = BUILDER
+            .comment("The temperature, snow, crop seasons and the grass, leaf and texture colors run this share of a season",
+                    "behind the calendar, as in real life the warmest time comes about a month after the longest day",
+                    "(0.333: a third of a season, 14 days of a 42-day season). A share, so it scales with days_per_season.",
+                    "Day length, tropical wet and dry seasons and the season shown stay on the calendar.")
+            .defineInRange("temperature_lag", 1 / 3.0, 0.0, 4.0);
     public static final ModConfigSpec.DoubleValue SEASON_VARIATION = BUILDER
             .comment("Each season is warmer or colder than usual by a random amount up to this, so no two years are the",
                     "same (0.067: about 2 °C). Small changes are more likely than big ones. Blended from one season to",
@@ -123,7 +124,7 @@ public final class Config {
     private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
     private static volatile Map<Zone, float[]> climateChanges = Map.of();
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
-    private static volatile int temperatureLagDays = 14;
+    private static volatile double temperatureLag = 1 / 3.0;
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
@@ -144,7 +145,7 @@ public final class Config {
         }
         climateChanges = Map.copyOf(changes);
         celsiusChanges = toCelsiusMap(CELSIUS_CHANGES.get());
-        temperatureLagDays = TEMPERATURE_LAG_DAYS.get();
+        temperatureLag = TEMPERATURE_LAG.get();
         seasonVariation = SEASON_VARIATION.get().floatValue();
         dailyVariation = DAILY_VARIATION.get().floatValue();
         variationSeed = VARIATION_SEED.get();
@@ -253,9 +254,9 @@ public final class Config {
         return changes != null ? changes : zone.defaultChanges();
     }
 
-    /** Days the temperature and colors run behind the calendar. */
-    public static int temperatureLagDays() {
-        return temperatureLagDays;
+    /** Share of a season the temperature and colors run behind the calendar. */
+    public static double temperatureLag() {
+        return temperatureLag;
     }
 
     /** Up to this much warmer or colder per season. */

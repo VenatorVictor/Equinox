@@ -24,8 +24,8 @@ public final class Celsius {
     /** Where the season is gone underground, and the temperature there. */
     private static final int FADE_DEPTH = 20;
     private static final float CAVE = 15.6F, BEDROCK = 32.2F; // Cold Sweat's 60 °F and 90 °F
-    /** The sea warms and cools later than rivers and lakes (1.5 months against 1, with 42-day seasons). */
-    private static final int SEA_EXTRA_LAG_DAYS = 7;
+    /** The sea warms and cools later than rivers and lakes: this much more of a season (7 days of 42; 1.5 months against 1). */
+    private static final double SEA_EXTRA_LAG = 1 / 6.0;
 
     /** 0 at midnight, 1 at noon, smooth in between. */
     public static float dayWeight(Level level) {
@@ -63,7 +63,7 @@ public final class Celsius {
         float[] changes = Config.celsiusChanges(zone);
         if (state != null && changes != null) {
             Climate.Phase phase = zone.sea()
-                    ? Climate.Phase.of(state.lagged(Config.temperatureLagDays() + SEA_EXTRA_LAG_DAYS), Climate.phase().season(), 0)
+                    ? Climate.Phase.of(state.lagged(Config.temperatureLag() + SEA_EXTRA_LAG), Climate.phase().season(), 0)
                     : Climate.phase();
             water += (change(changes, phase, 0) + change(changes, phase, 1)) / 2 + phase.season() * zone.factor * PER_UNIT;
         }

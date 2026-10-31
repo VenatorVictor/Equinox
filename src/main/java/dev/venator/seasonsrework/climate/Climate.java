@@ -63,6 +63,8 @@ public final class Climate {
     private static volatile List<Holder<Biome>> serverBiomes = List.of(), clientBiomes = List.of();
     // The distinct seasonal curves of the server's biomes (for SnowCover's target).
     private static volatile List<Curve> curves = List.of();
+    // The server's biomes with seasons (Snowpack).
+    private static volatile List<Holder<Biome>> seasonal = List.of();
 
     /** The temperate zone's change now, variation included (the reference for the snowy season and /season). */
     public static float offset() {
@@ -128,7 +130,7 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        SeasonState lagged = state.lagged(Config.temperatureLagDays());
+        SeasonState lagged = state.lagged(Config.temperatureLag());
         phase = Phase.of(lagged, variationAt(lagged), dailyVariationAt(state));
         Season season = state.season();
         summer = season == Season.SUMMER;
@@ -197,7 +199,10 @@ public final class Climate {
             if (event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) clientBiomes = biomes;
             else serverBiomes = biomes;
             biomes.forEach(Climate::categorize);
-            if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) curves = curvesOf(biomes);
+            if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) {
+                curves = curvesOf(biomes);
+                seasonal = seasonalOf(biomes);
+            }
             for (Holder<Biome> holder : biomes) ((ClimateBiome) (Object) holder.value()).seasonsrework$setColorProfile(ColorProfile.of(holder));
         });
     }
@@ -208,6 +213,16 @@ public final class Climate {
         serverBiomes.forEach(Climate::categorize);
         clientBiomes.forEach(Climate::categorize);
         curves = curvesOf(serverBiomes);
+        seasonal = seasonalOf(serverBiomes);
+    }
+
+    /** The server's biomes with seasons. */
+    public static List<Holder<Biome>> seasonalBiomes() {
+        return seasonal;
+    }
+
+    private static List<Holder<Biome>> seasonalOf(List<Holder<Biome>> biomes) {
+        return biomes.stream().filter(holder -> ((ClimateBiome) (Object) holder.value()).seasonsrework$changes() != null).toList();
     }
 
     private static void categorize(Holder<Biome> holder) {
@@ -221,7 +236,40 @@ public final class Climate {
             // Tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
             if (zone.thaws) changes[Season.SUMMER.ordinal()] = Math.max(changes[Season.SUMMER.ordinal()], Zone.THAW - temperature);
         }
-        ((ClimateBiome) (Object) holder.value()).seasonsrework$setClimate(zone, temperature - own, changes);
+        float snowShift = snowShift(temperature, changes, holder.getData(BiomeSnow.TYPE), zone.factor);
+        ((ClimateBiome) (Object) holder.value()).seasonsrework$setClimate(zone, temperature - own, snowShift, changes);
+    }
+
+    /** Vanilla snows and freezes below this temperature. */
+    public static final float SNOW_LINE = 0.15F;
+    private static final int SAMPLES = 336;
+
+    /**
+     * Moves a seasonal curve up or down so it's below the snow line for the biome's share of snowy days (BiomeSnow),
+     * in an average year at sea level. Never: the coldest day stays above it even in the coldest variation; all year:
+     * the warmest day stays below it. 0 without a value or without seasons.
+     */
+    static float snowShift(float temperature, float[] changes, BiomeSnow snow, float factor) {
+        if (snow == null || changes == null) return 0;
+        float[] curve = new float[SAMPLES];
+        for (int i = 0; i < SAMPLES; i++) {
+            double position = (i + 0.5) / SAMPLES * Season.COUNT;
+            int index = (int) position;
+            float blend = (float) (position - index);
+            curve[i] = temperature + changes[index] + (changes[(index + 1) % Season.COUNT] - changes[index]) * blend;
+        }
+        java.util.Arrays.sort(curve);
+        float spread = (Config.seasonVariation() + Config.dailyVariation()) * factor + 0.02F;
+        int cold = Math.round(snow.days() / 365F * SAMPLES);
+        if (cold <= 0) return Math.max(0, SNOW_LINE + spread - curve[0]);
+        if (cold >= SAMPLES) return Math.min(0, SNOW_LINE - spread - curve[SAMPLES - 1]);
+        return SNOW_LINE - (curve[cold - 1] + curve[cold]) / 2;
+    }
+
+    /** The temperature now at sea level (no height), season and snow tuning included. */
+    public static float surfaceTemperature(Biome biome) {
+        ClimateBiome climate = (ClimateBiome) (Object) biome;
+        return biome.getBaseTemperature() + climate.seasonsrework$shift() + climate.seasonsrework$snowShift() + change(biome);
     }
 
     private static Zone zoneOf(Holder<Biome> holder, float temperature) {
@@ -244,13 +292,7 @@ public final class Climate {
         return List.copyOf(list);
     }
 
-    /** The temperature at pos without the season (snowy biomes and high peaks are cold all year). */
-    public static float baseTemperature(Biome biome, net.minecraft.core.BlockPos pos) {
-        ClimateBiome climate = (ClimateBiome) (Object) biome;
-        return climate.seasonsrework$temperature(pos) - change(biome);
-    }
-
-    /** The temperature at pos now, season included (snow falls and water freezes below 0.15). */
+    /** The temperature at pos now, season included (snow falls and water freezes below SNOW_LINE). */
     public static float temperature(Biome biome, net.minecraft.core.BlockPos pos) {
         return ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos);
     }

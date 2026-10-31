@@ -11,10 +11,10 @@ import dev.venator.seasonsrework.crops.Crops;
 import dev.venator.seasonsrework.daylength.DayLength;
 import dev.venator.seasonsrework.season.SeasonClock;
 import dev.venator.seasonsrework.season.SeasonCommand;
-import dev.venator.seasonsrework.snow.FirstSnow;
+import dev.venator.seasonsrework.snow.Snowpack;
 import dev.venator.seasonsrework.snow.SnowConfig;
 import dev.venator.seasonsrework.snow.SnowCover;
-import dev.venator.seasonsrework.snow.SnowCoveragePayload;
+import dev.venator.seasonsrework.snow.SnowpackPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
@@ -70,14 +70,15 @@ public final class SeasonsRework {
         NeoForge.EVENT_BUS.addListener(SleepFinishedTimeEvent.class, DayLength::onSleepFinished);
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, SeasonCommand::register);
 
-        // Snow cover and first snow (sent to clients for LOD snow and snowy textures).
-        modBus.addListener(RegisterPayloadHandlersEvent.class, SnowCoveragePayload::register);
-        FirstSnow.init();
+        // Snowpack (sent to clients for LOD snow and snowy textures) and snow cover.
+        modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);
+        Snowpack.init();
         SnowCover.init(modBus);
         dev.venator.seasonsrework.snow.SnowyPlants.init(modBus);
         modBus.addListener(AddPackFindersEvent.class, SeasonsRework::addPacks);
         modBus.addListener(RegisterDataMapTypesEvent.class, event -> {
             event.register(BiomeCelsius.TYPE);
+            event.register(dev.venator.seasonsrework.climate.BiomeSnow.TYPE);
             event.register(CropClimate.TYPE);
             event.register(CropWarmth.TYPE);
         });

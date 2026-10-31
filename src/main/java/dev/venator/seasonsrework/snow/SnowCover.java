@@ -10,6 +10,7 @@ import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
@@ -39,14 +40,16 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
 /**
- * Brings loaded chunks up to the season's snow and ice in one pass: vanilla snowfall only adds snow near players and
- * never melts it.
- * Work only happens when the target changes (any climate zone's temperature change moved by STEP, or the first snowfall of the cold season),
- * or when a chunk loads that was last done for an older target. Nothing re-checks chunks on a timer,
+ * Brings loaded chunks up to the snowpack's snow and the season's ice in one pass: vanilla snowfall only adds snow
+ * near players and never melts it. Where snow lies follows SnowRules.lies (patches, then everywhere, deeper when
+ * colder); where it doesn't, snow melts and, if it's warm, ice too.
+ * Work only happens when the target changes (the snowpack moved, or any climate zone's temperature change moved by
+ * STEP), or when a chunk loads that was last done for an older target. Nothing re-checks chunks on a timer,
  * and each tick only spends the configured time budget. Overworld only.
  */
 public final class SnowCover {
@@ -115,14 +118,14 @@ public final class SnowCover {
         } while (!QUEUE.isEmpty() && Util.getNanos() < deadline);
     }
 
-    /** The target is the zones' temperature changes (in STEPs) plus whether the first snow has fallen. A change redoes every loaded chunk. */
+    /** The target is the zones' temperature changes (in STEPs) plus the snowpack. A change redoes every loaded chunk. */
     private static void checkTarget(ServerLevel level, Data data) {
         int adjustment = Climate.snowTarget(STEP);
-        float coverage = FirstSnow.coverage;
-        if (data.version != 0 && adjustment == data.adjustment && coverage == data.coverage) return;
+        int snowpack = Snowpack.version();
+        if (data.version != 0 && adjustment == data.adjustment && snowpack == data.snowpack) return;
         data.version = data.version == Integer.MAX_VALUE ? 1 : data.version + 1;
         data.adjustment = adjustment;
-        data.coverage = coverage;
+        data.snowpack = snowpack;
         data.setDirty();
         queueLoadedChunks(level);
     }
@@ -190,22 +193,18 @@ public final class SnowCover {
         BlockPos below = top.below();
         BlockState topState = chunk.getBlockState(top);
         BlockState belowState = chunk.getBlockState(below);
-        boolean cold = SnowRules.cold(biome, top);
+        Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
 
-        if (cold) {
-            if (!SnowRules.snowAllowed(biome, top, FirstSnow.coverage)) {
-                // No snowfall yet this cold season; water still freezes.
-                freeze(level, below, belowState);
-                return;
-            }
-            int depth = SnowyPlants.depth(biome, top);
+        if (SnowRules.lies(biome, top, warmest)) {
+            int depth = SnowRules.layers(biome, top, warmest);
             if (topState.isAir() && dark(level, top) && Blocks.SNOW.defaultBlockState().canSurvive(level, top)) {
                 // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
                 level.setBlock(top, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, depth), Block.UPDATE_CLIENTS);
             } else if (dark(level, top) && SnowyPlants.cover(level, top.immutable(), topState, depth, Block.UPDATE_CLIENTS)) {
                 // grass, a fern or a flower now in the snow
-            } else if (SnowConfig.SNOW_DEPTH.get() && topState.getBlock() instanceof SnowLayerBlock && topState.getValue(SnowLayerBlock.LAYERS) != depth) {
-                // depth by climate: a layer at a time toward the depth (the cover is redone every few days)
+            } else if (SnowConfig.SNOW_DEPTH.get() && topState.getBlock() instanceof SnowLayerBlock && topState.getValue(SnowLayerBlock.LAYERS) != depth
+                    && topState.getValue(SnowLayerBlock.LAYERS) <= SnowRules.maxLayers(biome)) {
+                // a layer at a time toward the depth (deeper piles are a player's, left alone)
                 int layers = topState.getValue(SnowLayerBlock.LAYERS);
                 level.setBlock(top, topState.setValue(SnowLayerBlock.LAYERS, layers + Integer.signum(depth - layers)), Block.UPDATE_CLIENTS);
             } else if (!freeze(level, below, belowState) && SNOW_REAL_MAGIC) {
@@ -214,10 +213,14 @@ public final class SnowCover {
             return;
         }
 
+        // No snow lies here: it thawed, rained, or hasn't snowed since it got cold.
         if (topState.is(Blocks.SNOW)) {
             level.setBlock(top, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
         } else if (topState.getBlock() instanceof SnowyPlantBlock snowy) {
             level.setBlock(top, snowy.unsnowed(topState, level, top), Block.UPDATE_ALL);
+        } else if (SnowRules.cold(biome, top)) {
+            // Water freezes without snowfall.
+            freeze(level, below, belowState);
         } else if (belowState.is(Blocks.ICE)) {
             level.setBlock(below, IceBlock.meltsInto(), Block.UPDATE_ALL);
             level.neighborChanged(below, IceBlock.meltsInto().getBlock(), below);
@@ -248,13 +251,13 @@ public final class SnowCover {
     private static final class Data extends SavedData {
         int version;
         int adjustment;
-        float coverage;
+        int snowpack;
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
             Data data = new Data();
             data.version = tag.getInt("version");
             data.adjustment = tag.getInt("climate");
-            data.coverage = tag.getFloat("coverage");
+            data.snowpack = tag.getInt("snowpack");
             return data;
         }
 
@@ -262,7 +265,7 @@ public final class SnowCover {
         public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
             tag.putInt("version", version);
             tag.putInt("climate", adjustment);
-            tag.putFloat("coverage", coverage);
+            tag.putInt("snowpack", snowpack);
             return tag;
         }
     }
