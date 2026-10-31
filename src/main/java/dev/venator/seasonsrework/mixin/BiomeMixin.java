@@ -2,6 +2,7 @@ package dev.venator.seasonsrework.mixin;
 
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.ClimateBiome;
+import dev.venator.seasonsrework.climate.ClimateBlend;
 import dev.venator.seasonsrework.climate.ColorProfile;
 import dev.venator.seasonsrework.climate.Zone;
 import net.minecraft.core.BlockPos;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * The two hooks of the climate. Vanilla decides rain or snow, freezing, snow layers, rain rendering and the rest
+ * The two hooks of the climate (temperature: the biome's, its season, its snow tuning and the climate blending). Vanilla decides rain or snow, freezing, snow layers, rain rendering and the rest
  * from these, so all of it follows the season.
  */
 @Mixin(Biome.class)
@@ -29,6 +30,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     private float[] seasonsrework$changes;
     @Unique
     private ColorProfile seasonsrework$colorProfile = ColorProfile.STABLE;
+    @Unique
+    private byte seasonsrework$blendKind = ClimateBiome.BLEND_NONE;
 
     @Shadow
     protected abstract float getTemperature(BlockPos pos);
@@ -81,12 +84,23 @@ public abstract class BiomeMixin implements ClimateBiome {
         seasonsrework$changes = changes;
     }
 
+    @Override
+    public byte seasonsrework$blendKind() {
+        return seasonsrework$blendKind;
+    }
+
+    @Override
+    public void seasonsrework$setBlendKind(byte kind) {
+        seasonsrework$blendKind = kind;
+    }
+
     // At RETURN, so vanilla's per-position cache keeps the plain value and the offset is always the current one.
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         float[] changes = seasonsrework$changes;
         float shift = seasonsrework$shift + seasonsrework$snowShift;
         if (changes != null) shift += Climate.change(changes, seasonsrework$zone.factor);
+        shift += ClimateBlend.delta((Biome) (Object) this, pos, seasonsrework$blendKind);
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
     }
 

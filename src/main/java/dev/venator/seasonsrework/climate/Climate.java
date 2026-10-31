@@ -7,6 +7,7 @@ import dev.venator.seasonsrework.api.Seasons;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -237,7 +238,10 @@ public final class Climate {
             if (zone.thaws) changes[Season.SUMMER.ordinal()] = Math.max(changes[Season.SUMMER.ordinal()], Zone.THAW - temperature);
         }
         float snowShift = snowShift(temperature, changes, holder.getData(BiomeSnow.TYPE), zone.factor);
-        ((ClimateBiome) (Object) holder.value()).seasonsrework$setClimate(zone, temperature - own, snowShift, changes);
+        ClimateBiome climate = (ClimateBiome) (Object) holder.value();
+        climate.seasonsrework$setClimate(zone, temperature - own, snowShift, changes);
+        climate.seasonsrework$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
+                : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
     }
 
     /** Vanilla snows and freezes below this temperature. */
