@@ -14,13 +14,15 @@ import net.minecraft.world.phys.Vec2;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
+import snownee.jade.api.JadeIds;
 import snownee.jade.api.config.IPluginConfig;
+import snownee.jade.api.theme.IThemeHelper;
 import snownee.jade.api.ui.Element;
 import snownee.jade.api.ui.IElement;
 
 /**
  * Dead crops and spoiled fruit: the original crop's look in its dead colours as the icon (the same sprite the block
- * shows), and the cause of death.
+ * shows), its name as the title, and the cause of death.
  */
 final class DeadCropProvider implements IBlockComponentProvider {
     static final DeadCropProvider INSTANCE = new DeadCropProvider();
@@ -38,10 +40,11 @@ final class DeadCropProvider implements IBlockComponentProvider {
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         boolean heat = accessor.getBlockState().getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.HEAT;
+        // The title: the plant it was (Carrots, Pumpkin) instead of Dead Crop / Spoiled Fruit.
+        if (accessor.getBlockEntity() instanceof DeadCropBlockEntity entity && entity.original() != null)
+            tooltip.replace(JadeIds.CORE_OBJECT_NAME, IThemeHelper.get().title(entity.original().getBlock().getName()));
         tooltip.add(Component.translatable(heat ? "jade.seasonsrework.killed_heat" : "jade.seasonsrework.killed_frost")
                 .withStyle(heat ? ChatFormatting.GOLD : ChatFormatting.AQUA));
-        if (accessor.getBlockEntity() instanceof DeadCropBlockEntity entity && entity.original() != null)
-            tooltip.add(Component.translatable("jade.seasonsrework.was", entity.original().getBlock().getName()).withStyle(ChatFormatting.GRAY));
     }
 
     @Override
