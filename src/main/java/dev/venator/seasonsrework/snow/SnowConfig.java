@@ -17,6 +17,10 @@ public final class SnowConfig {
     public static final ModConfigSpec.BooleanValue SNOWY_LEAF_LITTER;
     public static final ModConfigSpec.BooleanValue SNOWY_PLANTS;
     public static final ModConfigSpec.BooleanValue SNOW_DEPTH;
+    public static final ModConfigSpec.EnumValue<Storage> STORAGE;
+
+    /** How snow is kept in plants and fences (testing both). */
+    public enum Storage { BLOCK_STATE, BLOCK_ENTITY }
 
     static {
         BUILDER.comment(
@@ -65,6 +69,10 @@ public final class SnowConfig {
                 "Off while Snow! Real Magic is installed (it does the same).")
                 .push("snowy_plants");
         SNOWY_PLANTS = BUILDER.comment("Snow covers plants, fences and walls (snow cover and snowfall).").define("enabled", true);
+        STORAGE = BUILDER.comment("TEMPORARY (testing): how new snow is kept. BLOCK_STATE = a state of the plant itself (it stays itself).",
+                        "BLOCK_ENTITY = a snow block with the plant kept inside (a block entity that never ticks). Snow of the",
+                        "other kind already in the world keeps working and melts as usual.")
+                .defineEnum("storage", Storage.BLOCK_STATE);
         SNOW_DEPTH = BUILDER.comment("The snow cover builds deeper snow the colder the last snowfall was, up to a limit per biome",
                         "(more snowy days a year, deeper: 1 to 6 layers). false = always 1 layer (vanilla).")
                 .define("depth_by_climate", false);

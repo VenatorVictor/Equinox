@@ -21,7 +21,9 @@
     "BlockStateSnowBreakMixin",
     "SnowyDirtMixin",
     "SpreadingSnowyDirtMixin",
-    "WallSnowShapeMixin"
+    "WallSnowShapeMixin",
+    "SnowyNeighbourMixin",
+    "SnowyDoublePlantMixin"
   ],
   "client": [
     "client.BiomeColorMixin"

@@ -292,10 +292,8 @@ public final class SnowCover {
                                    boolean inFence, int now, int target) {
         if (target > now && !dark(level, inFence ? below : top)) return false;
         if (inFence) {
-            BlockState snowy = SnowyPlants.withLayers(belowState, target);
-            if (snowy == belowState || target > 0 && !Blocks.SNOW.defaultBlockState().canSurvive(level, below)) return false;
-            level.setBlock(below, snowy, Block.UPDATE_ALL);
-            return true;
+            if (target > 0 && !Blocks.SNOW.defaultBlockState().canSurvive(level, below)) return false;
+            return SnowyPlants.setLayers(level, below, belowState, target, Block.UPDATE_ALL);
         }
         if (topState.getBlock() instanceof SnowLayerBlock) {
             // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
@@ -309,10 +307,7 @@ public final class SnowCover {
         }
         // A plant: all updates when the snow comes or goes, so the grass under it turns snowy or back.
         if (now == 0) return SnowyPlants.cover(level, top.immutable(), topState, target, Block.UPDATE_ALL);
-        BlockState snowy = SnowyPlants.withLayers(topState, target);
-        if (snowy == topState) return false;
-        level.setBlock(top, snowy, target == 0 ? Block.UPDATE_ALL : Block.UPDATE_CLIENTS);
-        return true;
+        return SnowyPlants.setLayers(level, top, topState, target, target == 0 ? Block.UPDATE_ALL : Block.UPDATE_CLIENTS);
     }
 
     /** Vanilla's freeze check, minus the temperature (already checked). */

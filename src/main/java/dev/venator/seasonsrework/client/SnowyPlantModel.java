@@ -59,9 +59,9 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     /** After the other wrappers (seasonal textures), so this is the outer one. */
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (SnowyPlants.maxLayers(block.defaultBlockState()) == 0) continue;
+            if (SnowyPlants.stateMaxLayers(block.defaultBlockState()) == 0) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                int layers = SnowyPlants.layers(state);
+                int layers = SnowyPlants.stateLayers(state);
                 if (layers == 0) continue;
                 ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
                 BakedModel model = event.getModels().get(location);

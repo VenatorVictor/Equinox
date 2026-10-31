@@ -89,6 +89,7 @@ public final class SeasonsRework {
             event.register(CropWarmth.TYPE);
         });
         CropBlocks.register(modBus);
+        dev.venator.seasonsrework.snow.SnowBlocks.register(modBus);
         NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, Crops::onChunkUnload);
 

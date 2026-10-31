@@ -40,6 +40,7 @@
   "commands.seasonsrework.season.daylight": "Daylight %s hours (vanilla 13.6)",
   "block.seasonsrework.dead_crop": "Dead Crop",
   "block.seasonsrework.dead_fruit": "Spoiled Fruit",
+  "block.seasonsrework.snowy_block": "Snow",
   "jade.seasonsrework.killed_frost": "Killed by frost",
   "jade.seasonsrework.killed_heat": "Killed by heat",
   "jade.seasonsrework.growing_well": "Growing well",
