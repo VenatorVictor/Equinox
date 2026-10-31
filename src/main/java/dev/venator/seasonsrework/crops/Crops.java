@@ -188,12 +188,21 @@ public final class Crops {
 
     /** RandomTickMixin, before every random tick of a block: kills a farmland crop past its limits. True = it died. */
     public static boolean onRandomTick(BlockState state, ServerLevel level, BlockPos pos) {
-        if (!mortal(state.getBlock()) || !(level.getBlockState(pos.below()).getBlock() instanceof FarmBlock)) return false;
+        if (!mortal(state.getBlock())) return false;
+        if (state.hasProperty(SnowyCrops.SNOWY)) { // snow settles or melts; this tick does nothing else
+            boolean snowy = SnowyCrops.snowy(state, level, pos);
+            if (snowy != state.getValue(SnowyCrops.SNOWY)) {
+                level.setBlock(pos, state.setValue(SnowyCrops.SNOWY, snowy), Block.UPDATE_CLIENTS);
+                return true;
+            }
+        }
+        if (!(level.getBlockState(pos.below()).getBlock() instanceof FarmBlock)) return false;
         Effect effect = effect(level, pos, state);
         if (effect != Effect.FROST && effect != Effect.HEAT) return false;
         DeadCropBlock.Cause cause = effect == Effect.FROST ? DeadCropBlock.Cause.FROST : DeadCropBlock.Cause.HEAT;
         BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause);
-        level.setBlock(pos, dead.setValue(DeadCropBlock.SNOWY, DeadCropBlock.snowy(dead, level, pos)), Block.UPDATE_ALL);
+        boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
+        level.setBlock(pos, dead.setValue(DeadCropBlock.SNOWY, snowy), Block.UPDATE_ALL);
         if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
         Block fruit = fruitOf(state.getBlock());
         if (fruit != null) { // the pumpkin or melon it holds dies with it

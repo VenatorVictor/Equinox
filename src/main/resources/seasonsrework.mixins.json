@@ -12,7 +12,9 @@
     "FarmBlockMixin",
     "LevelChunkMixin",
     "RandomTickMixin",
-    "ServerLevelTimeMixin"
+    "ServerLevelTimeMixin",
+    "BlockSnowyMixin",
+    "StateDefinitionBuilderAccessor"
   ],
   "client": [
     "client.BiomeColorMixin"
