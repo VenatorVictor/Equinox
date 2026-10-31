@@ -4,6 +4,7 @@ import dev.venator.seasonsrework.Config;
 import dev.venator.seasonsrework.api.Season;
 import dev.venator.seasonsrework.api.SeasonState;
 import dev.venator.seasonsrework.api.Seasons;
+import dev.venator.seasonsrework.snow.SnowConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -28,6 +29,9 @@ public final class Climate {
     /** Biomes in no climate tag: Serene Seasons' tropical biomes get the monsoon (the tag can add more). */
     public static final TagKey<Biome> TROPICAL = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("seasonsrework", "tropical"));
     public static final TagKey<Biome> NO_SEASONS = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("seasonsrework", "no_seasons"));
+    /** Snow all year while SnowConfig.SNOW_LOCKS is on. */
+    public static final TagKey<Biome> ALWAYS_SNOW = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("seasonsrework", "always_snow"));
+    private static final BiomeSnow ALL_YEAR = new BiomeSnow(365);
     /** Untagged biomes hotter than this have no seasons (Zone.HOT), as in Serene Seasons. */
     private static final float MAX_SEASONAL_TEMPERATURE = 0.8F;
     /** Zones are checked in this order (a biome in two tags gets the first). */
@@ -225,17 +229,23 @@ public final class Climate {
             // Tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
             if (zone.thaws) changes[Season.SUMMER.ordinal()] = Math.max(changes[Season.SUMMER.ordinal()], Zone.THAW - temperature);
         }
-        float snowShift = snowShift(temperature, changes, holder.getData(BiomeSnow.TYPE), zone.factor);
+        BiomeSnow snow = snowDays(holder);
+        float snowShift = snowShift(temperature, changes, snow, zone.factor);
         ClimateBiome climate = (ClimateBiome) (Object) holder.value();
         climate.seasonsrework$setClimate(zone, temperature - own, snowShift, changes);
-        // Snowy biomes (snow all year) only get colder from blending; no-snow ones (0 days, or warm without seasons:
-        // deserts, jungles, savannas) only warmer, so blending never takes their snow away or brings it.
-        BiomeSnow snow = holder.getData(BiomeSnow.TYPE);
-        boolean always = snow != null && snow.days() >= 365;
-        boolean never = snow != null ? snow.days() <= 0 : changes == null && temperature >= SNOW_LINE;
+        // Locked (snow_locks): snowy biomes have snow all year, no-snow ones (0 days, or warm without seasons: deserts,
+        // jungles, savannas) never; blending leaves both alone (ClimateBlend), only the biomes in between change.
+        boolean locks = SnowConfig.SNOW_LOCKS.get();
+        boolean always = locks && holder.is(ALWAYS_SNOW);
+        boolean never = locks && !always && (snow != null ? snow.days() <= 0 : changes == null && temperature >= SNOW_LINE);
         climate.seasonsrework$setSnowLock(always ? ClimateBiome.SNOW_ALWAYS : never ? ClimateBiome.SNOW_NEVER : ClimateBiome.SNOW_FREE);
         climate.seasonsrework$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
                 : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
+    }
+
+    /** The biome's snow days (data map), 365 for snowy biomes while snow_locks is on. Null without a value. */
+    public static BiomeSnow snowDays(Holder<Biome> holder) {
+        return SnowConfig.SNOW_LOCKS.get() && holder.is(ALWAYS_SNOW) ? ALL_YEAR : holder.getData(BiomeSnow.TYPE);
     }
 
     /** Vanilla snows and freezes below this temperature. */

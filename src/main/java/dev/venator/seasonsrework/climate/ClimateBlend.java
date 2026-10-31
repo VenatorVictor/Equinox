@@ -46,10 +46,13 @@ public final class ClimateBlend {
     private static final Map<Long, Holder<Biome>> GRID = new ConcurrentHashMap<>();
     private static volatile int gridStep;
 
-    /** The temperature change at pos for this biome (0 when not blended or no mix is known around). */
+    /** The temperature change at pos for this biome (0 when not blended, locked, or no mix is known around). */
     public static float delta(Biome biome, BlockPos pos, byte kind) {
         if (kind == ClimateBiome.BLEND_NONE) return 0;
-        Map<Long, Mix> mixes = ((ClimateBiome) (Object) biome).seasonsrework$clientSide() ? CLIENT : SERVER;
+        ClimateBiome climate = (ClimateBiome) (Object) biome;
+        // Snowy and snowless biomes (snow locks) keep their climate; only the ones in between change near them.
+        if (climate.seasonsrework$snowLock() != ClimateBiome.SNOW_FREE) return 0;
+        Map<Long, Mix> mixes = climate.seasonsrework$clientSide() ? CLIENT : SERVER;
         if (mixes.isEmpty()) return 0;
         float strength = kind == ClimateBiome.BLEND_FULL ? 1 : Config.blendStrength();
         if (strength == 0) return 0;
@@ -67,12 +70,7 @@ public final class ClimateBlend {
             weight += w;
         }
         if (weight < 1e-4F) return 0;
-        float delta = strength * (sum / weight - Climate.surfaceTemperature(biome));
-        return switch (((ClimateBiome) (Object) biome).seasonsrework$snowLock()) {
-            case ClimateBiome.SNOW_ALWAYS -> Math.min(delta, 0);
-            case ClimateBiome.SNOW_NEVER -> Math.max(delta, 0);
-            default -> delta;
-        };
+        return strength * (sum / weight - Climate.surfaceTemperature(biome));
     }
 
     /** The server's mix of a chunk, or null if not known. */

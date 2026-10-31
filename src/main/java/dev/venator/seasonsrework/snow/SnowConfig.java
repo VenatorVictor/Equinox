@@ -6,6 +6,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class SnowConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.BooleanValue SNOW_LOCKS;
     public static final ModConfigSpec.BooleanValue FORCE_SNOWFALL;
     public static final ModConfigSpec.IntValue SNOWFALL_TICKS;
     public static final ModConfigSpec.BooleanValue SNOW_COVER;
@@ -23,6 +24,11 @@ public final class SnowConfig {
                 "first in round patches, everywhere once it snows well below freezing, deeper when colder.",
                 "How many days a year each biome is cold enough: data map seasonsrework:snow (real days of 365).")
                 .push("snowfall");
+        SNOW_LOCKS = BUILDER.comment("TEMPORARY (testing): true = biomes in the tag seasonsrework:always_snow (snowy plains, snowy taiga, ice spikes...)",
+                        "have snow all year, biomes with 0 snow days or warm without seasons (desert, jungle, savanna, swamp) never",
+                        "get any, and climate blending leaves both alone (only the biomes in between change near them).",
+                        "false = every biome follows its snow days (data map) and blending changes all of them.")
+                .define("snow_locks", true);
         FORCE_SNOWFALL = BUILDER.comment("Where a player is, it's cold enough to snow and no snow lies, a snowfall comes within a day",
                         "(at most one a day; weather is global, so it rains where it's warm).")
                 .define("force_snowfall", true);
