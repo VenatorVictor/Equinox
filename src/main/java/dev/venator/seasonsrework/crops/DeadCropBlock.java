@@ -49,7 +49,7 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
     public static final BooleanProperty SNOWY = BlockStateProperties.SNOWY;
     /** Dead rice stays in its water. */
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    /** Its water froze (SnowCover, with the water around it): the dead rice sits inside a block of ice. */
+    /** Its water froze (SnowCover or its random tick, with the water around it): the whole dead plant sits in ice. */
     public static final BooleanProperty ICED = BooleanProperty.create("iced");
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 8, 16);
 
@@ -109,11 +109,11 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
         return state.getValue(ICED) ? Blocks.ICE.getFriction() : super.getFriction(state, level, pos, entity);
     }
 
-    /** Broken in ice: the water comes back, as with ice. */
+    /** Broken in ice: the water comes back at the plant's base, as with ice. */
     @Override
     public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity entity, ItemStack tool) {
         super.playerDestroy(level, player, pos, state, entity, tool);
-        if (state.getValue(ICED)) level.setBlockAndUpdate(pos, IceBlock.meltsInto());
+        if (state.getValue(ICED) && base(level, pos)) level.setBlockAndUpdate(pos, IceBlock.meltsInto());
     }
 
     /** In ice: no face between it and ice next to it (as between two ice blocks). */
@@ -123,10 +123,29 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
                 || super.skipRendering(state, adjacent, direction);
     }
 
-    /** SnowCover: the water around it freezes (true) or thaws (false). Null if it isn't dead rice in water or ice. */
-    public static @Nullable BlockState freeze(BlockState state, boolean freeze) {
-        if (!(state.getBlock() instanceof DeadCropBlock) || state.getValue(ICED) == freeze || state.getValue(WATERLOGGED) != freeze) return null;
-        return state.setValue(ICED, freeze).setValue(WATERLOGGED, !freeze);
+    /**
+     * The water at the base of a dead plant (rice) froze (true) or thawed: the whole dead plant goes into the ice or
+     * comes out of it, its base back in water. pos: any block of the plant. False if it has no water there or nothing
+     * changes.
+     */
+    public static boolean setIced(Level level, BlockPos pos, boolean iced) {
+        if (!(level.getBlockState(pos).getBlock() instanceof DeadCropBlock)) return false;
+        BlockPos base = pos;
+        while (level.getBlockState(base.below()).getBlock() instanceof DeadCropBlock) base = base.below();
+        BlockState state = level.getBlockState(base);
+        if (state.getValue(ICED) == iced || !state.getValue(ICED) && !state.getValue(WATERLOGGED)) return false;
+        BlockPos top = base;
+        while (level.getBlockState(top.above()).getBlock() instanceof DeadCropBlock) top = top.above();
+        for (BlockPos p = top; p.getY() >= base.getY(); p = p.below()) {
+            BlockState part = level.getBlockState(p);
+            level.setBlock(p, part.setValue(ICED, iced).setValue(WATERLOGGED, !iced && p.equals(base)), Block.UPDATE_ALL);
+        }
+        return true;
+    }
+
+    /** The base of a dead plant (nothing dead below it): the block that holds its water. */
+    private static boolean base(LevelReader level, BlockPos pos) {
+        return !(level.getBlockState(pos.below()).getBlock() instanceof DeadCropBlock);
     }
 
     @Override
@@ -158,11 +177,8 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         // Its water freezes and thaws over time like the water around it (the snow cover's sweeps are rare: rice that
         // dies after the paddy froze would stay in open water).
-        BlockState frozen = freeze(state, state.getValue(ICED) ? !thaws(level, pos) : freezes(level, pos));
-        if (frozen != null) {
-            level.setBlock(pos, frozen, Block.UPDATE_ALL);
-            return;
-        }
+        if ((state.getValue(ICED) || state.getValue(WATERLOGGED)) && base(level, pos)
+                && setIced(level, pos, state.getValue(ICED) ? !thaws(level, pos) : freezes(level, pos))) return;
         boolean snowy = snowy(state, level, pos);
         if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
     }

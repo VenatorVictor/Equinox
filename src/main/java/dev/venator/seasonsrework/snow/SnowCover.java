@@ -211,8 +211,8 @@ public final class SnowCover {
         } else if (belowState.is(Blocks.ICE)) {
             level.setBlock(below, IceBlock.meltsInto(), Block.UPDATE_ALL);
             level.neighborChanged(below, IceBlock.meltsInto().getBlock(), below);
-        } else if (DeadCropBlock.freeze(belowState, false) != null) { // dead rice: its ice thaws back to water
-            level.setBlock(below, DeadCropBlock.freeze(belowState, false), Block.UPDATE_ALL);
+        } else if (belowState.getBlock() instanceof DeadCropBlock && DeadCropBlock.setIced(level, below, false)) {
+            // dead rice: its ice thaws back to water
         } else if (SNOW_REAL_MAGIC) {
             SnowRealMagicCompat.melt(level, top.immutable(), topState, below, belowState);
         }
@@ -220,11 +220,7 @@ public final class SnowCover {
 
     /** Vanilla's freeze check, minus the temperature (already checked). */
     private static boolean freeze(ServerLevel level, BlockPos pos, BlockState state) {
-        BlockState iced = DeadCropBlock.freeze(state, true);
-        if (iced != null && dark(level, pos)) {
-            level.setBlock(pos, iced, Block.UPDATE_ALL);
-            return true;
-        }
+        if (state.getBlock() instanceof DeadCropBlock && dark(level, pos) && DeadCropBlock.setIced(level, pos, true)) return true;
         if (!state.is(Blocks.WATER) || !state.getFluidState().isSource() || !dark(level, pos)) return false;
         level.setBlock(pos, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
         return true;
