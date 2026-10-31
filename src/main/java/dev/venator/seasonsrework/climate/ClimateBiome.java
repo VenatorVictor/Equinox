@@ -29,6 +29,13 @@ public interface ClimateBiome {
 
     void seasonsrework$setBlendKind(byte kind);
 
+    /** Snow the climate blending can't change: ALWAYS (snow all year, blending only colder), NEVER (no snow, only warmer). */
+    byte SNOW_FREE = 0, SNOW_ALWAYS = 1, SNOW_NEVER = 2;
+
+    byte seasonsrework$snowLock();
+
+    void seasonsrework$setSnowLock(byte lock);
+
     /** True for the client's copy of the biome (single player has both): picks the side's climate blend mixes. */
     boolean seasonsrework$clientSide();
 

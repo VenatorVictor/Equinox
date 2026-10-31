@@ -96,9 +96,12 @@ public final class Config {
     public static final ModConfigSpec.IntValue BLEND_RADIUS = BUILDER
             .comment("Climate blending: the temperature at a place mixes its biome with the biomes around it, up to this",
                     "many blocks away (nearer ones count more), so a river in the jungle is tropical, one in the taiga cold,",
-                    "and a forest next to a desert is warmer than one next to snowy plains. World generation doesn't",
-                    "change. -1: 64 blocks, or 256 with Large Biomes. 0: off.")
-            .defineInRange("blend_radius", -1, -1, 1024);
+                    "and a forest next to a desert is warmer than one next to snowy plains. Snowy biomes (365 snow days) only",
+                    "get colder and biomes without snow only warmer. World generation doesn't change. 0: off.")
+            .defineInRange("blend_radius", 64, 0, 1024);
+    public static final ModConfigSpec.IntValue BLEND_RADIUS_LARGE = BUILDER
+            .comment("The same for Large Biomes worlds (biomes 4 times wider).")
+            .defineInRange("blend_radius_large_biomes", 128, 0, 1024);
     public static final ModConfigSpec.DoubleValue BLEND_STRENGTH = BUILDER
             .comment("How much a biome takes from its surroundings: 0 = its own temperature, 1 = only the surroundings'.",
                     "Rivers and beaches always take 1 (they have no climate of their own).")
@@ -143,7 +146,7 @@ public final class Config {
     private static volatile int slowGrowth = 6;
     private static volatile float idealBonus = 0.15F, farmlandHeat = 30;
     private static volatile double latitude = 40;
-    private static volatile int blendRadius = -1;
+    private static volatile int blendRadius = 64, blendRadiusLarge = 128;
     private static volatile float blendStrength = 0.5F;
 
     public static void refresh() {
@@ -169,6 +172,7 @@ public final class Config {
         farmlandHeat = FARMLAND_HEAT.get().floatValue();
         latitude = LATITUDE.get();
         blendRadius = BLEND_RADIUS.get();
+        blendRadiusLarge = BLEND_RADIUS_LARGE.get();
         blendStrength = BLEND_STRENGTH.get().floatValue();
         Climate.recategorize();
     }
@@ -269,9 +273,14 @@ public final class Config {
         return changes != null ? changes : zone.defaultChanges();
     }
 
-    /** Climate blending radius in blocks (-1: by world type, 0: off). */
+    /** Climate blending radius in blocks (0: off). */
     public static int blendRadius() {
         return blendRadius;
+    }
+
+    /** Climate blending radius in Large Biomes worlds. */
+    public static int blendRadiusLarge() {
+        return blendRadiusLarge;
     }
 
     /** How much a (land) biome's temperature takes from its surroundings. */

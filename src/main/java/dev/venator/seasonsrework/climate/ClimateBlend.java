@@ -67,7 +67,12 @@ public final class ClimateBlend {
             weight += w;
         }
         if (weight < 1e-4F) return 0;
-        return strength * (sum / weight - Climate.surfaceTemperature(biome));
+        float delta = strength * (sum / weight - Climate.surfaceTemperature(biome));
+        return switch (((ClimateBiome) (Object) biome).seasonsrework$snowLock()) {
+            case ClimateBiome.SNOW_ALWAYS -> Math.min(delta, 0);
+            case ClimateBiome.SNOW_NEVER -> Math.max(delta, 0);
+            default -> delta;
+        };
     }
 
     /** The server's mix of a chunk, or null if not known. */
@@ -144,13 +149,11 @@ public final class ClimateBlend {
         return mix;
     }
 
-    /** Config radius, or 64 / 256 (Large Biomes) by world type. */
+    /** The configured radius for the world type (Large Biomes has its own). */
     public static int radius(ServerLevel level) {
-        int radius = Config.blendRadius();
-        if (radius >= 0) return radius;
         boolean large = level.getChunkSource().getGenerator() instanceof NoiseBasedChunkGenerator generator
                 && generator.generatorSettings().is(NoiseGeneratorSettings.LARGE_BIOMES);
-        return large ? 256 : 64;
+        return large ? Config.blendRadiusLarge() : Config.blendRadius();
     }
 
     private ClimateBlend() {}

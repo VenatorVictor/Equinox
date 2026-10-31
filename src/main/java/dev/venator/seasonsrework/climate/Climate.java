@@ -228,6 +228,12 @@ public final class Climate {
         float snowShift = snowShift(temperature, changes, holder.getData(BiomeSnow.TYPE), zone.factor);
         ClimateBiome climate = (ClimateBiome) (Object) holder.value();
         climate.seasonsrework$setClimate(zone, temperature - own, snowShift, changes);
+        // Snowy biomes (snow all year) only get colder from blending; no-snow ones (0 days, or warm without seasons:
+        // deserts, jungles, savannas) only warmer, so blending never takes their snow away or brings it.
+        BiomeSnow snow = holder.getData(BiomeSnow.TYPE);
+        boolean always = snow != null && snow.days() >= 365;
+        boolean never = snow != null ? snow.days() <= 0 : changes == null && temperature >= SNOW_LINE;
+        climate.seasonsrework$setSnowLock(always ? ClimateBiome.SNOW_ALWAYS : never ? ClimateBiome.SNOW_NEVER : ClimateBiome.SNOW_FREE);
         climate.seasonsrework$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
                 : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
     }
