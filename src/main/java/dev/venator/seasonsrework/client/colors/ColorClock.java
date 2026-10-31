@@ -21,7 +21,7 @@ public final class ColorClock {
     /** Returns true when the colors changed since the last tick (new step or new blend update). */
     public static boolean tick(ClientLevel level) {
         SeasonState state = Seasons.get(level);
-        if (state != null) state = state.lagged(Config.temperatureLagDays()); // colors follow the temperature
+        if (state != null) state = state.lagged(Config.temperatureLag()); // colors follow the temperature
         if (state == null) {
             boolean changed = active;
             reset();

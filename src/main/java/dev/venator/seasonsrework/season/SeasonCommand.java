@@ -8,6 +8,8 @@ import dev.venator.seasonsrework.api.SeasonState;
 import dev.venator.seasonsrework.api.Seasons;
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.ClimateBiome;
+import dev.venator.seasonsrework.snow.SnowRules;
+import dev.venator.seasonsrework.snow.Snowpack;
 import dev.venator.seasonsrework.climate.Zone;
 import dev.venator.seasonsrework.api.Temperatures;
 import dev.venator.seasonsrework.daylength.DayLength;
@@ -62,6 +64,13 @@ public final class SeasonCommand {
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.climate",
                 Component.translatable("seasonsrework.climate." + climate), String.format("%+.2f", Climate.change(biome)),
                 String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()), String.format("%.2f", ((ClimateBiome) (Object) biome).seasonsrework$temperature(pos))), false);
+        // Snow: the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15) and whether it lies here.
+        var holder = source.getLevel().getBiome(pos);
+        var snowDays = holder.getData(dev.venator.seasonsrework.climate.BiomeSnow.TYPE);
+        Float warmest = holder.unwrapKey().map(Snowpack.warmest()::get).orElse(null);
+        source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.snow",
+                snowDays != null ? String.format("%.0f", snowDays.days()) : "-", warmest != null ? String.format("%.2f", warmest) : "-",
+                Component.translatable(SnowRules.lies(holder, pos, Snowpack.warmest()) ? "gui.yes" : "gui.no")), false);
         Temperatures.DayRange today = Temperatures.airToday(source.getLevel(), pos);
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.celsius",
                 String.format("%.1f", Temperatures.air(source.getLevel(), pos)), String.format("%.1f", today.low()),

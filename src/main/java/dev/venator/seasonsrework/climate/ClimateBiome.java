@@ -17,7 +17,10 @@ public interface ClimateBiome {
     /** The biome's change at mid spring, summer, autumn, winter, or null without seasons (Climate.change). */
     float[] seasonsrework$changes();
 
-    void seasonsrework$setClimate(Zone zone, float shift, float[] changes);
+    /** Added to the temperature (not to shift, so °C fallbacks don't see it): tunes the biome's snow days (BiomeSnow). */
+    float seasonsrework$snowShift();
+
+    void seasonsrework$setClimate(Zone zone, float shift, float snowShift, float[] changes);
 
     /** The biome's color profile (seasonal colors, client side). */
     ColorProfile seasonsrework$colorProfile();

@@ -1,6 +1,6 @@
 package dev.venator.seasonsrework.crops;
 
-import dev.venator.seasonsrework.snow.FirstSnow;
+import dev.venator.seasonsrework.snow.Snowpack;
 import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -20,7 +20,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Snow on crops, like snow on grass: farmland crops get a snowy block state (added by BlockSnowyMixin) that the
  * snowy textures follow. Set on the crop's random tick while it snows on it (open sky, no heater, first snow fallen,
  * block light below 10 as vanilla snowfall); melts on a later random tick under a roof, near a heater, in block light
- * above 11 (as vanilla snow layers: a torch or campfire melts it and stops new snow) or once it's warm, so it goes
+ * above 11 (as vanilla snow layers: a torch or campfire melts it and stops new snow) or where snow no longer lies
+ * (SnowRules.lies: a thaw, rain), so it goes
  * block by block. It stays when the crop grows, is bonemealed, a stem takes its fruit or the crop freezes (keep).
  * is() runs while blocks are built, so it touches only vanilla classes.
  */
@@ -37,13 +38,12 @@ public final class SnowyCrops {
         Holder<Biome> biome = level.getBiome(pos);
         // Melts: warm, a heater nearby, or a roof (glass too; leaves aren't one).
         int light = level.getBrightness(LightLayer.BLOCK, pos);
-        if (!SnowRules.cold(biome, pos) || CropWarmth.heated(level, pos) || light > 11
+        if (!SnowRules.lies(biome, pos, Snowpack.warmest()) || CropWarmth.heated(level, pos) || light > 11
                 || pos.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ())) return false;
         if (state.getValue(SNOWY)) return true;
         // Settles only while it snows on it.
         return light < 10 && level.isRaining() && biome.value().hasPrecipitation()
-                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ())
-                && SnowRules.snowAllowed(biome, pos, FirstSnow.coverage);
+                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
     }
 
     /**

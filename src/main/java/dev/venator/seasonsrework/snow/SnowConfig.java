@@ -6,8 +6,6 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class SnowConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue FIRST_SNOW;
-    public static final ModConfigSpec.DoubleValue SNOWY_SEASON;
     public static final ModConfigSpec.BooleanValue FORCE_SNOWFALL;
     public static final ModConfigSpec.IntValue SNOWFALL_TICKS;
     public static final ModConfigSpec.BooleanValue SNOW_COVER;
@@ -21,25 +19,19 @@ public final class SnowConfig {
 
     static {
         BUILDER.comment(
-                "First snow: in the snowy season (temperature change below snowy_season, by default from about the start",
-                "of late autumn to the start of mid spring), the snow cover waits for the first snowfall, then covers the",
-                "whole world wherever it's cold enough to snow. Back to waiting once the season warms up (snow then melts",
-                "where it's warm). Biomes that are cold all year (snowy biomes, high peaks) never wait.",
-                "Distant Horizons LODs follow the same rule.")
-                .push("first_snow");
-        FIRST_SNOW = BUILDER.comment("false = cover everything as soon as it's cold enough, without waiting for snowfall.")
-                .define("enabled", true);
-        SNOWY_SEASON = BUILDER.comment("The snowy season is when the temperate zone's temperature change (server config climate_changes,",
-                        "-0.3 in mid autumn, -0.75 in mid winter; season variation counted, the day's not) is below this. -0.5: from the start of winter.")
-                .defineInRange("snowy_season", -0.5, -5.0, 5.0);
-        FORCE_SNOWFALL = BUILDER.comment("Start a snowfall when the snowy season begins, so the first snow comes right away.")
+                "Snowfall: snow lies where it has stayed cold since it last snowed there (rain or a thaw takes it away),",
+                "first in round patches, everywhere once it snows well below freezing, deeper when colder.",
+                "How many days a year each biome is cold enough: data map seasonsrework:snow (real days of 365).")
+                .push("snowfall");
+        FORCE_SNOWFALL = BUILDER.comment("Where a player is, it's cold enough to snow and no snow lies, a snowfall comes within a day",
+                        "(at most one a day; weather is global, so it rains where it's warm).")
                 .define("force_snowfall", true);
-        SNOWFALL_TICKS = BUILDER.comment("How long that forced snowfall lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
+        SNOWFALL_TICKS = BUILDER.comment("How long that snowfall lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
                 .defineInRange("snowfall_ticks", 6000, 20, 1_000_000);
         BUILDER.pop().comment(
-                "Snow cover: puts snow and ice on loaded chunks where it's cold, and melts them when it's warm, including",
-                "Snow! Real Magic's snowy plants. Chunks are redone when the temperature change moves by 0.05 (every few",
-                "days) or the first snowfall comes, or when a chunk loads that was done for an older season.")
+                "Snow cover: puts snow and ice on loaded chunks following the snowfall rule above, and melts them, including",
+                "Snow! Real Magic's snowy plants. Chunks are redone when the snow or the temperature changes, or when a",
+                "chunk loads that was done for an older state.")
                 .push("snow_cover");
         SNOW_COVER = BUILDER.comment("Turn the snow cover on.").define("enabled", true);
         BUDGET_MICROS = BUILDER.comment("Most time per server tick it may use, in microseconds (2000 = 2 ms of the 50 ms tick).",
@@ -61,8 +53,8 @@ public final class SnowConfig {
                 "Off while Snow! Real Magic is installed (it does the same).")
                 .push("snowy_plants");
         SNOWY_PLANTS = BUILDER.comment("Snow covers plants (snow cover and snowfall).").define("enabled", true);
-        SNOW_DEPTH = BUILDER.comment("The snow cover builds deeper snow where it's colder: 1 layer in temperate winters, 2 in boreal,",
-                        "3 in tundra, 4 in the coldest places. false = always 1 layer (vanilla).")
+        SNOW_DEPTH = BUILDER.comment("The snow cover builds deeper snow the colder the last snowfall was, up to a limit per biome",
+                        "(more snowy days a year, deeper: 1 to 6 layers). false = always 1 layer (vanilla).")
                 .define("depth_by_climate", false);
         RESTORE_PLANTS = BUILDER.comment("Before removing this mod: true turns every snowy plant in chunks that load back into its plant",
                         "(and stops new ones), so no plants are lost. Load the places you care about, then remove the mod.")

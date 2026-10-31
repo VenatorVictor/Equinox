@@ -24,6 +24,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Unique
     private float seasonsrework$shift;
     @Unique
+    private float seasonsrework$snowShift;
+    @Unique
     private float[] seasonsrework$changes;
     @Unique
     private ColorProfile seasonsrework$colorProfile = ColorProfile.STABLE;
@@ -57,6 +59,11 @@ public abstract class BiomeMixin implements ClimateBiome {
     }
 
     @Override
+    public float seasonsrework$snowShift() {
+        return seasonsrework$snowShift;
+    }
+
+    @Override
     public ColorProfile seasonsrework$colorProfile() {
         return seasonsrework$colorProfile;
     }
@@ -67,9 +74,10 @@ public abstract class BiomeMixin implements ClimateBiome {
     }
 
     @Override
-    public void seasonsrework$setClimate(Zone zone, float shift, float[] changes) {
+    public void seasonsrework$setClimate(Zone zone, float shift, float snowShift, float[] changes) {
         seasonsrework$zone = zone;
         seasonsrework$shift = shift;
+        seasonsrework$snowShift = snowShift;
         seasonsrework$changes = changes;
     }
 
@@ -77,7 +85,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         float[] changes = seasonsrework$changes;
-        float shift = changes != null ? seasonsrework$shift + Climate.change(changes, seasonsrework$zone.factor) : seasonsrework$shift;
+        float shift = seasonsrework$shift + seasonsrework$snowShift;
+        if (changes != null) shift += Climate.change(changes, seasonsrework$zone.factor);
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
     }
 

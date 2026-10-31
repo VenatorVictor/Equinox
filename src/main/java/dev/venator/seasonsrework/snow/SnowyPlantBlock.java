@@ -95,10 +95,10 @@ public class SnowyPlantBlock extends SnowLayerBlock {
         return state;
     }
 
-    /** Melts as vanilla snow does (block light above 11), and where it's no longer cold; a layer at a time. */
+    /** Melts as vanilla snow does (block light above 11), and where snow no longer lies (SnowRules.lies); a layer at a time. */
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (level.getBrightness(LightLayer.BLOCK, pos) > 11 || !SnowRules.cold(level.getBiome(pos), pos))
+        if (level.getBrightness(LightLayer.BLOCK, pos) > 11 || !SnowRules.lies(level.getBiome(pos), pos, Snowpack.warmest()))
             level.setBlock(pos, melted(state, level, pos), Block.UPDATE_ALL);
     }
 

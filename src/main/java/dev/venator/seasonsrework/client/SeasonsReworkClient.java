@@ -73,12 +73,13 @@ public final class SeasonsReworkClient {
         if (SeasonalTextures.any && step != lastStep || SeasonalTextures.anySnow && changed) ChunkRefresher.refreshAll();
         else if (changed) ChunkRefresher.refreshVisible();
         lastStep = step;
+        if (ClientSnow.takeRefresh()) snowChanged();
         if (!changed) return;
         // Color updates are also when LOD snow appears or melts.
         if (dhLoaded && (ClientConfig.DH_REFRESH.get() || ClientConfig.DH_SNOW.get())) DhRefresher.refresh(level);
     }
 
-    /** The first snow fell or the cold season ended: repaint LOD snow and snowy textures. */
+    /** The snowpack changed (snowfall, thaw): repaint LOD snow and snowy textures. */
     public static void snowChanged() {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) return;

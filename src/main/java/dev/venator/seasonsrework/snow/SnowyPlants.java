@@ -1,7 +1,6 @@
 package dev.venator.seasonsrework.snow;
 
 import dev.venator.seasonsrework.SeasonsRework;
-import dev.venator.seasonsrework.climate.Climate;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -160,19 +159,9 @@ public final class SnowyPlants {
         BlockState state = level.getBlockState(top);
         if (blockFor(state) == null) return;
         Holder<Biome> biome = level.getBiome(top);
-        if (!biome.value().hasPrecipitation() || !SnowRules.cold(biome, top) || !SnowRules.snowAllowed(biome, top, FirstSnow.coverage)
+        if (!biome.value().hasPrecipitation() || !SnowRules.lies(biome, top, Snowpack.warmest())
                 || level.getBrightness(LightLayer.BLOCK, top) >= 10) return;
         cover(level, top, state, 1, Block.UPDATE_ALL);
-    }
-
-    /**
-     * Snow depth the snow cover builds, in layers: 1, or with snow_depth_by_climate deeper where it's colder
-     * (temperate winters 1, boreal 2, tundra 3, the coldest places 4).
-     */
-    public static int depth(Holder<Biome> biome, BlockPos pos) {
-        if (!SnowConfig.SNOW_DEPTH.get()) return 1;
-        float t = Climate.temperature(biome.value(), pos);
-        return Mth.clamp(1 + Mth.floor((0.15F - t) / 0.25F), 1, 4);
     }
 
     // Clean removal: with restore_plants on, snowy plants in chunks that load turn back into their plants.
