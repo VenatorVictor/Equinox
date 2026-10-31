@@ -54,16 +54,11 @@ public final class Climate {
         return phase;
     }
 
-    /** A seasonal curve and its variation factor. */
-    private record Curve(float[] changes, float factor) {}
-
     // Read by the Biome hooks on any thread; written once per tick.
     private static volatile Phase phase = new Phase(0, 0, 0, 0, 0);
     private static volatile boolean summer, winter, savannaDry;
     // The biomes of the last tag load on each side, to sort again when the config changes.
     private static volatile List<Holder<Biome>> serverBiomes = List.of(), clientBiomes = List.of();
-    // The distinct seasonal curves of the server's biomes (for SnowCover's target).
-    private static volatile List<Curve> curves = List.of();
     // The server's biomes with seasons (Snowpack).
     private static volatile List<Holder<Biome>> seasonal = List.of();
 
@@ -140,13 +135,6 @@ public final class Climate {
                 || season == Season.SPRING && state.part() == 0;
     }
 
-    /** Changes with every STEP of any seasonal curve (SnowCover redoes the loaded chunks then). */
-    public static int snowTarget(float step) {
-        int target = 1;
-        for (Curve curve : curves) target = 31 * target + Math.round(change(curve.changes, curve.factor) / step);
-        return target;
-    }
-
     /**
      * Each season's variation peaks at its middle and blends into the next one's (smoothstep), so it never jumps.
      * Worked out from the variation seed and the season's number, so server and clients get the same without syncing.
@@ -201,7 +189,6 @@ public final class Climate {
             else serverBiomes = biomes;
             biomes.forEach(Climate::categorize);
             if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) {
-                curves = curvesOf(biomes);
                 seasonal = seasonalOf(biomes);
             }
             for (Holder<Biome> holder : biomes) ((ClimateBiome) (Object) holder.value()).seasonsrework$setColorProfile(ColorProfile.of(holder));
@@ -213,7 +200,6 @@ public final class Climate {
         for (Zone zone : Zone.values()) if (zone.seasonal()) zone.changes = Config.climateChanges(zone);
         serverBiomes.forEach(Climate::categorize);
         clientBiomes.forEach(Climate::categorize);
-        curves = curvesOf(serverBiomes);
         seasonal = seasonalOf(serverBiomes);
     }
 
@@ -281,19 +267,6 @@ public final class Climate {
         if (holder.is(NO_SEASONS)) return Zone.NONE;
         if (holder.is(TROPICAL)) return Zone.MONSOON;
         return temperature > MAX_SEASONAL_TEMPERATURE ? Zone.HOT : Zone.TEMPERATE;
-    }
-
-    /** The distinct curves of these biomes (same values = one curve). */
-    private static List<Curve> curvesOf(List<Holder<Biome>> biomes) {
-        List<Curve> list = new java.util.ArrayList<>();
-        for (Holder<Biome> holder : biomes) {
-            ClimateBiome climate = (ClimateBiome) (Object) holder.value();
-            float[] changes = climate.seasonsrework$changes();
-            float factor = climate.seasonsrework$zone().factor;
-            if (changes != null && list.stream().noneMatch(c -> c.factor == factor && java.util.Arrays.equals(c.changes, changes)))
-                list.add(new Curve(changes, factor));
-        }
-        return List.copyOf(list);
     }
 
     /** The temperature at pos now, season included (snow falls and water freezes below SNOW_LINE). */

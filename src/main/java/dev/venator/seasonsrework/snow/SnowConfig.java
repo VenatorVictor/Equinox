@@ -9,6 +9,7 @@ public final class SnowConfig {
     public static final ModConfigSpec.BooleanValue FORCE_SNOWFALL;
     public static final ModConfigSpec.IntValue SNOWFALL_TICKS;
     public static final ModConfigSpec.BooleanValue SNOW_COVER;
+    public static final ModConfigSpec.DoubleValue COLUMNS_PER_TICK;
     public static final ModConfigSpec.IntValue BUDGET_MICROS;
     public static final ModConfigSpec.IntValue SPARE_MICROS;
     public static final ModConfigSpec.IntValue BIOME_CELL;
@@ -28,13 +29,18 @@ public final class SnowConfig {
         SNOWFALL_TICKS = BUILDER.comment("How long that snowfall lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
                 .defineInRange("snowfall_ticks", 6000, 20, 1_000_000);
         BUILDER.pop().comment(
-                "Snow cover: puts snow and ice on loaded chunks following the snowfall rule above, and melts them, including",
-                "Snow! Real Magic's snowy plants. Chunks are redone when the snow or the temperature changes, or when a",
-                "chunk loads that was done for an older state.")
+                "Snow cover: puts snow and ice on the ground following the snowfall rule above, and melts them, including",
+                "Snow! Real Magic's snowy plants. Near players it changes bit by bit: snow builds while it snows and melts",
+                "a layer at a time after; snow you break stays gone until the next snowfall. A chunk that loads catches up",
+                "at once (covered only if it snowed there since the chunk was last saved).")
                 .push("snow_cover");
         SNOW_COVER = BUILDER.comment("Turn the snow cover on.").define("enabled", true);
+        COLUMNS_PER_TICK = BUILDER.comment("Near players: random columns per chunk each tick that snow builds on (while snowing) or melts on",
+                        "(one layer each). 0.0625 (vanilla snowfall's own rate, which adds on top, so twice vanilla): a chunk is",
+                        "about 45% covered after 1 minute of snowfall, 70% after 2, 95% after 5. Melting uses this rate alone. 0: off.")
+                .defineInRange("columns_per_tick", 0.0625, 0.0, 16.0);
         BUDGET_MICROS = BUILDER.comment("Most time per server tick it may use, in microseconds (2000 = 2 ms of the 50 ms tick).",
-                        "Lower = less lag, the snow just spreads over loaded chunks more slowly.")
+                        "Lower = less lag, the snow just changes more slowly.")
                 .defineInRange("budget_micros", 2000, 100, 20000);
         SPARE_MICROS = BUILDER.comment("When the server is ahead of schedule, it may use up to this much more of the time until the next tick,",
                         "in microseconds (10000 = 10 ms), always leaving 10 ms for the rest of the tick. Snow fills in faster",
