@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -23,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * A plant or fence with snow in it (SnowyPlants) acts as its snow too: snow's outline and collision added to its own,
+ * A plant or fence with snow in it (SnowyPlants) acts as its snow too (and has no random offset): snow's outline and collision added to its own,
  * snow's sound, snow's mining speed (the snow breaks first, BlockStateSnowBreakMixin), and random ticks to melt.
  */
 @Mixin(BlockBehaviour.BlockStateBase.class)
@@ -47,7 +48,15 @@ public abstract class SnowStateMixin {
     @Inject(method = "getShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;",
             at = @At("RETURN"), cancellable = true)
     private void seasonsrework$snowShape(BlockGetter level, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        if (seasonsrework$snow > 0) cir.setReturnValue(Shapes.or(cir.getReturnValue(), SnowyPlants.shape(seasonsrework$snow)));
+        // The plant's own shape where it's drawn (with its offset, which the snowy state itself doesn't have).
+        if (seasonsrework$snow > 0)
+            cir.setReturnValue(Shapes.or(SnowyPlants.unsnowed(asState()).getShape(level, pos, context), SnowyPlants.shape(seasonsrework$snow)));
+    }
+
+    /** No random offset with snow inside: the snow sits like a vanilla layer; SnowyPlantModel moves the plant itself. */
+    @Inject(method = "getOffset", at = @At("HEAD"), cancellable = true)
+    private void seasonsrework$noOffset(BlockGetter level, BlockPos pos, CallbackInfoReturnable<Vec3> cir) {
+        if (seasonsrework$snow > 0) cir.setReturnValue(Vec3.ZERO);
     }
 
     @Inject(method = "getCollisionShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/shapes/VoxelShape;",

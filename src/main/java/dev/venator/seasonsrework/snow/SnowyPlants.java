@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.NeoForge;
@@ -117,6 +119,11 @@ public final class SnowyPlants {
 
     public static VoxelShape collision(int layers) {
         return COLLISION[layers];
+    }
+
+    /** The random offset the plant would have without snow (a block with snow has none, SnowStateMixin). */
+    public static Vec3 plantOffset(BlockState state, BlockGetter level, BlockPos pos) {
+        return unsnowed(state).getOffset(level, pos);
     }
 
     /** Snow goes on plants now: config on and Snow! Real Magic not installed. */
