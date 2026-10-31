@@ -171,13 +171,14 @@ public final class SnowCover {
         for (int i = 0; i < size; i++) {
             if ((i & 15) == 0 && Util.getNanos() > deadline) return;
             cursor = (cursor + 1) % size;
+            // A fraction of a column per tick: one column with that chance. Decided first: most chunks get none.
+            int columns = (int) rate + (random.nextDouble() < rate - (int) rate ? 1 : 0);
+            if (columns == 0) continue;
             long pos = ORDER.getLong(cursor);
             if (STAMPS.containsKey(pos)) continue; // not caught up yet
             int x = ChunkPos.getX(pos), z = ChunkPos.getZ(pos);
             LevelChunk chunk = level.getChunkSource().getChunkNow(x, z);
             if (chunk == null || !neighboursLoaded(level, x, z)) continue;
-            // A fraction of a column per tick: one column with that chance.
-            int columns = (int) rate + (random.nextDouble() < rate - (int) rate ? 1 : 0);
             for (int c = 0; c < columns; c++) {
                 int lx = random.nextInt(16), lz = random.nextInt(16);
                 top.set(chunk.getPos().getMinBlockX() + lx, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz) + 1, chunk.getPos().getMinBlockZ() + lz);
