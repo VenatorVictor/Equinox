@@ -67,11 +67,15 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
             List<Float> weights = new ArrayList<>();
             var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
             for (int i = 0; i < mix.biomes().length; i++) {
-                holders.add(registry.wrapAsHolder(mix.biomes()[i]));
+                // Only registered biomes can be sent (by id).
+                var key = registry.getResourceKey(mix.biomes()[i]);
+                if (key.isEmpty()) continue;
+                holders.add(registry.getHolderOrThrow(key.get()));
                 weights.add(mix.weights()[i]);
             }
+            if (holders.isEmpty()) return;
             PacketDistributor.sendToPlayer(e.getPlayer(), new ClimateBlendPayload(pos.toLong(), holders, weights));
         });
-        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, e -> ClimateBlend.clear());
+        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, e -> ClimateBlend.clearServer());
     }
 }

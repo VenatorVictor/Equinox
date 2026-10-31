@@ -29,6 +29,11 @@ public interface ClimateBiome {
 
     void seasonsrework$setBlendKind(byte kind);
 
+    /** True for the client's copy of the biome (single player has both): picks the side's climate blend mixes. */
+    boolean seasonsrework$clientSide();
+
+    void seasonsrework$setClientSide(boolean client);
+
     /** The biome's color profile (seasonal colors, client side). */
     ColorProfile seasonsrework$colorProfile();
 
