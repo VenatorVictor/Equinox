@@ -57,6 +57,8 @@ public final class SeasonsRework {
         modBus.addListener(ModConfigEvent.Loading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
         modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
         container.registerConfig(ModConfig.Type.COMMON, SnowConfig.SPEC);
+        // snow_locks changes which biomes are locked.
+        modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == SnowConfig.SPEC) dev.venator.seasonsrework.climate.Climate.recategorize(); });
 
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SeasonClock::onLevelTick);
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);

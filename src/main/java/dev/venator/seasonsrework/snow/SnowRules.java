@@ -45,7 +45,7 @@ public final class SnowRules {
 
     /** Natural snow never fills a whole block (players can stack it to 8). */
     static int maxLayers(Holder<Biome> biome) {
-        BiomeSnow snow = biome.getData(BiomeSnow.TYPE);
+        BiomeSnow snow = Climate.snowDays(biome);
         if (snow == null) return 2;
         float days = snow.days();
         return days < 60 ? 1 : days < 120 ? 2 : days < 200 ? 3 : days < 270 ? 4 : 6;
