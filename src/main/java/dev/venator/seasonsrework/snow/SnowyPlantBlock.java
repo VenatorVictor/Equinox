@@ -16,6 +16,8 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
@@ -87,6 +89,9 @@ public class SnowyPlantBlock extends SnowLayerBlock {
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         if (direction == Direction.DOWN && !canSurvive(state, level, pos)) return unsnowed(state, level, pos);
+        // A tall plant whose upper half went (broken): only the snow is left.
+        if (direction == Direction.UP && plant instanceof DoublePlantBlock
+                && !(neighbor.is(plant) && neighbor.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.UPPER)) return snow(state);
         return state;
     }
 
@@ -123,12 +128,13 @@ public class SnowyPlantBlock extends SnowLayerBlock {
         if (!level.isClientSide && !player.isCreative() && (!snowPart || player.hasCorrectToolForDrops(broken, level, pos)))
             Block.dropResources(broken, level, pos, null, player, player.getMainHandItem());
         level.levelEvent(player, 2001, pos, Block.getId(broken));
+        // Flag 3: a tall plant's upper half follows (DoublePlantBlock drops it when its lower half is gone).
         level.setBlock(pos, snowPart ? unsnowed(state, level, pos) : snow(state), level.isClientSide ? 11 : 3);
         return false;
     }
 
     /** Plain snow with the same layers. */
-    private static BlockState snow(BlockState state) {
+    public static BlockState snow(BlockState state) {
         return Blocks.SNOW.defaultBlockState().setValue(LAYERS, state.getValue(LAYERS));
     }
 

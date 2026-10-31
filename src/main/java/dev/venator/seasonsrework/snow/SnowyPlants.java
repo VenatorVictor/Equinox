@@ -60,7 +60,9 @@ public final class SnowyPlants {
     /** Plants with their own snowy block (no block entity): the common ones, in every snowy field. */
     private static final List<Block> OWN_BLOCK = List.of(Blocks.SHORT_GRASS, Blocks.FERN, Blocks.DEAD_BUSH, Blocks.DANDELION, Blocks.POPPY,
             Blocks.BLUE_ORCHID, Blocks.ALLIUM, Blocks.AZURE_BLUET, Blocks.RED_TULIP, Blocks.ORANGE_TULIP, Blocks.WHITE_TULIP, Blocks.PINK_TULIP,
-            Blocks.OXEYE_DAISY, Blocks.CORNFLOWER, Blocks.LILY_OF_THE_VALLEY, Blocks.TORCHFLOWER);
+            Blocks.OXEYE_DAISY, Blocks.CORNFLOWER, Blocks.LILY_OF_THE_VALLEY, Blocks.TORCHFLOWER,
+            // tall plants: the lower half goes in the snow, the upper half stays above (DoublePlantSnowMixin)
+            Blocks.TALL_GRASS, Blocks.LARGE_FERN, Blocks.SUNFLOWER, Blocks.LILAC, Blocks.ROSE_BUSH, Blocks.PEONY);
     /** Other plants that snow may cover (the generic block keeps them in a block entity). */
     public static final TagKey<Block> PLANTS = TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(SeasonsRework.MOD_ID, "snowy_plants"));
 
