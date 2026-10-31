@@ -32,6 +32,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     private ColorProfile seasonsrework$colorProfile = ColorProfile.STABLE;
     @Unique
     private byte seasonsrework$blendKind = ClimateBiome.BLEND_NONE;
+    @Unique
+    private boolean seasonsrework$clientSide;
 
     @Shadow
     protected abstract float getTemperature(BlockPos pos);
@@ -92,6 +94,16 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Override
     public void seasonsrework$setBlendKind(byte kind) {
         seasonsrework$blendKind = kind;
+    }
+
+    @Override
+    public boolean seasonsrework$clientSide() {
+        return seasonsrework$clientSide;
+    }
+
+    @Override
+    public void seasonsrework$setClientSide(boolean client) {
+        seasonsrework$clientSide = client;
     }
 
     // At RETURN, so vanilla's per-position cache keeps the plain value and the offset is always the current one.

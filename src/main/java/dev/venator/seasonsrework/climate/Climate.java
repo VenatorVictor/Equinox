@@ -187,6 +187,8 @@ public final class Climate {
             List<Holder<Biome>> biomes = List.copyOf(registry.holders().toList());
             if (event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) clientBiomes = biomes;
             else serverBiomes = biomes;
+            boolean client = event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED;
+            for (Holder<Biome> holder : biomes) ((ClimateBiome) (Object) holder.value()).seasonsrework$setClientSide(client);
             biomes.forEach(Climate::categorize);
             if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) {
                 seasonal = seasonalOf(biomes);

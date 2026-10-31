@@ -37,17 +37,20 @@ public final class ClimateBlend {
 
     /** Ignored below this weight (a biome barely touching the edge). */
     private static final float MIN_WEIGHT = 0.02F;
-    /** Kept this many chunks at most (both sides share it in single player); cleared past it, mixes come back on load. */
+    /** Kept this many chunks at most per side; cleared past it, mixes come back on load. */
     private static final int MAX_CHUNKS = 200_000;
 
-    private static final Map<Long, Mix> MIXES = new ConcurrentHashMap<>();
+    /** Each side's mixes (single player runs both, with separate biome objects). */
+    private static final Map<Long, Mix> SERVER = new ConcurrentHashMap<>(), CLIENT = new ConcurrentHashMap<>();
     /** Biomes sampled on the grid (server), shared by neighbouring chunks. */
     private static final Map<Long, Holder<Biome>> GRID = new ConcurrentHashMap<>();
     private static volatile int gridStep;
 
     /** The temperature change at pos for this biome (0 when not blended or no mix is known around). */
     public static float delta(Biome biome, BlockPos pos, byte kind) {
-        if (kind == ClimateBiome.BLEND_NONE || MIXES.isEmpty()) return 0;
+        if (kind == ClimateBiome.BLEND_NONE) return 0;
+        Map<Long, Mix> mixes = ((ClimateBiome) (Object) biome).seasonsrework$clientSide() ? CLIENT : SERVER;
+        if (mixes.isEmpty()) return 0;
         float strength = kind == ClimateBiome.BLEND_FULL ? 1 : Config.blendStrength();
         if (strength == 0) return 0;
         // Chunk centers around pos and how far pos is between them.
@@ -57,7 +60,7 @@ public final class ClimateBlend {
         float sum = 0, weight = 0;
         for (int i = 0; i < 4; i++) {
             int dx = i & 1, dz = i >> 1;
-            Mix mix = MIXES.get(ChunkPos.asLong(x0 + dx, z0 + dz));
+            Mix mix = mixes.get(ChunkPos.asLong(x0 + dx, z0 + dz));
             if (mix == null) continue;
             float w = (dx == 0 ? 1 - fx : fx) * (dz == 0 ? 1 - fz : fz);
             sum += w * mix.temperature();
@@ -67,20 +70,25 @@ public final class ClimateBlend {
         return strength * (sum / weight - Climate.surfaceTemperature(biome));
     }
 
-    /** The mix of a chunk, or null if not known (here). */
+    /** The server's mix of a chunk, or null if not known. */
     public static Mix mix(int chunkX, int chunkZ) {
-        return MIXES.get(ChunkPos.asLong(chunkX, chunkZ));
+        return SERVER.get(ChunkPos.asLong(chunkX, chunkZ));
     }
 
     /** Client: the server sent a chunk's mix. */
     public static void put(long chunk, Mix mix) {
-        if (MIXES.size() > MAX_CHUNKS) MIXES.clear();
-        MIXES.put(chunk, mix);
+        if (CLIENT.size() > MAX_CHUNKS) CLIENT.clear();
+        CLIENT.put(chunk, mix);
     }
 
-    /** Leaving a world (either side). */
-    public static void clear() {
-        MIXES.clear();
+    /** Client: leaving a world. */
+    public static void clearClient() {
+        CLIENT.clear();
+    }
+
+    /** Server stopped. */
+    public static void clearServer() {
+        SERVER.clear();
         GRID.clear();
         gridStep = 0;
     }
@@ -88,7 +96,7 @@ public final class ClimateBlend {
     /** Server: the mix of a chunk, worked out the first time. Null when blending is off. */
     public static Mix compute(ServerLevel level, ChunkPos chunk) {
         long key = chunk.toLong();
-        Mix known = MIXES.get(key);
+        Mix known = SERVER.get(key);
         if (known != null) return known;
         int radius = radius(level);
         if (radius <= 0) return null;
@@ -131,7 +139,8 @@ public final class ClimateBlend {
         float[] array = new float[values.size()];
         for (int i = 0; i < array.length; i++) array[i] = values.get(i) / kept;
         Mix mix = new Mix(biomes.toArray(Biome[]::new), array);
-        put(key, mix);
+        if (SERVER.size() > MAX_CHUNKS) SERVER.clear();
+        SERVER.put(key, mix);
         return mix;
     }
 
