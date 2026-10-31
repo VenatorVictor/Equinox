@@ -17,6 +17,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.ModelEvent;
@@ -76,6 +77,19 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
 
     @Override
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
+        if (state == null || !iced(state)) return plantQuads(state, side, rand, data, renderType);
+        // Dead rice in frozen water: an ice block around it. Each part only in its own render types (models give
+        // their quads whatever type is asked).
+        BlockState ice = Blocks.ICE.defaultBlockState();
+        BakedModel iceModel = model(ice);
+        List<BakedQuad> quads = new ArrayList<>();
+        if (renderType == null || plantTypes(state, rand, data).contains(renderType)) quads.addAll(plantQuads(state, side, rand, data, renderType));
+        if (renderType == null || iceModel.getRenderTypes(ice, rand, ModelData.EMPTY).contains(renderType))
+            quads.addAll(iceModel.getQuads(ice, side, rand, ModelData.EMPTY, renderType));
+        return quads;
+    }
+
+    private List<BakedQuad> plantQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
         BlockState crop = data.get(DeadCropBlockEntity.ORIGINAL);
         DeadCropTextures.Kind kind = data.get(KIND);
         if (crop == null || kind == null) return super.getQuads(state, side, rand, data, renderType);
@@ -142,8 +156,19 @@ public final class DeadCropModel extends BakedModelWrapper<BakedModel> {
 
     @Override
     public @NotNull ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
+        ChunkRenderTypeSet types = plantTypes(state, rand, data);
+        if (!iced(state)) return types;
+        BlockState ice = Blocks.ICE.defaultBlockState();
+        return ChunkRenderTypeSet.union(types, model(ice).getRenderTypes(ice, rand, ModelData.EMPTY));
+    }
+
+    private ChunkRenderTypeSet plantTypes(BlockState state, RandomSource rand, ModelData data) {
         BlockState crop = data.get(DeadCropBlockEntity.ORIGINAL);
         return crop == null ? super.getRenderTypes(state, rand, data) : model(crop).getRenderTypes(crop, rand, ModelData.EMPTY);
+    }
+
+    private static boolean iced(BlockState state) {
+        return state.hasProperty(DeadCropBlock.ICED) && state.getValue(DeadCropBlock.ICED);
     }
 
     @Override

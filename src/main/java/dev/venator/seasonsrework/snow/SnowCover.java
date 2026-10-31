@@ -21,6 +21,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.IceBlock;
+import dev.venator.seasonsrework.crops.DeadCropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -210,6 +211,8 @@ public final class SnowCover {
         } else if (belowState.is(Blocks.ICE)) {
             level.setBlock(below, IceBlock.meltsInto(), Block.UPDATE_ALL);
             level.neighborChanged(below, IceBlock.meltsInto().getBlock(), below);
+        } else if (DeadCropBlock.freeze(belowState, false) != null) { // dead rice: its ice thaws back to water
+            level.setBlock(below, DeadCropBlock.freeze(belowState, false), Block.UPDATE_ALL);
         } else if (SNOW_REAL_MAGIC) {
             SnowRealMagicCompat.melt(level, top.immutable(), topState, below, belowState);
         }
@@ -217,6 +220,11 @@ public final class SnowCover {
 
     /** Vanilla's freeze check, minus the temperature (already checked). */
     private static boolean freeze(ServerLevel level, BlockPos pos, BlockState state) {
+        BlockState iced = DeadCropBlock.freeze(state, true);
+        if (iced != null && dark(level, pos)) {
+            level.setBlock(pos, iced, Block.UPDATE_ALL);
+            return true;
+        }
         if (!state.is(Blocks.WATER) || !state.getFluidState().isSource() || !dark(level, pos)) return false;
         level.setBlock(pos, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
         return true;
