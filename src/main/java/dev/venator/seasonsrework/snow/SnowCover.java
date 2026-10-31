@@ -21,6 +21,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.IceBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import dev.venator.seasonsrework.crops.DeadCropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -197,9 +198,16 @@ public final class SnowCover {
                 freeze(level, below, belowState);
                 return;
             }
+            int depth = SnowyPlants.depth(biome, top);
             if (topState.isAir() && dark(level, top) && Blocks.SNOW.defaultBlockState().canSurvive(level, top)) {
                 // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
-                level.setBlock(top, Blocks.SNOW.defaultBlockState(), Block.UPDATE_CLIENTS);
+                level.setBlock(top, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, depth), Block.UPDATE_CLIENTS);
+            } else if (dark(level, top) && SnowyPlants.cover(level, top.immutable(), topState, depth, Block.UPDATE_CLIENTS)) {
+                // grass, a fern or a flower now in the snow
+            } else if (SnowConfig.SNOW_DEPTH.get() && topState.getBlock() instanceof SnowLayerBlock && topState.getValue(SnowLayerBlock.LAYERS) != depth) {
+                // depth by climate: a layer at a time toward the depth (the cover is redone every few days)
+                int layers = topState.getValue(SnowLayerBlock.LAYERS);
+                level.setBlock(top, topState.setValue(SnowLayerBlock.LAYERS, layers + Integer.signum(depth - layers)), Block.UPDATE_CLIENTS);
             } else if (!freeze(level, below, belowState) && SNOW_REAL_MAGIC) {
                 SnowRealMagicCompat.cover(level, top.immutable(), topState, below, belowState);
             }
@@ -208,6 +216,8 @@ public final class SnowCover {
 
         if (topState.is(Blocks.SNOW)) {
             level.setBlock(top, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        } else if (topState.getBlock() instanceof SnowyPlantBlock snowy) {
+            level.setBlock(top, snowy.unsnowed(topState, level, top), Block.UPDATE_ALL);
         } else if (belowState.is(Blocks.ICE)) {
             level.setBlock(below, IceBlock.meltsInto(), Block.UPDATE_ALL);
             level.neighborChanged(below, IceBlock.meltsInto().getBlock(), below);
