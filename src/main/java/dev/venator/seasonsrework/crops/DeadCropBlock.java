@@ -19,6 +19,9 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.IceBlock;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.levelgen.Heightmap;
+import dev.venator.seasonsrework.snow.SnowRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -153,8 +156,28 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
 
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        // Its water freezes and thaws over time like the water around it (the snow cover's sweeps are rare: rice that
+        // dies after the paddy froze would stay in open water).
+        BlockState frozen = freeze(state, state.getValue(ICED) ? !thaws(level, pos) : freezes(level, pos));
+        if (frozen != null) {
+            level.setBlock(pos, frozen, Block.UPDATE_ALL);
+            return;
+        }
         boolean snowy = snowy(state, level, pos);
         if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
+    }
+
+    /** Its water freezes as vanilla water: cold, open to the sky (leaves aside), block light below 10. */
+    private static boolean freezes(ServerLevel level, BlockPos pos) {
+        BlockPos above = pos.above();
+        return SnowRules.cold(level.getBiome(above), above) && level.getBrightness(LightLayer.BLOCK, pos) < 10
+                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
+    }
+
+    /** Its ice melts as vanilla ice: warm, or block light above 11. */
+    private static boolean thaws(ServerLevel level, BlockPos pos) {
+        BlockPos above = pos.above();
+        return !SnowRules.cold(level.getBiome(above), above) || level.getBrightness(LightLayer.BLOCK, pos) > 11;
     }
 
     /** Frozen or in ice: breaks like ice. Dried by heat: the crop's own rustle. */
