@@ -17,7 +17,8 @@
     "StateDefinitionBuilderAccessor",
     "IceSeamMixin",
     "ServerLevelSnowfallMixin",
-    "SnowLayerPlacementMixin"
+    "SnowLayerPlacementMixin",
+    "DoublePlantSnowMixin"
   ],
   "client": [
     "client.BiomeColorMixin"
