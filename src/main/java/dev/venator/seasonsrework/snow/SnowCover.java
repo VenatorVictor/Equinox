@@ -6,13 +6,12 @@ import dev.venator.seasonsrework.SeasonsRework;
 import dev.venator.seasonsrework.climate.Climate;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.Util;
+import net.minecraft.util.RandomSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -27,11 +26,11 @@ import dev.venator.seasonsrework.crops.DeadCropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.ChunkDataEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
@@ -41,36 +40,66 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
 /**
- * Brings loaded chunks up to the snowpack's snow and the season's ice in one pass: vanilla snowfall only adds snow
- * near players and never melts it. Where snow lies follows SnowRules.lies (patches, then everywhere, deeper when
- * colder); where it doesn't, snow melts and, if it's warm, ice too.
- * Work only happens when the target changes (the snowpack moved, or any climate zone's temperature change moved by
- * STEP), or when a chunk loads that was last done for an older target. Nothing re-checks chunks on a timer,
- * and each tick only spends the configured time budget. Overworld only.
+ * Puts snow and ice on the ground following the snowfall rule (SnowRules.lies: patches, then everywhere, deeper when
+ * colder) and takes them away when it thaws, in two ways:
+ * - Chunks near players (loaded) change bit by bit: each tick a few random columns per chunk. Snow builds a layer at a
+ *   time only while it's snowing there; it melts a layer at a time once it no longer lies. Snow a player breaks stays
+ *   gone until the next snowfall (vanilla's own snowfall can still bring some back).
+ * - A chunk that loads catches up at once (out at the view distance, where chunks appear anyway): melted where snow no
+ *   longer lies, and covered where it lies if it has snowed in that biome since the chunk was last saved.
+ * Water freezes and thaws the same way. Overworld only.
  */
 public final class SnowCover {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, SeasonsRework.MOD_ID);
-    /** The target version a chunk was last brought to; saved with the chunk. */
-    private static final Supplier<AttachmentType<Integer>> DONE = ATTACHMENTS.register("snow_version",
+    /** No longer used (the old versioned passes); still registered so chunks saved with it load without warnings. */
+    @SuppressWarnings("unused")
+    private static final Supplier<AttachmentType<Integer>> OLD_VERSION = ATTACHMENTS.register("snow_version",
             () -> AttachmentType.builder(() -> 0).serialize(Codec.INT).build());
+    /** Saved in the chunk's data: the game time the chunk was last saved with its snow up to date. */
+    private static final String STAMP = "seasonsrework:snow_stamp";
 
     private static final boolean SNOW_REAL_MAGIC = ModList.get().isLoaded("snowrealmagic");
+    /** Chunks waiting to catch up, nearest to a player first. */
     private static final LongLinkedOpenHashSet QUEUE = new LongLinkedOpenHashSet();
-    // Chunk loads may be reported off the server thread; they're moved into QUEUE on tick.
-    private static final ConcurrentLinkedQueue<Long> LOADED = new ConcurrentLinkedQueue<>();
+    /** Loaded chunks (bit by bit changes); events may come off the server thread, so they wait in queues. */
+    private static final LongOpenHashSet ACTIVE = new LongOpenHashSet();
+    private static final ConcurrentLinkedQueue<Long> LOADED = new ConcurrentLinkedQueue<>(), UNLOADED = new ConcurrentLinkedQueue<>();
+    /** Stamps read from loaded chunks' data, until they catch up. */
+    private static final Map<Long, Long> STAMPS = new ConcurrentHashMap<>();
+    private static final LongArrayList ORDER = new LongArrayList();
+    private static boolean orderDirty;
+    private static int cursor;
     /** Time left for the rest of the tick (other dimensions, network) when using the server's spare time. */
     private static final long RESERVE_NANOS = 10_000_000L;
-    /** The seasonal temperature change is blended every tick; chunks are redone each time it moves this much. */
-    private static final float STEP = 0.05F;
 
     public static void init(IEventBus modBus) {
         ATTACHMENTS.register(modBus);
+        NeoForge.EVENT_BUS.addListener(ChunkDataEvent.Load.class, e -> {
+            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD && e.getData().contains(STAMP))
+                STAMPS.put(e.getChunk().getPos().toLong(), e.getData().getLong(STAMP));
+        });
+        NeoForge.EVENT_BUS.addListener(ChunkDataEvent.Save.class, e -> {
+            if (!(e.getLevel() instanceof ServerLevel level) || level.dimension() != Level.OVERWORLD) return;
+            long pos = e.getChunk().getPos().toLong();
+            // Still waiting to catch up: keep the old stamp.
+            Long old = STAMPS.get(pos);
+            e.getData().putLong(STAMP, old != null ? old : level.getGameTime());
+        });
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Load.class, e -> {
-            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) LOADED.add(e.getChunk().getPos().toLong());
+            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD && e.getChunk() instanceof LevelChunk) {
+                long pos = e.getChunk().getPos().toLong();
+                // A new chunk (no stamp) catches up as if never covered.
+                STAMPS.putIfAbsent(pos, Long.MIN_VALUE);
+                LOADED.add(pos);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, e -> {
+            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) UNLOADED.add(e.getChunk().getPos().toLong());
         });
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, e -> {
             if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) tick(level);
@@ -78,65 +107,87 @@ public final class SnowCover {
         NeoForge.EVENT_BUS.addListener(LevelEvent.Unload.class, e -> {
             if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) {
                 QUEUE.clear();
+                ACTIVE.clear();
+                ORDER.clear();
                 LOADED.clear();
+                UNLOADED.clear();
+                STAMPS.clear();
             }
         });
     }
 
     private static void tick(ServerLevel level) {
         if (!SnowConfig.SNOW_COVER.get() || !Config.hasSeasons(level.dimension())) return;
-        Data data = data(level);
-        if (level.getGameTime() % 20 == 0) checkTarget(level, data);
-        // Players move, so the queue is put back in nearest-first order every 5 seconds.
-        if (level.getGameTime() % 100 == 0) sortQueue(level);
-
+        for (Long pos; (pos = UNLOADED.poll()) != null; ) {
+            ACTIVE.remove((long) pos);
+            QUEUE.remove((long) pos);
+            orderDirty = true;
+        }
         // A loaded chunk may be the neighbour another chunk was waiting for, so its neighbours go too.
         for (Long pos; (pos = LOADED.poll()) != null; ) {
             int x = ChunkPos.getX(pos), z = ChunkPos.getZ(pos);
+            ACTIVE.add((long) pos);
+            orderDirty = true;
             QUEUE.add((long) pos);
-            QUEUE.add(ChunkPos.asLong(x + 1, z));
-            QUEUE.add(ChunkPos.asLong(x - 1, z));
-            QUEUE.add(ChunkPos.asLong(x, z + 1));
-            QUEUE.add(ChunkPos.asLong(x, z - 1));
+            for (long next : new long[]{ChunkPos.asLong(x + 1, z), ChunkPos.asLong(x - 1, z), ChunkPos.asLong(x, z + 1), ChunkPos.asLong(x, z - 1)})
+                if (STAMPS.containsKey(next)) QUEUE.add(next);
         }
-        if (QUEUE.isEmpty()) return;
+        // Players move, so the queue is put back in nearest-first order every 5 seconds.
+        if (level.getGameTime() % 100 == 0) sortQueue(level);
 
         long now = Util.getNanos();
         long deadline = now + SnowConfig.BUDGET_MICROS.get() * 1000L;
         // When the server is ahead of schedule, also use part of the time until the next tick.
         long spare = SnowConfig.SPARE_MICROS.get() * 1000L;
         if (spare > 0) deadline = Math.max(deadline, Math.min(now + spare, level.getServer().getNextTickTime() - RESERVE_NANOS));
-        do {
+        stepLoaded(level, now + SnowConfig.BUDGET_MICROS.get() * 1000L);
+        while (!QUEUE.isEmpty() && Util.getNanos() < deadline) {
             long pos = QUEUE.removeFirstLong();
             int x = ChunkPos.getX(pos), z = ChunkPos.getZ(pos);
             LevelChunk chunk = level.getChunkSource().getChunkNow(x, z);
-            // Unloaded chunks are done when they load again; chunks missing a neighbour when it loads.
-            if (chunk == null || chunk.getData(DONE) == data.version || !neighboursLoaded(level, x, z)) continue;
-            process(level, chunk);
-            chunk.setData(DONE, data.version);
+            Long stamp = STAMPS.get(pos);
+            // Unloaded chunks catch up when they load again; chunks missing a neighbour when it loads.
+            if (chunk == null || stamp == null || !neighboursLoaded(level, x, z)) continue;
+            catchUp(level, chunk, stamp);
+            STAMPS.remove(pos);
             chunk.setUnsaved(true);
-        } while (!QUEUE.isEmpty() && Util.getNanos() < deadline);
+        }
     }
 
-    /** The target is the zones' temperature changes (in STEPs) plus the snowpack. A change redoes every loaded chunk. */
-    private static void checkTarget(ServerLevel level, Data data) {
-        int adjustment = Climate.snowTarget(STEP);
-        int snowpack = Snowpack.version();
-        if (data.version != 0 && adjustment == data.adjustment && snowpack == data.snowpack) return;
-        data.version = data.version == Integer.MAX_VALUE ? 1 : data.version + 1;
-        data.adjustment = adjustment;
-        data.snowpack = snowpack;
-        data.setDirty();
-        queueLoadedChunks(level);
-    }
-
-    /** Every loaded chunk, nearest to a player first. */
-    private static void queueLoadedChunks(ServerLevel level) {
-        List<ServerPlayer> players = level.players();
-        LongArrayList chunks = new LongArrayList();
-        for (ChunkHolder holder : level.getChunkSource().chunkMap.getChunks()) chunks.add(holder.getPos().toLong());
-        if (!players.isEmpty()) chunks.sort(Comparator.comparingLong(pos -> distanceToPlayers(pos, players)));
-        QUEUE.addAll(chunks);
+    /** Bit by bit near players: a few random columns of every loaded, caught-up chunk, within the time budget. */
+    private static void stepLoaded(ServerLevel level, long deadline) {
+        double rate = SnowConfig.COLUMNS_PER_TICK.get();
+        if (rate <= 0 || ACTIVE.isEmpty()) return;
+        if (orderDirty) {
+            ORDER.clear();
+            ORDER.addAll(ACTIVE);
+            orderDirty = false;
+        }
+        Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
+        BlockPos.MutableBlockPos top = new BlockPos.MutableBlockPos();
+        RandomSource random = level.random;
+        // Starts where the last tick stopped, so all chunks get their turn when the budget runs out.
+        int size = ORDER.size();
+        for (int i = 0; i < size; i++) {
+            if ((i & 15) == 0 && Util.getNanos() > deadline) return;
+            cursor = (cursor + 1) % size;
+            long pos = ORDER.getLong(cursor);
+            if (STAMPS.containsKey(pos)) continue; // not caught up yet
+            int x = ChunkPos.getX(pos), z = ChunkPos.getZ(pos);
+            LevelChunk chunk = level.getChunkSource().getChunkNow(x, z);
+            if (chunk == null || !neighboursLoaded(level, x, z)) continue;
+            // A fraction of a column per tick: one column with that chance.
+            int columns = (int) rate + (random.nextDouble() < rate - (int) rate ? 1 : 0);
+            for (int c = 0; c < columns; c++) {
+                int lx = random.nextInt(16), lz = random.nextInt(16);
+                top.set(chunk.getPos().getMinBlockX() + lx, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz) + 1, chunk.getPos().getMinBlockZ() + lz);
+                Holder<Biome> biome = level.getBiome(top);
+                boolean snowing = level.isRaining() && biome.value().hasPrecipitation() && SnowRules.cold(biome, top);
+                column(level, chunk, biome, top, warmest, true, snowing);
+                int yNoLeaves = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz) + 1;
+                if (yNoLeaves != top.getY()) column(level, chunk, biome, top.setY(yNoLeaves), warmest, true, snowing);
+            }
+        }
     }
 
     private static void sortQueue(ServerLevel level) {
@@ -165,7 +216,9 @@ public final class SnowCover {
                 && source.getChunkNow(x, z + 1) != null && source.getChunkNow(x, z - 1) != null;
     }
 
-    private static void process(ServerLevel level, LevelChunk chunk) {
+    /** A chunk that loaded: every column at once; snow is only added in biomes where it snowed since stamp. */
+    private static void catchUp(ServerLevel level, LevelChunk chunk, long stamp) {
+        Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
         BlockPos.MutableBlockPos top = new BlockPos.MutableBlockPos();
         int minX = chunk.getPos().getMinBlockX(), minZ = chunk.getPos().getMinBlockZ();
         // Biomes come from vanilla's fuzzy lookup (irregular edges); with a cell size above 1, one lookup per cell.
@@ -180,53 +233,44 @@ public final class SnowCover {
                 int index = lx / cell * cells + lz / cell;
                 Holder<Biome> biome = biomes[index];
                 if (biome == null) biome = biomes[index] = level.getBiome(top);
-                column(level, chunk, biome, top);
+                boolean snowedSince = Snowpack.lastSnowfall(biome) > stamp;
+                column(level, chunk, biome, top, warmest, false, snowedSince);
                 // Also the ground under trees.
-                if (yNoLeaves != y) column(level, chunk, biome, top.setY(yNoLeaves));
+                if (yNoLeaves != y) column(level, chunk, biome, top.setY(yNoLeaves), warmest, false, snowedSince);
             }
         }
     }
 
-    /** top: the first non-blocking position above a column (air, a plant or a snow layer). */
-    private static void column(ServerLevel level, LevelChunk chunk, Holder<Biome> biome, BlockPos.MutableBlockPos top) {
+    /**
+     * One column. top: the first non-blocking position above it (air, a plant or a snow layer). gradual: one layer at a
+     * time (near players), else straight to the target (catching up). add: snow may be added (snowing now, or snowed
+     * since the chunk was saved); melting and thinning always happen.
+     */
+    private static void column(ServerLevel level, LevelChunk chunk, Holder<Biome> biome, BlockPos.MutableBlockPos top,
+                               Map<ResourceKey<Biome>, Float> warmest, boolean gradual, boolean add) {
         if (level.isOutsideBuildHeight(top) || top.getY() <= level.getMinBuildHeight()) return;
         BlockPos below = top.below();
         BlockState topState = chunk.getBlockState(top);
         BlockState belowState = chunk.getBlockState(below);
-        Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
+        // Where the snow of this column is: a snow layer or plant at top, or a fence or wall just under it.
+        boolean inFence = topState.isAir() && SnowyPlants.maxLayers(belowState) > 0 && SnowyPlants.holds(belowState);
+        int now = topState.getBlock() instanceof SnowLayerBlock ? topState.getValue(SnowLayerBlock.LAYERS)
+                : SnowyPlants.layers(topState) > 0 ? SnowyPlants.layers(topState) : inFence ? SnowyPlants.layers(belowState) : 0;
 
         if (SnowRules.lies(biome, top, warmest)) {
             int depth = SnowRules.layers(biome, top, warmest);
-            if (topState.isAir() && dark(level, top) && Blocks.SNOW.defaultBlockState().canSurvive(level, top)) {
-                // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
-                level.setBlock(top, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, depth), Block.UPDATE_CLIENTS);
-            } else if (dark(level, top) && SnowyPlants.cover(level, top.immutable(), topState, depth, Block.UPDATE_ALL)) {
-                // grass, a fern or a flower now in the snow (all updates: the grass under it turns snowy)
-            } else if (topState.isAir() && SnowyPlants.maxLayers(belowState) == 1 && dark(level, below)
-                    && SnowyPlants.cover(level, below, belowState, 1, Block.UPDATE_ALL)) {
-                // a fence or wall (the heightmap is above it), its snow on the ground around it
-            } else if (SnowConfig.SNOW_DEPTH.get() && SnowyPlants.layers(topState) > 0 && SnowyPlants.maxLayers(topState) == 8
-                    && SnowyPlants.layers(topState) != depth && SnowyPlants.layers(topState) <= SnowRules.maxLayers(biome)) {
-                int layers = SnowyPlants.layers(topState);
-                level.setBlock(top, SnowyPlants.withLayers(topState, layers + Integer.signum(depth - layers)), Block.UPDATE_CLIENTS);
-            } else if (SnowConfig.SNOW_DEPTH.get() && topState.getBlock() instanceof SnowLayerBlock && topState.getValue(SnowLayerBlock.LAYERS) != depth
-                    && topState.getValue(SnowLayerBlock.LAYERS) <= SnowRules.maxLayers(biome)) {
-                // a layer at a time toward the depth (deeper piles are a player's, left alone)
-                int layers = topState.getValue(SnowLayerBlock.LAYERS);
-                level.setBlock(top, topState.setValue(SnowLayerBlock.LAYERS, layers + Integer.signum(depth - layers)), Block.UPDATE_CLIENTS);
-            } else if (!freeze(level, below, belowState) && SNOW_REAL_MAGIC) {
-                SnowRealMagicCompat.cover(level, top.immutable(), topState, below, belowState);
-            }
+            int target = now;
+            if (now < depth && add) target = gradual ? now + 1 : depth;
+            // Deeper than the climate gives now: thins toward it (deeper piles are a player's, left alone).
+            else if (now > depth && SnowConfig.SNOW_DEPTH.get() && now <= SnowRules.maxLayers(biome)) target = gradual ? now - 1 : depth;
+            if (target != now && setSnow(level, top, topState, below, belowState, inFence, now, target)) return;
+            if (!freeze(level, below, belowState) && add && SNOW_REAL_MAGIC) SnowRealMagicCompat.cover(level, top.immutable(), topState, below, belowState);
             return;
         }
 
         // No snow lies here: it thawed, rained, or hasn't snowed since it got cold.
-        if (topState.is(Blocks.SNOW)) {
-            level.setBlock(top, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-        } else if (SnowyPlants.layers(topState) > 0) {
-            level.setBlock(top, SnowyPlants.unsnowed(topState), Block.UPDATE_ALL);
-        } else if (topState.isAir() && SnowyPlants.layers(belowState) > 0) {
-            level.setBlock(below, SnowyPlants.unsnowed(belowState), Block.UPDATE_ALL);
+        if (now > 0) {
+            setSnow(level, top, topState, below, belowState, inFence, now, gradual ? now - 1 : 0);
         } else if (SnowRules.cold(biome, top)) {
             // Water freezes without snowfall.
             freeze(level, below, belowState);
@@ -240,6 +284,34 @@ public final class SnowCover {
         }
     }
 
+    /** Sets the column's snow from now to target layers. False if nothing could change (no room for snow, too bright). */
+    private static boolean setSnow(ServerLevel level, BlockPos.MutableBlockPos top, BlockState topState, BlockPos below, BlockState belowState,
+                                   boolean inFence, int now, int target) {
+        if (target > now && !dark(level, inFence ? below : top)) return false;
+        if (inFence) {
+            BlockState snowy = SnowyPlants.withLayers(belowState, target);
+            if (snowy == belowState || target > 0 && !Blocks.SNOW.defaultBlockState().canSurvive(level, below)) return false;
+            level.setBlock(below, snowy, Block.UPDATE_ALL);
+            return true;
+        }
+        if (topState.getBlock() instanceof SnowLayerBlock) {
+            // Flag 2: send to clients and update neighbour shapes (grass turns snowy), no redstone-style updates.
+            level.setBlock(top, target == 0 ? Blocks.AIR.defaultBlockState() : topState.setValue(SnowLayerBlock.LAYERS, target), Block.UPDATE_CLIENTS);
+            return true;
+        }
+        if (topState.isAir()) {
+            if (!Blocks.SNOW.defaultBlockState().canSurvive(level, top)) return false;
+            level.setBlock(top, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, target), Block.UPDATE_CLIENTS);
+            return true;
+        }
+        // A plant: all updates when the snow comes or goes, so the grass under it turns snowy or back.
+        if (now == 0) return SnowyPlants.cover(level, top.immutable(), topState, target, Block.UPDATE_ALL);
+        BlockState snowy = SnowyPlants.withLayers(topState, target);
+        if (snowy == topState) return false;
+        level.setBlock(top, snowy, target == 0 ? Block.UPDATE_ALL : Block.UPDATE_CLIENTS);
+        return true;
+    }
+
     /** Vanilla's freeze check, minus the temperature (already checked). */
     private static boolean freeze(ServerLevel level, BlockPos pos, BlockState state) {
         if (state.getBlock() instanceof DeadCropBlock && dark(level, pos) && DeadCropBlock.setIced(level, pos, true)) return true;
@@ -251,32 +323,6 @@ public final class SnowCover {
     // Vanilla doesn't snow or freeze next to light 10 or more.
     private static boolean dark(ServerLevel level, BlockPos pos) {
         return level.getBrightness(LightLayer.BLOCK, pos) < 10;
-    }
-
-    private static Data data(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(Data::new, Data::load, null), "seasonsrework_snow_cover");
-    }
-
-    private static final class Data extends SavedData {
-        int version;
-        int adjustment;
-        int snowpack;
-
-        static Data load(CompoundTag tag, HolderLookup.Provider registries) {
-            Data data = new Data();
-            data.version = tag.getInt("version");
-            data.adjustment = tag.getInt("climate");
-            data.snowpack = tag.getInt("snowpack");
-            return data;
-        }
-
-        @Override
-        public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-            tag.putInt("version", version);
-            tag.putInt("climate", adjustment);
-            tag.putInt("snowpack", snowpack);
-            return tag;
-        }
     }
 
     private SnowCover() {}
