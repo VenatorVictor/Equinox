@@ -258,8 +258,10 @@ public final class SnowCover {
         int now = topState.getBlock() instanceof SnowLayerBlock ? topState.getValue(SnowLayerBlock.LAYERS)
                 : SnowyPlants.layers(topState) > 0 ? SnowyPlants.layers(topState) : inFence ? SnowyPlants.layers(belowState) : 0;
 
-        if (SnowRules.lies(biome, top, warmest)) {
-            int depth = SnowRules.layers(biome, top, warmest);
+        // One temperature lookup per position (the rules below all need it).
+        float here = Climate.temperature(biome.value(), top);
+        if (SnowRules.lies(biome, top, warmest, here)) {
+            int depth = SnowRules.layers(biome, top, warmest, here);
             int target = now;
             if (now < depth && add) target = gradual ? now + 1 : depth;
             // Deeper than the climate gives now: thins toward it (deeper piles are a player's, left alone).
@@ -272,7 +274,7 @@ public final class SnowCover {
         // No snow lies here: it thawed, rained, or hasn't snowed since it got cold.
         if (now > 0) {
             setSnow(level, top, topState, below, belowState, inFence, now, gradual ? now - 1 : 0);
-        } else if (SnowRules.cold(biome, top)) {
+        } else if (here < Climate.SNOW_LINE) {
             // Water freezes without snowfall.
             freeze(level, below, belowState);
         } else if (belowState.is(Blocks.ICE)) {
