@@ -232,7 +232,9 @@ public final class Crops {
         boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
         BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause)
                 .setValue(DeadCropBlock.SNOWY, snowy).setValue(DeadCropBlock.WATERLOGGED, state.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
-        level.setBlock(pos, dead, Block.UPDATE_ALL);
+        // Flagged as a piston move: Farmer's Delight tomatoes on rope put their rope back when replaced (onRemove),
+        // which would overwrite the dead crop.
+        level.setBlock(pos, dead, Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
         if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
     }
 
