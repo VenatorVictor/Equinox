@@ -154,9 +154,19 @@ public final class Crops {
         return f < 1 / 3F ? 2 : f < 2 / 3F ? 3 : 4;
     }
 
-    /** Frost and heat kill only crops on farmland. */
+    /** Planted crops that aren't CropBlocks but die too (Farmer's Delight rice and young tomatoes). */
+    private static final java.util.Set<ResourceLocation> MORTAL_EXTRA = java.util.Set.of(
+            ResourceLocation.fromNamespaceAndPath("farmersdelight", "rice"),
+            ResourceLocation.fromNamespaceAndPath("farmersdelight", "budding_tomatoes"));
+
+    /**
+     * Frost and heat kill planted crops: CropBlocks (all their parts, on farmland or not: rice panicles, tomatoes on
+     * rope), stems, and MORTAL_EXTRA. Wild crops (Farmer's Delight wild crops, berries), pumpkins and melons without a
+     * stem, cocoa, cane, cactus and bamboo only stop, so generated land isn't spoiled.
+     */
     public static boolean mortal(Block block) {
-        return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock;
+        return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock
+                || MORTAL_EXTRA.contains(BuiltInRegistries.BLOCK.getKey(block));
     }
 
     /** The fruit block an attached stem grows (pumpkin, melon), or null. */
@@ -196,14 +206,15 @@ public final class Crops {
                 return true;
             }
         }
-        if (!(level.getBlockState(pos.below()).getBlock() instanceof FarmBlock)) return false;
         Effect effect = effect(level, pos, state);
         if (effect != Effect.FROST && effect != Effect.HEAT) return false;
         DeadCropBlock.Cause cause = effect == Effect.FROST ? DeadCropBlock.Cause.FROST : DeadCropBlock.Cause.HEAT;
-        BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause);
-        boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
-        level.setBlock(pos, dead.setValue(DeadCropBlock.SNOWY, snowy), Block.UPDATE_ALL);
-        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
+        // The whole plant dies (rice and its panicles, a tomato vine up its rope), top first so no part pops off.
+        BlockPos bottom = pos;
+        while (bottom.getY() > level.getMinBuildHeight() && mortal(level.getBlockState(bottom.below()).getBlock())) bottom = bottom.below();
+        BlockPos top = pos;
+        while (top.getY() < level.getMaxBuildHeight() - 1 && mortal(level.getBlockState(top.above()).getBlock())) top = top.above();
+        for (BlockPos p = top; p.getY() >= bottom.getY(); p = p.below()) kill(level, p, level.getBlockState(p), cause);
         Block fruit = fruitOf(state.getBlock());
         if (fruit != null) { // the pumpkin or melon it holds dies with it
             BlockPos fruitPos = pos.relative(state.getValue(AttachedStemBlock.FACING));
@@ -214,6 +225,15 @@ public final class Crops {
             }
         }
         return true;
+    }
+
+    /** Turns one plant block into a dead crop that remembers it (snow and water kept). */
+    private static void kill(ServerLevel level, BlockPos pos, BlockState state, DeadCropBlock.Cause cause) {
+        boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
+        BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause)
+                .setValue(DeadCropBlock.SNOWY, snowy).setValue(DeadCropBlock.WATERLOGGED, state.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
+        level.setBlock(pos, dead, Block.UPDATE_ALL);
+        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
     }
 
     /**

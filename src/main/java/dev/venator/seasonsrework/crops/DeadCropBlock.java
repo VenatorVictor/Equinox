@@ -17,6 +17,9 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -30,11 +33,13 @@ import org.jetbrains.annotations.Nullable;
  * with frosted (snowy when snow lies on it) or withered textures (client DeadCropModel / DeadCropTextures). Drops nothing, breaks instantly, and seeds can be
  * planted straight into it (replaceable). Stays on farmland only.
  */
-public final class DeadCropBlock extends Block implements EntityBlock {
+public final class DeadCropBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
     public static final MapCodec<DeadCropBlock> CODEC = simpleCodec(DeadCropBlock::new);
     public static final EnumProperty<Cause> CAUSE = EnumProperty.create("cause", Cause.class);
     /** Snow lies on a frozen crop (server side, its random tick): cold, after the first snowfall, outside, no heater. */
     public static final BooleanProperty SNOWY = BlockStateProperties.SNOWY;
+    /** Dead rice stays in its water. */
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 8, 16);
 
     public enum Cause implements StringRepresentable {
@@ -48,7 +53,7 @@ public final class DeadCropBlock extends Block implements EntityBlock {
 
     public DeadCropBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(CAUSE, Cause.FROST).setValue(SNOWY, false));
+        registerDefaultState(stateDefinition.any().setValue(CAUSE, Cause.FROST).setValue(SNOWY, false).setValue(WATERLOGGED, false));
     }
 
     @Override
@@ -58,7 +63,7 @@ public final class DeadCropBlock extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(CAUSE, SNOWY);
+        builder.add(CAUSE, SNOWY, WATERLOGGED);
     }
 
     /** The crop it was: a dead young stem is as small as the living one. */
@@ -73,11 +78,20 @@ public final class DeadCropBlock extends Block implements EntityBlock {
 
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
-        return level.getBlockState(pos.below()).getBlock() instanceof FarmBlock;
+        // Farmland, the ground rice grows in, or the rest of a dead (or still living) plant below it.
+        BlockState below = level.getBlockState(pos.below());
+        return below.getBlock() instanceof FarmBlock || below.getBlock() instanceof DeadCropBlock || Crops.mortal(below.getBlock())
+                || below.isFaceSturdy(level, pos.below(), Direction.UP);
+    }
+
+    @Override
+    protected FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(WATERLOGGED)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         return direction == Direction.DOWN && !canSurvive(state, level, pos) ? Blocks.AIR.defaultBlockState()
                 : super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
