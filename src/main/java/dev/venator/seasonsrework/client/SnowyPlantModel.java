@@ -26,6 +26,7 @@ import net.neoforged.neoforge.client.model.IQuadTransformer;
 import net.neoforged.neoforge.client.model.QuadTransformers;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.neoforged.neoforge.common.util.TriState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -44,6 +45,8 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     private static final ModelProperty<IQuadTransformer> UNOFFSET = new ModelProperty<>();
 
     private final int layers;
+    /** Whether the block's own model draws in solid too (fences, walls), found on first use. */
+    private volatile Boolean ownSolid;
 
     private SnowyPlantModel(BakedModel own, int layers) {
         super(own);
@@ -101,6 +104,16 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     @Override
     public @NotNull ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
         return ChunkRenderTypeSet.union(super.getRenderTypes(state, rand, data), SOLID);
+    }
+
+    /** Plants turn smooth lighting off; the snow keeps it, as a snow layer (its own render type, solid). */
+    @Override
+    public @NotNull TriState useAmbientOcclusion(@NotNull BlockState state, @NotNull ModelData data, @NotNull RenderType renderType) {
+        if (renderType != RenderType.solid()) return super.useAmbientOcclusion(state, data, renderType);
+        Boolean own = ownSolid;
+        if (own == null) ownSolid = own = super.getRenderTypes(state, RandomSource.create(42), data).contains(renderType);
+        if (!own) return TriState.DEFAULT;
+        return super.useAmbientOcclusion(state, data, renderType);
     }
 
     @Override
