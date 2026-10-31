@@ -1,5 +1,8 @@
 package dev.venator.seasonsrework.client;
 
+import dev.venator.seasonsrework.climate.FarBlend;
+import net.neoforged.neoforge.network.PacketDistributor;
+
 import dev.venator.seasonsrework.SeasonsRework;
 import dev.venator.seasonsrework.client.colors.ColorClock;
 import dev.venator.seasonsrework.client.colors.SeasonColors;
@@ -27,6 +30,8 @@ public final class SeasonsReworkClient {
     private static final SeasonWatcher WATCHER = new SeasonWatcher();
     private static boolean dhLoaded;
     private static int lastStep = -1;
+    /** Ticks since far blend mixes last arrived (-1: none waiting); LODs are repainted once they stop coming. */
+    private static volatile int farQuiet = -1;
 
     public static void init(ModContainer container, IEventBus modBus) {
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
@@ -47,7 +52,13 @@ public final class SeasonsReworkClient {
             CropLookModel.reset();
             lastStep = -1;
             if (dhLoaded) DhRefresher.clearCache();
+            // Distant Horizons: ask for the climate blending out to the LOD distance.
+            if (dhLoaded && ClientConfig.DH_SNOW.get() && event.getPlayer().connection.hasChannel(FarBlend.Request.TYPE)) {
+                int distance = DhRefresher.lodDistance();
+                if (distance > 0) PacketDistributor.sendToServer(new FarBlend.Request(distance));
+            }
         });
+        FarBlend.onReceived = () -> farQuiet = 0;
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
             WATCHER.reset();
             ColorClock.reset();
@@ -74,6 +85,10 @@ public final class SeasonsReworkClient {
         else if (changed) ChunkRefresher.refreshVisible();
         lastStep = step;
         if (ClientSnow.takeRefresh()) snowChanged();
+        if (farQuiet >= 0 && ++farQuiet > 40) {
+            farQuiet = -1;
+            if (dhLoaded && ClientConfig.DH_SNOW.get()) DhRefresher.refresh(level);
+        }
         if (!changed) return;
         // Color updates are also when LOD snow appears or melts.
         if (dhLoaded && (ClientConfig.DH_REFRESH.get() || ClientConfig.DH_SNOW.get())) DhRefresher.refresh(level);

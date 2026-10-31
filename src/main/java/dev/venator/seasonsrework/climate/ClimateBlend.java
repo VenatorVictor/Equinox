@@ -66,6 +66,9 @@ public final class ClimateBlend {
 
     /** Each side's mixes (single player runs both, with separate biome objects). */
     private static final Map<Long, Mix> SERVER = new ConcurrentHashMap<>(), CLIENT = new ConcurrentHashMap<>();
+    /** Client: mixes on a coarser grid of farCell blocks out to Distant Horizons' distance (FarBlend), used where no chunk's is known. */
+    private static final Map<Long, Mix> FAR = new ConcurrentHashMap<>();
+    private static volatile int farCell;
     /** Biomes sampled on the grid (server), shared by neighbouring chunks. */
     private static final Map<Long, Holder<Biome>> GRID = new ConcurrentHashMap<>();
     private static volatile int gridStep;
@@ -76,12 +79,20 @@ public final class ClimateBlend {
         ClimateBiome climate = (ClimateBiome) (Object) biome;
         // Snowy and snowless biomes (snow locks) keep their climate; only the ones in between change near them.
         if (climate.seasonsrework$snowLock() != ClimateBiome.SNOW_FREE) return 0;
-        Map<Long, Mix> mixes = climate.seasonsrework$clientSide() ? CLIENT : SERVER;
-        if (mixes.isEmpty()) return 0;
+        boolean client = climate.seasonsrework$clientSide();
         float strength = kind == ClimateBiome.BLEND_FULL ? 1 : Config.blendStrength();
         if (strength == 0) return 0;
-        // Chunk centers around pos and how far pos is between them.
-        float gx = (pos.getX() - 8) / 16F, gz = (pos.getZ() - 8) / 16F;
+        float around = around(client ? CLIENT : SERVER, 16, pos);
+        if (Float.isNaN(around) && client && farCell > 0) around = around(FAR, farCell, pos);
+        if (Float.isNaN(around)) return 0;
+        return strength * (around - Climate.surfaceTemperature(biome));
+    }
+
+    /** The mixes' temperature at pos, blended between the centers of the cells around it; NaN if none is known. */
+    private static float around(Map<Long, Mix> mixes, int cell, BlockPos pos) {
+        if (mixes.isEmpty()) return Float.NaN;
+        float half = cell / 2F;
+        float gx = (pos.getX() - half) / cell, gz = (pos.getZ() - half) / cell;
         int x0 = (int) Math.floor(gx), z0 = (int) Math.floor(gz);
         float fx = gx - x0, fz = gz - z0;
         float sum = 0, weight = 0;
@@ -93,8 +104,7 @@ public final class ClimateBlend {
             sum += w * mix.temperature();
             weight += w;
         }
-        if (weight < 1e-4F) return 0;
-        return strength * (sum / weight - Climate.surfaceTemperature(biome));
+        return weight < 1e-4F ? Float.NaN : sum / weight;
     }
 
     /** The server's mix of a chunk, or null if not known. */
@@ -108,9 +118,20 @@ public final class ClimateBlend {
         CLIENT.put(chunk, mix);
     }
 
+    /** Client: the server sent far mixes (cells of cell blocks; a new size replaces the old ones). */
+    public static void putFar(int cell, long key, Mix mix) {
+        if (cell != farCell || FAR.size() > MAX_CHUNKS) {
+            FAR.clear();
+            farCell = cell;
+        }
+        FAR.put(key, mix);
+    }
+
     /** Client: leaving a world. */
     public static void clearClient() {
         CLIENT.clear();
+        FAR.clear();
+        farCell = 0;
     }
 
     /** Server stopped. */
@@ -125,17 +146,25 @@ public final class ClimateBlend {
         long key = chunk.toLong();
         Mix known = SERVER.get(key);
         if (known != null) return known;
+        Mix mix = mixAt(level, chunk.getMiddleBlockX(), chunk.getMiddleBlockZ());
+        if (mix == null) return null;
+        if (SERVER.size() > MAX_CHUNKS) SERVER.clear();
+        SERVER.put(key, mix);
+        return mix;
+    }
+
+    /** Server: the mix around a block column (not kept). Null when blending is off. */
+    public static Mix mixAt(ServerLevel level, int cx, int cz) {
         int radius = radius(level);
         if (radius <= 0) return null;
         // About 50 samples in the circle, on a grid aligned to the world so neighbours share them.
         int step = Math.max(8, radius / 4);
-        if (step != gridStep) {
+        if (step != gridStep || GRID.size() > MAX_CHUNKS * 4) {
             GRID.clear();
             gridStep = step;
         }
         BiomeSource source = level.getChunkSource().getGenerator().getBiomeSource();
         var sampler = level.getChunkSource().randomState().sampler();
-        int cx = chunk.getMiddleBlockX(), cz = chunk.getMiddleBlockZ();
         Map<Biome, Float> weights = new IdentityHashMap<>();
         float total = 0;
         for (int x = Math.floorDiv(cx - radius, step) * step; x <= cx + radius; x += step) {
@@ -165,10 +194,7 @@ public final class ClimateBlend {
         }
         float[] array = new float[values.size()];
         for (int i = 0; i < array.length; i++) array[i] = values.get(i) / kept;
-        Mix mix = new Mix(biomes.toArray(Biome[]::new), array);
-        if (SERVER.size() > MAX_CHUNKS) SERVER.clear();
-        SERVER.put(key, mix);
-        return mix;
+        return new Mix(biomes.toArray(Biome[]::new), array);
     }
 
     /** The configured radius for the world type (Large Biomes has its own). */
