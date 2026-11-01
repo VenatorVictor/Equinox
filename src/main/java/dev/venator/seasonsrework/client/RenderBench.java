@@ -17,6 +17,8 @@ public final class RenderBench {
     private static long start;
     private static boolean busy;
     private static final long[] TIMES = new long[RUNS];
+    /** Last /snowbench: ms to redraw one section (best run / sections), -1 = not run. Used by SnowAnimBench. */
+    static double lastMsPerSection = -1;
 
     public static void init() {
         NeoForge.EVENT_BUS.addListener(RegisterClientCommandsEvent.class, event -> event.getDispatcher().register(
@@ -59,6 +61,7 @@ public final class RenderBench {
         }
         String text = String.format("Snow bench: redraw all sections %d ms average, %d ms best (%s ms), %d sections", sum / RUNS / 1_000_000, best / 1_000_000,
                 all.toString().trim(), renderer.countRenderedSections());
+        lastMsPerSection = (double) best / 1_000_000 / Math.max(1, renderer.countRenderedSections());
         var player = Minecraft.getInstance().player;
         if (player != null) player.displayClientMessage(Component.literal(text), false);
     }

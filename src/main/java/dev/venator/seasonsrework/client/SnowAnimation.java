@@ -52,6 +52,10 @@ public final class SnowAnimation {
 
     private static final Map<Long, Anim> ANIMS = new ConcurrentHashMap<>();
 
+    // TEMPORARY measuring (SnowAnimBench): time spent drawing the moving copies, and redraws asked at the ends.
+    static long benchDrawNanos, benchMaxDrawNanos, benchActive, benchMaxActive, benchStarted, benchEndRedraws;
+    static final java.util.Set<Long> BENCH_SECTIONS = new java.util.HashSet<>();
+
     private static final class Anim {
         final BlockPos pos;
         final BlockState ghost;
@@ -117,6 +121,7 @@ public final class SnowAnimation {
         Anim running = ANIMS.get(key);
         float shownHeight = running != null && !running.done ? running.ghostHeight + running.offset(now_) : a * LAYER;
         ANIMS.put(key, new Anim(pos.immutable(), ghost, shownHeight - height, b * LAYER - height, now_));
+        benchStarted++;
     }
 
     /** Models (chunk meshing, any thread): leave out the snow at this block. */
@@ -132,6 +137,9 @@ public final class SnowAnimation {
 
     public static void onRenderStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ANIMS.isEmpty()) return;
+        long benchStart = System.nanoTime();
+        benchActive += ANIMS.size();
+        benchMaxActive = Math.max(benchMaxActive, ANIMS.size());
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) return;
@@ -154,6 +162,8 @@ public final class SnowAnimation {
                 anim.done = true; // the mesh draws the snow again
                 BlockPos p = anim.pos;
                 mc.levelRenderer.setBlocksDirty(p.getX(), p.getY(), p.getZ(), p.getX(), p.getY(), p.getZ());
+                benchEndRedraws++;
+                BENCH_SECTIONS.add(net.minecraft.core.SectionPos.asLong(p));
             }
             float offset = anim.offset(now);
             if (offset <= -anim.ghostHeight + 1e-4f) continue; // all sunk
@@ -169,6 +179,9 @@ public final class SnowAnimation {
             drew = true;
         }
         if (drew) buffers.endBatch(RenderType.solid());
+        long took = System.nanoTime() - benchStart;
+        benchDrawNanos += took;
+        benchMaxDrawNanos = Math.max(benchMaxDrawNanos, took);
     }
 
     public static void clear() {

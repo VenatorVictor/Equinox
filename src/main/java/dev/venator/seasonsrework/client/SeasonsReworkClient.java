@@ -50,6 +50,7 @@ public final class SeasonsReworkClient {
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         RenderBench.init();
+        SnowAnimBench.init();
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> dev.venator.seasonsrework.climate.ClimateBlend.clearClient());
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
