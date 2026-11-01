@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Climate zones: each mix also keeps the world's temperature map (the noise vanilla places biomes by, -1..1) at its
  * center as a cooling factor, 1 = full winter, fading to 0 across Config.zoneWarmStart..zoneWarmEnd. The cold part of
  * the seasons is scaled by it (blended between chunk centers like the mixes), so near jungles and savannas there's no
- * winter. Read with the world's sampler, never during world generation; only with vanilla's multi-noise placement.
+ * winter (mountains, the alpine climate, keep theirs). Read with the world's sampler, never during world generation; only with vanilla's multi-noise placement.
  */
 public final class ClimateBlend {
     /** The biomes around a chunk center and their weights (summing to 1). */
@@ -102,7 +102,7 @@ public final class ClimateBlend {
         if (climate.seasonsrework$snowLock() != ClimateBiome.SNOW_FREE) return seasonal;
         float[] here = sample(climate.seasonsrework$clientSide(), pos);
         float cooling = here[1];
-        float result = Climate.zoned(seasonal, cooling);
+        float result = Climate.zoned(biome, seasonal, cooling);
         if (Float.isNaN(here[0])) return result;
         float strength = kind == ClimateBiome.BLEND_FULL ? 1 : Config.blendStrength();
         if (strength == 0) return result;

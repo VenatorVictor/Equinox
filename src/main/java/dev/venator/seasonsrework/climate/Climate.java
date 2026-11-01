@@ -287,12 +287,17 @@ public final class Climate {
     /** The same in a climate zone: cooling (0..1, NaN = unknown = 1) scales the cold part of the season (ClimateBlend). */
     public static float surfaceTemperature(Biome biome, float cooling) {
         ClimateBiome climate = (ClimateBiome) (Object) biome;
-        return biome.getBaseTemperature() + climate.seasonsrework$shift() + zoned(climate.seasonsrework$snowShift() + change(biome), cooling);
+        return biome.getBaseTemperature() + climate.seasonsrework$shift() + zoned(biome, climate.seasonsrework$snowShift() + change(biome), cooling);
     }
 
-    /** A seasonal change (season + snow tuning) in a climate zone: its cold part times cooling (NaN: unchanged). */
-    public static float zoned(float seasonal, float cooling) {
-        return seasonal < 0 && cooling == cooling ? seasonal * cooling : seasonal;
+    /**
+     * A biome's seasonal change (season + snow tuning) in a climate zone: its cold part times cooling (NaN: unchanged).
+     * Mountains (alpine climate) keep their whole winter: their cold comes from height, whatever the band around them
+     * (a height limit instead would depend on the terrain mod).
+     */
+    public static float zoned(Biome biome, float seasonal, float cooling) {
+        if (seasonal >= 0 || cooling != cooling || zoneOf(biome) == Zone.ALPINE) return seasonal;
+        return seasonal * cooling;
     }
 
     private static Zone zoneOf(Holder<Biome> holder, float temperature) {

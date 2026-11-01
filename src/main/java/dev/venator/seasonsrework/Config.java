@@ -114,7 +114,8 @@ public final class Config {
             .comment("Climate zones: Minecraft places biomes by a temperature map (5 bands, frozen to hot, -1 to 1). Near the",
                     "warm bands (jungle, savanna, desert) the winter cold fades out, so there's no snow next to jungles.",
                     "Read from the world's own map (worlds with the vanilla biome placement only), it changes nothing in",
-                    "world generation. Only the cold half of the seasons (and of the snow tuning) fades; summers stay.")
+                    "world generation. Only the cold half of the seasons (and of the snow tuning) fades; summers stay.",
+                    "Mountains (biomes in seasonsrework:climate/alpine, e.g. stony peaks) keep their whole winter.")
             .define("climate_zones", true);
     public static final ModConfigSpec.DoubleValue ZONE_WARM_START = BUILDER
             .comment("Where on the temperature map the winter starts fading (full winter below). Vanilla's bands: frozen",
