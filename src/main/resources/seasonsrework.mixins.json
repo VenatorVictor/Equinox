@@ -24,7 +24,9 @@
     "WallSnowShapeMixin",
     "SnowyNeighbourMixin",
     "SnowyDoublePlantMixin",
-    "WorldgenClimateMixin"
+    "WorldgenClimateMixin",
+    "PathNavigationRegionAccessor",
+    "SnowyDirtShapeMixin"
   ],
   "client": [
     "client.BiomeColorMixin",

@@ -31,6 +31,8 @@ public abstract class LevelChunkMixin {
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void seasonsrework$warmth(BlockPos pos, BlockState state, boolean isMoving, CallbackInfoReturnable<BlockState> cir) {
         BlockState old = cir.getReturnValue();
-        if (old != null) CropWarmth.onBlockChanged(level, pos, old, state);
+        if (old == null) return;
+        CropWarmth.onBlockChanged(level, pos, old, state);
+        dev.venator.seasonsrework.snow.SnowMap.onBlockChanged(level, pos, old, state);
     }
 }

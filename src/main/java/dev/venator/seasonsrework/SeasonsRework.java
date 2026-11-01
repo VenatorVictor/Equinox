@@ -80,6 +80,7 @@ public final class SeasonsRework {
         dev.venator.seasonsrework.climate.FarBlend.init();
         Snowpack.init();
         SnowCover.init(modBus);
+        dev.venator.seasonsrework.snow.SnowMap.init(modBus);
         dev.venator.seasonsrework.snow.SnowyPlants.init();
         modBus.addListener(AddPackFindersEvent.class, SeasonsRework::addPacks);
         modBus.addListener(RegisterDataMapTypesEvent.class, event -> {

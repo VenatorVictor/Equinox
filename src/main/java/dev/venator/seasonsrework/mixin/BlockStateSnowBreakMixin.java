@@ -1,6 +1,11 @@
 package dev.venator.seasonsrework.mixin;
 
+import dev.venator.seasonsrework.snow.SnowMap;
 import dev.venator.seasonsrework.snow.SnowyPlants;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.SoundType;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -19,10 +24,18 @@ public abstract class BlockStateSnowBreakMixin implements IBlockStateExtension {
     @Override
     public boolean onDestroyedByPlayer(Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
         BlockState state = (BlockState) (Object) this;
-        if (SnowyPlants.layers(state) > 0) {
+        if (SnowyPlants.layers(level, pos, state) > 0) {
             SnowyPlants.breakSnow(state, level, pos, player);
             return false;
         }
         return state.getBlock().onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
+
+    /** A fence with snow by it (SnowMap) sounds like snow (steps, placing, breaking); the snow state's blocks do it in SnowStateMixin. */
+    @Override
+    public SoundType getSoundType(LevelReader level, BlockPos pos, @Nullable Entity entity) {
+        BlockState state = (BlockState) (Object) this;
+        if (SnowMap.uses(state) && SnowMap.get(level, pos) > 0) return SoundType.SNOW;
+        return state.getBlock().getSoundType(state, level, pos, entity);
     }
 }

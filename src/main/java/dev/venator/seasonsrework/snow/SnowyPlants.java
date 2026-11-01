@@ -51,7 +51,7 @@ import java.util.Map;
  * like the snowy crops. No extra blocks and no block entity: the plant stays itself (other mods, drops and Jade see
  * the real plant), and removing the mod just drops the state (the plants stay, the snow goes). Plants (every
  * BushBlock: grass, flowers, ferns, saplings, mushrooms, berry bushes, modded plants) hold 0..8 layers, a tall plant
- * in its lower half; fences, fence gates and walls hold 0..1 (not while waterlogged). Not: farmland crops
+ * in its lower half; fence gates and walls hold 0..1 (not while waterlogged); fences keep theirs by position (SnowMap, 0..8). Not: farmland crops
  * (SnowyCrops), water plants.
  * The rest lives in mixins: shape and collision, sound, melting on random ticks, breaking the snow first
  * (SnowStateMixin, BlockStateSnowBreakMixin), grass under snow (SnowyDirtMixin, SpreadingSnowyDirtMixin); the look in SnowyPlantModel.
@@ -86,7 +86,8 @@ public final class SnowyPlants {
     /** BlockSnowyMixin, while the block is built: the snow state it gets, or null. Only vanilla classes here. */
     public static IntegerProperty propertyFor(Block block, Map<String, Property<?>> properties) {
         if (properties.containsKey(SNOW.getName())) return null;
-        if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock) return SNOW_THIN;
+        if (block instanceof FenceBlock) return null; // its snow is kept by position (SnowMap)
+        if (block instanceof FenceGateBlock || block instanceof WallBlock) return SNOW_THIN;
         if (properties.containsKey(BlockStateProperties.WATERLOGGED.getName()) || !(block instanceof BushBlock) || block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock
                 || block instanceof WaterlilyBlock || block instanceof SeagrassBlock || block instanceof TallSeagrassBlock) return null;
         return SNOW;
@@ -95,6 +96,11 @@ public final class SnowyPlants {
     /** Snow layers in a block: its snow state, or a SnowyBlock's (0: none). */
     public static int layers(BlockState state) {
         return state.getBlock() instanceof SnowyBlock ? state.getValue(SnowyBlock.LAYERS) : stateLayers(state);
+    }
+
+    /** Snow layers at pos: the block's own (state or SnowyBlock), or the position's for fences (SnowMap). */
+    public static int layers(BlockGetter level, BlockPos pos, BlockState state) {
+        return SnowMap.uses(state) ? SnowMap.get(level, pos) : layers(state);
     }
 
     /** Snow layers in the block's own snow state (not SnowyBlock). */
@@ -106,6 +112,7 @@ public final class SnowyPlants {
     /** Most layers the block holds (0: none). */
     public static int maxLayers(BlockState state) {
         if (state.getBlock() instanceof SnowyBlock) return state.getValue(SnowyBlock.THIN) ? 1 : 8;
+        if (SnowMap.holds(state)) return 8;
         return stateMaxLayers(state);
     }
 
@@ -126,6 +133,8 @@ public final class SnowyPlants {
      * block comes back). New snow on a bare block follows the storage option. False if nothing changed.
      */
     public static boolean setLayers(Level level, BlockPos pos, BlockState state, int layers, int flags) {
+        // Fences: kept by position, changed on the server only (the clients get it from there).
+        if (SnowMap.uses(state)) return level instanceof ServerLevel server && SnowMap.set(server, pos, layers);
         if (state.getBlock() instanceof SnowyBlock) {
             if (layers <= 0) {
                 BlockState inner = SnowyBlock.inner(level, pos);
@@ -187,12 +196,13 @@ public final class SnowyPlants {
             return;
         }
         if (!enabled()) return;
-        if (maxLayers(state) == 0 && maxLayers(level.getBlockState(top.below())) == 1) {
+        BlockState under = level.getBlockState(top.below());
+        if (maxLayers(state) == 0 && (maxLayers(under) == 1 || SnowMap.holds(under))) {
             // A fence or wall (the heightmap is above it): its snow is on the ground around it.
             top = top.below();
             state = level.getBlockState(top);
         }
-        if (!holds(state) || layers(state) > 0) return;
+        if (!holds(state) || layers(level, top, state) > 0) return;
         Holder<Biome> biome = level.getBiome(top);
         if (!biome.value().hasPrecipitation() || !SnowRules.lies(biome, top, Snowpack.warmest())
                 || level.getBrightness(LightLayer.BLOCK, top) >= 10) return;
@@ -205,7 +215,7 @@ public final class SnowyPlants {
      */
     public static boolean randomTick(BlockState state, ServerLevel level, BlockPos pos) {
         if (level.getBrightness(LightLayer.BLOCK, pos) <= 11 && SnowRules.lies(level.getBiome(pos), pos, Snowpack.warmest())) return false;
-        setLayers(level, pos, state, layers(state) - 1, Block.UPDATE_ALL);
+        setLayers(level, pos, state, layers(level, pos, state) - 1, Block.UPDATE_ALL);
         return true;
     }
 
@@ -215,7 +225,7 @@ public final class SnowyPlants {
      * are vanilla's (playerWillDestroy), snow's for a snowy state (SnowStateMixin, SnowyPlantModel).
      */
     public static void breakSnow(BlockState state, Level level, BlockPos pos, Player player) {
-        BlockState snow = Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, layers(state));
+        BlockState snow = Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, layers(level, pos, state));
         if (!level.isClientSide && !player.isCreative() && player.hasCorrectToolForDrops(snow, level, pos))
             Block.dropResources(snow, level, pos, null, player, player.getMainHandItem());
         setLayers(level, pos, state, 0, level.isClientSide ? 11 : 3);
@@ -244,9 +254,10 @@ public final class SnowyPlants {
             state = level.getBlockState(pos);
         }
         if (!holds(state)) return;
-        if (layers(state) < maxLayers(state) && Blocks.SNOW.defaultBlockState().canSurvive(level, pos)) {
+        int layers = layers(level, pos, state);
+        if (layers < maxLayers(state) && Blocks.SNOW.defaultBlockState().canSurvive(level, pos)) {
             if (!level.isClientSide) {
-                setLayers(level, pos, state, layers(state) + 1, Block.UPDATE_ALL);
+                setLayers(level, pos, state, layers + 1, Block.UPDATE_ALL);
                 SoundType sound = Blocks.SNOW.defaultBlockState().getSoundType();
                 level.playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS, (sound.getVolume() + 1) / 2, sound.getPitch() * 0.8F);
                 if (!event.getEntity().getAbilities().instabuild) stack.shrink(1);

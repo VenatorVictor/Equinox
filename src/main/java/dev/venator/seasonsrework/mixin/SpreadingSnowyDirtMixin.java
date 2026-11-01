@@ -18,6 +18,6 @@ public abstract class SpreadingSnowyDirtMixin {
     private static void seasonsrework$grassUnderSnow(BlockState state, LevelReader level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) return;
         BlockState above = level.getBlockState(pos.above());
-        if (above.getBlock() instanceof SnowLayerBlock || SnowyPlants.layers(above) > 0) cir.setReturnValue(true);
+        if (above.getBlock() instanceof SnowLayerBlock || SnowyPlants.layers(level, pos.above(), above) > 0) cir.setReturnValue(true);
     }
 }
