@@ -37,6 +37,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
+import dev.venator.seasonsrework.crops.SnowyCrops;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -253,6 +254,15 @@ public final class SnowCover {
         BlockPos below = top.below();
         BlockState topState = chunk.getBlockState(top);
         BlockState belowState = chunk.getBlockState(below);
+        // A crop at the top: snow on it is its snowy state (SnowyCrops), set by the snowfall like the ground's snow.
+        if (SnowyCrops.holds(topState)) {
+            if (SnowRules.lies(biome, top, warmest)) {
+                if (add) SnowyCrops.cover(level, top.immutable(), topState);
+            } else {
+                SnowyCrops.melt(level, top.immutable(), topState);
+            }
+            return;
+        }
         // Where the snow of this column is: a snow layer or plant at top, or a fence or wall just under it.
         boolean inFence = topState.isAir() && SnowyPlants.maxLayers(belowState) > 0 && SnowyPlants.holds(belowState);
         int now = topState.getBlock() instanceof SnowLayerBlock ? topState.getValue(SnowLayerBlock.LAYERS)

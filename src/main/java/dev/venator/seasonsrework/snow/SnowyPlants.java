@@ -176,10 +176,17 @@ public final class SnowyPlants {
         return setLayers(level, pos, state, Math.max(layers, 1), flags);
     }
 
-    /** ServerLevelSnowfallMixin: vanilla snowfall reached a plant (it only snows on air or snow by itself). */
+    /** ServerLevelSnowfallMixin: vanilla snowfall reached a plant or crop (it only snows on air or snow by itself). */
     public static void onSnowfall(ServerLevel level, BlockPos top) {
-        if (!level.isRaining() || !enabled()) return;
+        if (!level.isRaining()) return;
         BlockState state = level.getBlockState(top);
+        if (dev.venator.seasonsrework.crops.SnowyCrops.holds(state)) { // a crop: it gets its snowy state
+            Holder<Biome> biome = level.getBiome(top);
+            if (biome.value().hasPrecipitation() && SnowRules.lies(biome, top, Snowpack.warmest()))
+                dev.venator.seasonsrework.crops.SnowyCrops.cover(level, top, state);
+            return;
+        }
+        if (!enabled()) return;
         if (maxLayers(state) == 0 && maxLayers(level.getBlockState(top.below())) == 1) {
             // A fence or wall (the heightmap is above it): its snow is on the ground around it.
             top = top.below();
