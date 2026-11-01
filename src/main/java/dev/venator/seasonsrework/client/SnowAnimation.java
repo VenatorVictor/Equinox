@@ -46,6 +46,9 @@ public final class SnowAnimation {
     private static final int SERVER_FLAGS = 19;
 
     private static final Map<Long, Anim> ANIMS = new ConcurrentHashMap<>();
+    /** Snow the player put in by hand changes at once: the clicked block and the one on the clicked face, until this time (ms). */
+    private static final Map<Long, Long> PLACED = new ConcurrentHashMap<>();
+    private static final long PLACED_MS = 1500;
     /** Set while we put a held-back block in, so the mixin lets it through. */
     private static boolean applying;
 
@@ -119,6 +122,8 @@ public final class SnowAnimation {
     public static boolean onServerChange(ClientLevel level, BlockPos pos, BlockState old, BlockState now) {
         if (applying) return false;
         long key = pos.asLong();
+        Long placed = PLACED.get(key);
+        if (placed != null && placed >= System.currentTimeMillis()) return false;
         Anim running = ANIMS.remove(key);
         long time = System.currentTimeMillis();
         // A newer change replaces a held-back one; the copy carries on from where it is.
@@ -150,8 +155,24 @@ public final class SnowAnimation {
         return false;
     }
 
+    /** The player uses snow (layers or a block) on a block: no animation for what that puts in. */
+    public static void onUse(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
+        if (!event.getLevel().isClientSide) return;
+        net.minecraft.world.item.ItemStack stack = event.getItemStack();
+        if (!stack.is(net.minecraft.world.item.Items.SNOW) && !stack.is(net.minecraft.world.item.Items.SNOW_BLOCK)) return;
+        long until = System.currentTimeMillis() + PLACED_MS;
+        BlockPos pos = event.getPos();
+        PLACED.put(pos.asLong(), until);
+        PLACED.put(pos.relative(event.getHitVec().getDirection()).asLong(), until);
+        PLACED.put(pos.below().asLong(), until); // a tall plant's upper half: its snow is in the lower half
+    }
+
     /** Client tick: put held-back blocks in once their copy has risen, drop finished copies. */
     public static void tick() {
+        if (!PLACED.isEmpty()) {
+            long now = System.currentTimeMillis();
+            PLACED.values().removeIf(until -> until < now);
+        }
         if (ANIMS.isEmpty()) return;
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null) {
