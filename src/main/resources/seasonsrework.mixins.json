@@ -26,7 +26,8 @@
     "SnowyDoublePlantMixin"
   ],
   "client": [
-    "client.BiomeColorMixin"
+    "client.BiomeColorMixin",
+    "client.ClientLevelSnowMixin"
   ],
   "injectors": {
     "defaultRequire": 1
