@@ -123,9 +123,9 @@ public abstract class BiomeMixin implements ClimateBiome {
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (Climate.WORLDGEN.get()) return; // world generation keeps vanilla's climate
         float[] changes = seasonsrework$changes;
-        float shift = seasonsrework$shift + seasonsrework$snowShift;
-        if (changes != null) shift += Climate.change(changes, seasonsrework$zone.factor);
-        shift += ClimateBlend.delta((Biome) (Object) this, pos, seasonsrework$blendKind);
+        float seasonal = seasonsrework$snowShift;
+        if (changes != null) seasonal += Climate.change(changes, seasonsrework$zone.factor);
+        float shift = seasonsrework$shift + ClimateBlend.adjust((Biome) (Object) this, pos, seasonsrework$blendKind, seasonal);
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
     }
 

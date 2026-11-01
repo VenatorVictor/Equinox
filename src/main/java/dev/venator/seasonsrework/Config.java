@@ -110,6 +110,19 @@ public final class Config {
             .comment("Distant Horizons: players with DH get the blending out to their LOD distance, up to this many blocks,",
                     "so far snow and ice match the blending too (worked out a little each tick, nearest first). 0: off.")
             .defineInRange("dh_blend_distance", 4096, 0, 32768);
+    public static final ModConfigSpec.BooleanValue CLIMATE_ZONES = BUILDER
+            .comment("Climate zones: Minecraft places biomes by a temperature map (5 bands, frozen to hot, -1 to 1). Near the",
+                    "warm bands (jungle, savanna, desert) the winter cold fades out, so there's no snow next to jungles.",
+                    "Read from the world's own map (worlds with the vanilla biome placement only), it changes nothing in",
+                    "world generation. Only the cold half of the seasons (and of the snow tuning) fades; summers stay.")
+            .define("climate_zones", true);
+    public static final ModConfigSpec.DoubleValue ZONE_WARM_START = BUILDER
+            .comment("Where on the temperature map the winter starts fading (full winter below). Vanilla's bands: frozen",
+                    "below -0.45, cold to -0.15, temperate to 0.2, warm (jungle, savanna, forest) to 0.55, hot (desert) above.")
+            .defineInRange("zone_warm_start", 0.0, -1.0, 1.0);
+    public static final ModConfigSpec.DoubleValue ZONE_WARM_END = BUILDER
+            .comment("Where the winter is gone (no seasonal cold above). 0.2 is where jungles and savannas start.")
+            .defineInRange("zone_warm_end", 0.2, -1.0, 1.0);
 
     public static final ModConfigSpec.BooleanValue SEASONAL_CROPS = BUILDER
             .comment("Crops follow the temperature in °C: each has a range (data map seasonsrework:crop_climate; crops only",
@@ -153,6 +166,8 @@ public final class Config {
     private static volatile int blendRadius = 64, blendRadiusLarge = 128;
     private static volatile float blendStrength = 0.5F;
     private static volatile int dhBlendDistance = 4096;
+    private static volatile boolean climateZones = true;
+    private static volatile float zoneWarmStart = 0, zoneWarmEnd = 0.2F;
 
     public static void refresh() {
         Set<ResourceKey<Level>> set = new HashSet<>();
@@ -180,6 +195,9 @@ public final class Config {
         blendRadiusLarge = BLEND_RADIUS_LARGE.get();
         blendStrength = BLEND_STRENGTH.get().floatValue();
         dhBlendDistance = DH_BLEND_DISTANCE.get();
+        climateZones = CLIMATE_ZONES.get();
+        zoneWarmStart = ZONE_WARM_START.get().floatValue();
+        zoneWarmEnd = ZONE_WARM_END.get().floatValue();
         Climate.recategorize();
     }
 
@@ -292,6 +310,21 @@ public final class Config {
     /** Distant Horizons blending distance in blocks (0: off). */
     public static int dhBlendDistance() {
         return dhBlendDistance;
+    }
+
+    /** Climate zones from the world's temperature map (ClimateBlend.cooling). */
+    public static boolean climateZones() {
+        return climateZones;
+    }
+
+    /** Temperature map value where the winter starts fading. */
+    public static float zoneWarmStart() {
+        return zoneWarmStart;
+    }
+
+    /** Temperature map value where the winter is gone. */
+    public static float zoneWarmEnd() {
+        return zoneWarmEnd;
     }
 
     /** How much a (land) biome's temperature takes from its surroundings. */

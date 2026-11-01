@@ -281,8 +281,18 @@ public final class Climate {
 
     /** The temperature now at sea level (no height), season and snow tuning included. */
     public static float surfaceTemperature(Biome biome) {
+        return surfaceTemperature(biome, Float.NaN);
+    }
+
+    /** The same in a climate zone: cooling (0..1, NaN = unknown = 1) scales the cold part of the season (ClimateBlend). */
+    public static float surfaceTemperature(Biome biome, float cooling) {
         ClimateBiome climate = (ClimateBiome) (Object) biome;
-        return biome.getBaseTemperature() + climate.seasonsrework$shift() + climate.seasonsrework$snowShift() + change(biome);
+        return biome.getBaseTemperature() + climate.seasonsrework$shift() + zoned(climate.seasonsrework$snowShift() + change(biome), cooling);
+    }
+
+    /** A seasonal change (season + snow tuning) in a climate zone: its cold part times cooling (NaN: unchanged). */
+    public static float zoned(float seasonal, float cooling) {
+        return seasonal < 0 && cooling == cooling ? seasonal * cooling : seasonal;
     }
 
     private static Zone zoneOf(Holder<Biome> holder, float temperature) {

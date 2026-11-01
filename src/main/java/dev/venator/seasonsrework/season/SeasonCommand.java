@@ -81,6 +81,10 @@ public final class SeasonCommand {
         }
         source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.blend",
                 String.format("%+.2f", blend), around.isEmpty() ? "-" : around.toString()), false);
+        // Climate zone: how much of the winter's cold applies here (100% = full winter, 0% = none, near the warm bands).
+        float cooling = dev.venator.seasonsrework.climate.ClimateBlend.coolingAt(false, pos);
+        source.sendSuccess(() -> Component.translatable("commands.seasonsrework.season.zone",
+                Float.isNaN(cooling) ? "-" : Math.round(cooling * 100) + "%"), false);
         // Snow: the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15) and whether it lies here.
         var holder = source.getLevel().getBiome(pos);
         var snowDays = holder.getData(dev.venator.seasonsrework.climate.BiomeSnow.TYPE);
