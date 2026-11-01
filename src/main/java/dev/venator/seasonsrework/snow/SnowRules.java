@@ -48,6 +48,30 @@ public final class SnowRules {
         return Mth.clamp(1 + Mth.floor(over / LAYER), 1, maxLayers(biome));
     }
 
+    /** How far below the snow line one snow look step is (snow textures and LOD snow fade in 4 steps). */
+    private static final float LOOK_STEP = 0.03F;
+
+    /**
+     * GROUND look: how snowy things look where snow lies, 1..4 (4 = fully snowy), by how far the column is past the
+     * point where snow starts to lie (the same margin the snow cover uses): the first patches look light, a long cold
+     * spell full. 0 where snow doesn't lie.
+     */
+    public static int groundStep(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest, float here) {
+        float over = margin(biome, warmest, here) - patch(pos.getX(), pos.getZ()) * RAMP;
+        if (over <= 0) return 0;
+        return Mth.clamp(1 + Mth.floor(over / LOOK_STEP), 1, 4);
+    }
+
+    /**
+     * CALENDAR look: how snowy things look from the temperature now alone (season, day and height), 0..4, like the
+     * seasonal colors: no snowfall needed, snow or not on the ground.
+     */
+    public static int calendarStep(float here) {
+        float below = Climate.SNOW_LINE - here;
+        if (below <= 0) return 0;
+        return Mth.clamp(1 + Mth.floor(below / LOOK_STEP), 1, 4);
+    }
+
     /** Natural snow never fills a whole block (players can stack it to 8). */
     static int maxLayers(Holder<Biome> biome) {
         BiomeSnow snow = Climate.snowDays(biome);

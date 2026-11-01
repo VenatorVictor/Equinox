@@ -38,6 +38,8 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -277,6 +279,15 @@ public final class SeasonalTextures {
             this.data = ModelData.builder().with(SeasonalModel.VARIANT, this).build();
         }
 
+        private final Overlay[] overlays = new Overlay[3];
+
+        /** This (snowy) set drawn over the normal one for look step 1..3. */
+        Overlay overlay(int step) {
+            Overlay overlay = overlays[step - 1];
+            if (overlay == null) overlays[step - 1] = overlay = new Overlay(this, step);
+            return overlay;
+        }
+
         BakedQuad swap(BakedQuad quad) {
             Swap swap = remap.get(quad.getSprite());
             return swap == null ? quad : quads.computeIfAbsent(quad, q -> retexture(q, swap));
@@ -297,6 +308,78 @@ public final class SeasonalTextures {
             }
             int tint = swap.tint() == KEEP_TINT ? quad.getTintIndex() : swap.tint();
             return new BakedQuad(vertices, tint, quad.getDirection(), to, quad.isShade(), quad.hasAmbientOcclusion());
+        }
+    }
+
+    /**
+     * The snowy texture drawn over the normal one for look steps 1..3: on side faces only the top part (a quarter,
+     * half, three quarters: snow settles from the top down), on top faces all of it from step 1, on bottom faces none.
+     * A hair in front of the face so it always wins over the texture under it. Its own tint (snow_tint).
+     */
+    static final class Overlay {
+        /** Distance in front of the face (blocks). */
+        private static final float LIFT = 0.0015F;
+        private final Variant snow;
+        private final int step;
+        private final Map<BakedQuad, Optional<BakedQuad>> quads = new ConcurrentHashMap<>();
+
+        Overlay(Variant snow, int step) {
+            this.snow = snow;
+            this.step = step;
+        }
+
+        /** The snow quad drawn over this (original, not yet swapped) quad, or null. */
+        @Nullable BakedQuad quad(BakedQuad quad) {
+            return quads.computeIfAbsent(quad, q -> Optional.ofNullable(make(q))).orElse(null);
+        }
+
+        private @Nullable BakedQuad make(BakedQuad quad) {
+            if (!snow.remap.containsKey(quad.getSprite())) return null;
+            BakedQuad swapped = snow.swap(quad);
+            int[] v = swapped.getVertices().clone();
+            int stride = v.length / 4;
+            float[] x = new float[4], y = new float[4], z = new float[4];
+            for (int i = 0; i < 4; i++) {
+                x[i] = Float.intBitsToFloat(v[i * stride]);
+                y[i] = Float.intBitsToFloat(v[i * stride + 1]);
+                z[i] = Float.intBitsToFloat(v[i * stride + 2]);
+            }
+            // The face's normal, from its corners.
+            float ax = x[1] - x[0], ay = y[1] - y[0], az = z[1] - z[0];
+            float bx = x[2] - x[0], by = y[2] - y[0], bz = z[2] - z[0];
+            float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+            float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (length < 1e-6F) return null;
+            nx /= length;
+            ny /= length;
+            nz /= length;
+            if (ny < -0.7F) return null; // bottom faces: no snow until fully snowy
+            if (ny < 0.7F) {
+                // A side face: keep its top part. Each lower corner moves up its edge to the cut.
+                float top = Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3]));
+                float bottom = Math.min(Math.min(y[0], y[1]), Math.min(y[2], y[3]));
+                if (top - bottom < 1e-4F) return null;
+                float cut = top - (top - bottom) * step / 4F;
+                int[] source = v.clone();
+                for (int i = 0; i < 4; i++) {
+                    if (y[i] >= cut - 1e-5F) continue;
+                    // Its partner: the neighbouring corner higher up (the other end of the side edge).
+                    int prev = (i + 3) % 4, next = (i + 1) % 4;
+                    int partner = y[prev] - y[i] > y[next] - y[i] ? prev : next;
+                    if (y[partner] - y[i] < 1e-5F) continue;
+                    float t = (cut - y[i]) / (y[partner] - y[i]);
+                    for (int k : new int[]{0, 1, 2, 4, 5}) { // position and texture coordinates
+                        float a = Float.intBitsToFloat(source[i * stride + k]), b = Float.intBitsToFloat(source[partner * stride + k]);
+                        v[i * stride + k] = Float.floatToRawIntBits(a + (b - a) * t);
+                    }
+                }
+            }
+            for (int i = 0; i < 4; i++) {
+                v[i * stride] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride]) + nx * LIFT);
+                v[i * stride + 1] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 1]) + ny * LIFT);
+                v[i * stride + 2] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 2]) + nz * LIFT);
+            }
+            return new BakedQuad(v, swapped.getTintIndex(), swapped.getDirection(), swapped.getSprite(), swapped.isShade(), swapped.hasAmbientOcclusion());
         }
     }
 

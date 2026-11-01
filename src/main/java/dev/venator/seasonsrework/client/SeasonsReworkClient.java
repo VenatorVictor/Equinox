@@ -85,6 +85,7 @@ public final class SeasonsReworkClient {
         Climate.update(level);
         CropLookModel.tick(level);
         SnowAnimation.tick();
+        ChunkRefresher.tick();
 
         boolean changed = ColorClock.tick(level);
         int step = ColorClock.active ? ColorClock.step : -1;
