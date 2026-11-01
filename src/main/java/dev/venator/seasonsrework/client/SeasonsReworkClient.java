@@ -51,6 +51,7 @@ public final class SeasonsReworkClient {
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         RenderBench.init();
         SnowAnimBench.init();
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, true, net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock.class, SnowAnimation::onUse);
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
             dev.venator.seasonsrework.climate.ClimateBlend.clearClient();
