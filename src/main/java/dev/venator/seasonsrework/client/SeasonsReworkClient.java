@@ -44,6 +44,8 @@ public final class SeasonsReworkClient {
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyPlantModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyBlockModel::onModifyBakingResult);
+        modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowAnimation::onModifyBakingResult);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, SnowAnimation::onRenderStage);
         modBus.addListener(RegisterColorHandlersEvent.Block.class, SnowyBlockModel::colors);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
@@ -66,8 +68,12 @@ public final class SeasonsReworkClient {
             WATCHER.reset();
             ColorClock.reset();
             ClientSnow.reset();
+            SnowAnimation.clear();
         });
-        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.Clone.class, event -> WATCHER.reset()); // dimension change
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.Clone.class, event -> {
+            WATCHER.reset(); // dimension change
+            SnowAnimation.clear();
+        });
         SeasonsRework.LOGGER.info("Seasons Rework: seasonal colors on, Distant Horizons {}", dhLoaded ? "found" : "not installed");
     }
 

@@ -19,6 +19,9 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue DH_SNOW;
     public static final ModConfigSpec.BooleanValue CROP_LOOKS;
     public static final ModConfigSpec.EnumValue<CropColors> CROP_COLORS;
+    public static final ModConfigSpec.BooleanValue SNOW_ANIMATION;
+    public static final ModConfigSpec.IntValue SNOW_ANIMATION_MS;
+    public static final ModConfigSpec.IntValue SNOW_ANIMATION_DISTANCE;
 
     /** Colors of crops that don't grow. ECLIPTIC: Ecliptic Seasons' winter beige and autumn dry orange. */
     public enum CropColors { DEFAULT, ECLIPTIC }
@@ -53,6 +56,13 @@ public final class ClientConfig {
         CROP_COLORS = BUILDER.comment("DEFAULT: greyish blue-green (cold), dark yellow (heat).",
                         "ECLIPTIC: Ecliptic Seasons' colors, winter beige (cold) and dry orange (heat). Needs a resource reload (F3+T).")
                 .defineEnum("crop_colors", CropColors.DEFAULT);
+        BUILDER.pop().push("snow");
+        SNOW_ANIMATION = BUILDER.comment("Snow that falls or melts near you slides up out of the ground / sinks into it instead of popping.")
+                .define("animation", true);
+        SNOW_ANIMATION_MS = BUILDER.comment("How long the slide takes (milliseconds).")
+                .defineInRange("animation_ms", 600, 50, 5000);
+        SNOW_ANIMATION_DISTANCE = BUILDER.comment("Only snow this close to you (blocks) is animated; further away it just changes.")
+                .defineInRange("animation_distance", 48, 4, 256);
         BUILDER.pop().push("distant_horizons");
         DH_REFRESH = BUILDER.comment("Re-color Distant Horizons LODs when the season colors change (nearest first).")
                 .define("refresh_lods", true);

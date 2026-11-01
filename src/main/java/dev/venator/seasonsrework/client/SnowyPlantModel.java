@@ -81,12 +81,14 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     @Override
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
         data = super.getModelData(region, pos, state, data);
-        if (!state.hasOffsetFunction()) return data;
-        Vec3 offset = SnowyPlants.plantOffset(state, region, pos);
-        if (offset.equals(Vec3.ZERO)) return data;
-        IQuadTransformer move = QuadTransformers.applying(new Transformation(
-                new Matrix4f().translation((float) offset.x, (float) offset.y, (float) offset.z)));
-        return data.derive().with(OFFSET, move).build();
+        boolean hidden = SnowAnimation.hidden(pos);
+        Vec3 offset = state.hasOffsetFunction() ? SnowyPlants.plantOffset(state, region, pos) : Vec3.ZERO;
+        if (!hidden && offset.equals(Vec3.ZERO)) return data;
+        ModelData.Builder builder = data.derive();
+        if (hidden) builder.with(SnowAnimation.HIDDEN, true);
+        if (!offset.equals(Vec3.ZERO)) builder.with(OFFSET, QuadTransformers.applying(new Transformation(
+                new Matrix4f().translation((float) offset.x, (float) offset.y, (float) offset.z))));
+        return builder.build();
     }
 
     @Override
@@ -97,7 +99,7 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
         List<BakedQuad> ownQuads = own ? super.getQuads(state, side, rand, data, renderType) : List.of();
         IQuadTransformer move = data.get(OFFSET);
         if (move != null && !ownQuads.isEmpty()) ownQuads = move.process(ownQuads);
-        if (!snow) return ownQuads;
+        if (!snow || SnowAnimation.hidden(data)) return ownQuads;
         BlockState snowState = snow();
         List<BakedQuad> quads = new ArrayList<>(ownQuads);
         quads.addAll(model(snowState).getQuads(snowState, side, rand, ModelData.EMPTY, renderType));
