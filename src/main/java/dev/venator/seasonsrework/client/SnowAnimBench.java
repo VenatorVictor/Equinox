@@ -20,10 +20,9 @@ import java.util.List;
 /**
  * TEMPORARY: measures the snow animation in game.
  * /snowanim watch [seconds]  - measures real snowfall/thaw around you (default 60 s).
- * /snowanim stress <per_second> [seconds] - fakes that many snow blocks rising per second (client only, snow layers
- *   and snowy plants within animation_distance), worst-case test without waiting for weather (default 10 s).
- * Reports: drawing time per frame (average / worst), moving copies at once, redraws asked at the ends and the
- * sections they touch. With a /snowbench result it also estimates the redraw cost (background threads with Sodium).
+ * /snowanim stress <per_second> [seconds] - fakes that many snow changes per second (half thaw and sink, half come back and rise; client only, snow layers
+ *   and snowy plants within animation_distance), worst-case test without waiting for weather (default 10 s); the snow is put back at the end.
+ * Reports: drawing time per frame (average / worst), moving copies at once, snow put in after rising.
  */
 public final class SnowAnimBench {
     private static long endAt = -1, startNanos;
@@ -31,6 +30,7 @@ public final class SnowAnimBench {
     private static int stressPerSecond;
     private static double stressCarry;
     private static List<BlockPos> candidates = List.of();
+    private static final java.util.Map<BlockPos, BlockState> ORIGINAL = new java.util.HashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
 
     public static void init() {
@@ -60,8 +60,7 @@ public final class SnowAnimBench {
 
     private static int start(int seconds, int perSecond) {
         SnowAnimation.benchDrawNanos = SnowAnimation.benchMaxDrawNanos = SnowAnimation.benchActive = SnowAnimation.benchMaxActive = 0;
-        SnowAnimation.benchStarted = SnowAnimation.benchEndRedraws = 0;
-        SnowAnimation.BENCH_SECTIONS.clear();
+        SnowAnimation.benchStarted = SnowAnimation.benchApplied = 0;
         frames = frameNanos = lastFrame = 0;
         stressPerSecond = perSecond;
         stressCarry = 0;
@@ -84,6 +83,7 @@ public final class SnowAnimBench {
         int r = ClientConfig.SNOW_ANIMATION_DISTANCE.get();
         BlockPos center = mc.player.blockPosition();
         List<BlockPos> found = new ArrayList<>();
+        ORIGINAL.clear();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = -r; x <= r; x++) {
             for (int z = -r; z <= r; z++) {
@@ -91,7 +91,10 @@ public final class SnowAnimBench {
                 for (int y = -16; y <= 16; y++) {
                     pos.set(center.getX() + x, center.getY() + y, center.getZ() + z);
                     BlockState state = level.getBlockState(pos);
-                    if (state.is(Blocks.SNOW) || dev.venator.seasonsrework.snow.SnowyPlants.stateLayers(state) > 0) found.add(pos.immutable());
+                    if (state.is(Blocks.SNOW) || dev.venator.seasonsrework.snow.SnowyPlants.stateLayers(state) > 0) {
+                        found.add(pos.immutable());
+                        ORIGINAL.put(pos.immutable(), state);
+                    }
                 }
             }
         }
@@ -109,16 +112,19 @@ public final class SnowAnimBench {
             stressCarry += stressPerSecond / 20.0;
             while (stressCarry >= 1) {
                 stressCarry--;
+                // Fake the server: a snowy block thaws (sinks), a thawed one gets its snow back (rises).
                 BlockPos pos = candidates.get(RANDOM.nextInt(candidates.size()));
                 BlockState state = level.getBlockState(pos);
-                BlockState bare = state.is(Blocks.SNOW) ? Blocks.AIR.defaultBlockState() : dev.venator.seasonsrework.snow.SnowyPlants.withLayers(state, 0);
-                SnowAnimation.onServerChange(level, pos, bare, state);
-                // What a real change does: redraw the block's section.
-                Minecraft.getInstance().levelRenderer.setBlocksDirty(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
+                BlockState snowy = ORIGINAL.get(pos);
+                if (snowy == null) continue;
+                boolean hasSnow = state.is(Blocks.SNOW) || dev.venator.seasonsrework.snow.SnowyPlants.stateLayers(state) > 0;
+                BlockState bare = snowy.is(Blocks.SNOW) ? Blocks.AIR.defaultBlockState() : dev.venator.seasonsrework.snow.SnowyPlants.withLayers(snowy, 0);
+                level.setServerVerifiedBlockState(pos, hasSnow ? bare : snowy, 19);
             }
         }
         if (System.nanoTime() < endAt) return;
         endAt = -1;
+        if (stressPerSecond > 0) ORIGINAL.forEach((pos, state) -> level.setServerVerifiedBlockState(pos, state, 19));
         report();
     }
 
@@ -128,20 +134,14 @@ public final class SnowAnimBench {
         double drawMs = SnowAnimation.benchDrawNanos / 1e6 / f;
         double frameMs = frameNanos / 1e6 / f;
         double started = SnowAnimation.benchStarted / seconds;
-        // A real change redraws the section once at the start; the animation adds one at the end.
-        double ends = SnowAnimation.benchEndRedraws / seconds;
+        // Snow arriving: the redraw happens when the held-back block goes in (the same one redraw as without animation).
+        double applied = SnowAnimation.benchApplied / seconds;
         say(String.format("Snow anim: %.1f s, %d frames (%.1f fps, %.2f ms/frame)", seconds, frames, frames / seconds, frameMs));
         say(String.format("Drawing copies: %.3f ms/frame average (%.1f%% of the frame), %.3f ms worst",
                 drawMs, frameMs > 0 ? 100 * drawMs / frameMs : 0, SnowAnimation.benchMaxDrawNanos / 1e6));
         say(String.format("Moving at once: %.1f average, %d most; started %.1f/s", SnowAnimation.benchActive / (double) f,
                 SnowAnimation.benchMaxActive, started));
-        say(String.format("Extra redraws at the ends: %.1f/s over %d sections", ends, SnowAnimation.BENCH_SECTIONS.size()));
-        if (RenderBench.lastMsPerSection > 0) {
-            say(String.format("~%.2f ms per section redraw (/snowbench) -> ~%.1f ms of redraw work per second (background threads)",
-                    RenderBench.lastMsPerSection, ends * RenderBench.lastMsPerSection));
-        } else {
-            say("Run /snowbench once (stand still) to also get the redraw cost per second.");
-        }
+        say(String.format("Held-back snow put in: %.1f/s (no extra redraws: each is the redraw the change needs anyway)", applied));
     }
 
     private static void say(String text) {

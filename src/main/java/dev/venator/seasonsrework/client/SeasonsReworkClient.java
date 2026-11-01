@@ -44,7 +44,6 @@ public final class SeasonsReworkClient {
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyPlantModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyBlockModel::onModifyBakingResult);
-        modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowAnimation::onModifyBakingResult);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, SnowAnimation::onRenderStage);
         modBus.addListener(RegisterColorHandlersEvent.Block.class, SnowyBlockModel::colors);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
@@ -85,6 +84,7 @@ public final class SeasonsReworkClient {
         WATCHER.tick(level);
         Climate.update(level);
         CropLookModel.tick(level);
+        SnowAnimation.tick();
 
         boolean changed = ColorClock.tick(level);
         int step = ColorClock.active ? ColorClock.step : -1;
