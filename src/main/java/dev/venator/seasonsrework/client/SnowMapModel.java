@@ -57,11 +57,12 @@ public final class SnowMapModel extends BakedModelWrapper<BakedModel> {
         }
     }
 
-    /** The snow at pos changed: draw its section again. */
+    /** The snow at pos changed: draw its section (and the neighbours' sections) again. */
     public static void redraw(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.levelRenderer != null)
-            minecraft.levelRenderer.setBlocksDirty(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
+            // The neighbours too: their snow's hidden faces depend on this snow.
+            minecraft.levelRenderer.setBlocksDirty(pos.getX() - 1, pos.getY() - 1, pos.getZ() - 1, pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
     }
 
     @Override
