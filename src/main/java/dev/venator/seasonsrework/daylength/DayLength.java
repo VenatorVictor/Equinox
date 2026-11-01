@@ -50,9 +50,22 @@ public final class DayLength {
         event.setTimeAddition(morning + offset);
     }
 
+    /** The last halfDay worked out: asked many times per frame and tick for the same time, so it's solved once. */
+    private record Half(long dayTime, int daysPerSeason, double latitude, double half) {}
+    private static volatile Half last = new Half(Long.MIN_VALUE, 0, 0, 0);
+
     /** Half the fraction of the day the sun is up. */
     private static double halfDay(long dayTime, int daysPerSeason) {
-        double latitude = Math.toRadians(Config.latitude());
+        Half cached = last;
+        double degrees = Config.latitude();
+        if (cached.dayTime == dayTime && cached.daysPerSeason == daysPerSeason && cached.latitude == degrees) return cached.half;
+        double half = solveHalfDay(dayTime, daysPerSeason, degrees);
+        last = new Half(dayTime, daysPerSeason, degrees, half);
+        return half;
+    }
+
+    private static double solveHalfDay(long dayTime, int daysPerSeason, double degrees) {
+        double latitude = Math.toRadians(degrees);
         if (latitude == 0) return SUN_UP;
         double year = new SeasonState(dayTime, daysPerSeason).yearProgress();
         double declination = TILT * Math.sin(2 * Math.PI * (year - 0.125)); // highest at mid summer (0.375)

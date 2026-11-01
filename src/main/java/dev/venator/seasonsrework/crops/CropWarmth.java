@@ -25,8 +25,9 @@ import java.util.WeakHashMap;
  *
  * No scans per crop: each chunk keeps the positions of its sources, built the first time a crop near it asks (a
  * section whose block palette has no source is skipped), updated when blocks change (LevelChunkMixin), dropped when
- * the chunk unloads or the config changes. The client uses it too for the crop looks (CropLookModel; the server
- * config is synced), from the chunk mesh threads, so every access locks the index.
+ * the chunk unloads or the config changes. Kept per section, and a lookup only reads the sections within reach. The
+ * client uses it too (crop looks, snowy textures) from the chunk mesh threads: the lists are copied on change, so
+ * lookups don't wait on each other.
  */
 public record CropWarmth(float target, boolean heats, int radius, boolean needsLight) {
     /** Block light above this melts snow and ice in vanilla. */
@@ -35,8 +36,13 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
     /** The configured heaters and coolers by block, rebuilt when the config loads. */
     private static volatile Map<Block, CropWarmth> sources = Map.of();
 
-    private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
-    private static int maxRadius;
+    /**
+     * Per level and chunk: the sources' positions per section (null: none). Arrays are never changed, only replaced
+     * (copy on write), so the lookups read them without holding the lock.
+     */
+    private static final Map<Level, Long2ObjectOpenHashMap<long[][]>> INDEX = new WeakHashMap<>();
+    private static final long[] NONE = new long[0];
+    private static volatile int maxRadius;
     /** The config changed: rebuild the sources, forget every chunk's list. */
     public static synchronized void reset() {
         INDEX.clear();
@@ -58,7 +64,7 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
     }
 
     static synchronized void onChunkUnload(Level level, ChunkPos pos) {
-        Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
+        Long2ObjectOpenHashMap<long[][]> chunks = INDEX.get(level);
         if (chunks != null) chunks.remove(pos.toLong());
     }
 
@@ -68,33 +74,44 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
     }
 
     private static synchronized void updateIndex(Level level, BlockPos pos, BlockState now) {
-        Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.get(level);
-        LongArrayList list = chunks == null ? null : chunks.get(ChunkPos.asLong(pos));
-        if (list == null) return;
+        Long2ObjectOpenHashMap<long[][]> chunks = INDEX.get(level);
+        long[][] sections = chunks == null ? null : chunks.get(ChunkPos.asLong(pos));
+        if (sections == null) return;
+        int index = level.getSectionIndex(pos.getY());
+        if (index < 0 || index >= sections.length) return;
+        LongArrayList list = new LongArrayList(sections[index] == null ? NONE : sections[index]);
         list.rem(pos.asLong());
         if (data(now) != null) list.add(pos.asLong());
+        sections[index] = list.isEmpty() ? null : list.toLongArray();
     }
 
     /** The temperature t at pos with the strongest heater and cooler around applied. */
-    static synchronized float apply(Level level, BlockPos pos, float t) {
+    static float apply(Level level, BlockPos pos, float t) {
+        int reach = maxRadius;
+        if (reach == 0) return t;
         CropWarmth heater = null, cooler = null;
-        if (maxRadius == 0) return t;
-        int minX = (pos.getX() - maxRadius) >> 4, maxX = (pos.getX() + maxRadius) >> 4;
-        int minZ = (pos.getZ() - maxRadius) >> 4, maxZ = (pos.getZ() + maxRadius) >> 4;
+        int px = pos.getX(), py = pos.getY(), pz = pos.getZ();
+        int minX = (px - reach) >> 4, maxX = (px + reach) >> 4;
+        int minZ = (pz - reach) >> 4, maxZ = (pz + reach) >> 4;
+        int minSection = level.getSectionIndex(py - reach), maxSection = level.getSectionIndex(py + reach);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int cx = minX; cx <= maxX; cx++)
             for (int cz = minZ; cz <= maxZ; cz++) {
-                LongArrayList list = sources(level, cx, cz);
-                if (list == null) continue;
-                for (int i = 0; i < list.size(); i++) {
-                    cursor.set(list.getLong(i));
-                    BlockState state = level.getBlockState(cursor);
-                    CropWarmth warmth = data(state);
-                    if (warmth == null || warmth.needsLight && state.getLightEmission() < MELTING_LIGHT) continue;
-                    int distance = Math.abs(cursor.getX() - pos.getX()) + Math.abs(cursor.getY() - pos.getY()) + Math.abs(cursor.getZ() - pos.getZ());
-                    if (distance > warmth.radius) continue;
-                    if (warmth.heats && (heater == null || warmth.target > heater.target)) heater = warmth;
-                    if (!warmth.heats && (cooler == null || warmth.target < cooler.target)) cooler = warmth;
+                long[][] sections = sources(level, cx, cz);
+                if (sections == null) continue;
+                // Only the sections within reach above and below (not the whole column).
+                for (int s = Math.max(0, minSection); s <= Math.min(sections.length - 1, maxSection); s++) {
+                    long[] list = sections[s];
+                    if (list == null) continue;
+                    for (long packed : list) {
+                        int distance = Math.abs(BlockPos.getX(packed) - px) + Math.abs(BlockPos.getY(packed) - py) + Math.abs(BlockPos.getZ(packed) - pz);
+                        if (distance > reach) continue;
+                        BlockState state = level.getBlockState(cursor.set(packed));
+                        CropWarmth warmth = data(state);
+                        if (warmth == null || distance > warmth.radius || warmth.needsLight && state.getLightEmission() < MELTING_LIGHT) continue;
+                        if (warmth.heats && (heater == null || warmth.target > heater.target)) heater = warmth;
+                        if (!warmth.heats && (cooler == null || warmth.target < cooler.target)) cooler = warmth;
+                    }
                 }
             }
         if (heater != null) t = Math.max(t, heater.target);
@@ -107,27 +124,35 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
         return apply(level, pos, -1000) > -1000;
     }
 
-    private static LongArrayList sources(Level level, int cx, int cz) {
-        Long2ObjectOpenHashMap<LongArrayList> chunks = INDEX.computeIfAbsent(level, l -> new Long2ObjectOpenHashMap<>());
+    private static long[][] sources(Level level, int cx, int cz) {
         long key = ChunkPos.asLong(cx, cz);
-        LongArrayList list = chunks.get(key);
-        if (list != null) return list;
+        synchronized (CropWarmth.class) {
+            Long2ObjectOpenHashMap<long[][]> chunks = INDEX.get(level);
+            long[][] known = chunks == null ? null : chunks.get(key);
+            if (known != null) return known;
+        }
         LevelChunk chunk = level.getChunkSource().getChunkNow(cx, cz);
         if (chunk == null) return null; // never loads chunks
-        list = new LongArrayList();
-        LevelChunkSection[] sections = chunk.getSections();
-        for (int s = 0; s < sections.length; s++) {
-            LevelChunkSection section = sections[s];
+        LevelChunkSection[] chunkSections = chunk.getSections();
+        long[][] sections = new long[chunkSections.length][];
+        LongArrayList list = new LongArrayList();
+        for (int s = 0; s < chunkSections.length; s++) {
+            LevelChunkSection section = chunkSections[s];
             if (section.hasOnlyAir() || !section.maybeHas(state -> data(state) != null)) continue;
             int baseY = chunk.getSectionYFromSectionIndex(s) << 4;
+            list.clear();
             for (int y = 0; y < 16; y++)
                 for (int z = 0; z < 16; z++)
                     for (int x = 0; x < 16; x++)
                         if (data(section.getBlockState(x, y, z)) != null)
                             list.add(BlockPos.asLong((cx << 4) + x, baseY + y, (cz << 4) + z));
+            if (!list.isEmpty()) sections[s] = list.toLongArray();
         }
-        chunks.put(key, list);
-        return list;
+        synchronized (CropWarmth.class) {
+            // Another thread may have built it meanwhile: keep the first (block changes went to that one).
+            long[][] known = INDEX.computeIfAbsent(level, l -> new Long2ObjectOpenHashMap<>()).putIfAbsent(key, sections);
+            return known != null ? known : sections;
+        }
     }
 
     /** A heater's or cooler's reach, 0 for other blocks. */
