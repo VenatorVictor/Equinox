@@ -42,11 +42,6 @@ public final class Config {
             .comment("Days in one season (a year is 4 seasons; 42 days: 168-day year). Each season has an early, mid",
                     "and late part. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 42, 3, 1000);
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> DIMENSIONS = BUILDER
-            .comment("Dimensions with seasons.")
-            .defineListAllowEmpty("dimensions", List.of("minecraft:overworld"), () -> "minecraft:overworld",
-                    value -> value instanceof String s && ResourceLocation.tryParse(s) != null);
-
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CLIMATE_CHANGES = BUILDER
             .comment("Temperature change of each seasonal climate zone (biome tags seasonsrework:climate/<zone>) at the",
                     "middle of spring, summer, autumn and winter, as \"zone=spring,summer,autumn,winter\". Blended in",
@@ -153,7 +148,6 @@ public final class Config {
 
     // Copies for hot paths and for before the config loads: set when it (re)loads.
     private static volatile int daysPerSeason = 42;
-    private static volatile Set<ResourceKey<Level>> dimensions = Set.of(Level.OVERWORLD);
     private static volatile Map<Zone, float[]> climateChanges = Map.of();
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
     private static volatile double temperatureLag = 1 / 3.0;
@@ -171,9 +165,6 @@ public final class Config {
     private static volatile float zoneWarmStart = 0, zoneWarmEnd = 0.2F;
 
     public static void refresh() {
-        Set<ResourceKey<Level>> set = new HashSet<>();
-        for (String id : DIMENSIONS.get()) set.add(ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(id)));
-        dimensions = Set.copyOf(set);
         daysPerSeason = DAYS_PER_SEASON.get();
         Map<Zone, float[]> changes = new HashMap<>();
         for (String entry : CLIMATE_CHANGES.get()) {
@@ -279,8 +270,9 @@ public final class Config {
         return Map.entry(zone, changes);
     }
 
+    /** Only the overworld has seasons. */
     public static boolean hasSeasons(ResourceKey<Level> dimension) {
-        return dimensions.contains(dimension);
+        return dimension == Level.OVERWORLD;
     }
 
     public static int daysPerSeason() {
