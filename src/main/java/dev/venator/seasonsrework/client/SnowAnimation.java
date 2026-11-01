@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Client only; the server's world is never changed by this, only when the client shows the server's change:
  * - more snow: the client keeps the old block until the slide ends, while a moving copy of the new snow rises out
  *   of the ground (the ground's top face hides the part below). Then the server's block is put in.
- * - less snow: the server's block is put in at once, and a copy of the old snow sinks into the ground.
+ * - less snow: the server's block is put in at once, and a copy of the old snow sinks into the ground; for the last
+ *   40% it is water instead, fading away.
  * The chunk mesh always shows a real block, so the ground and the neighbours' sides are drawn as usual. The copy is
  * drawn a hair smaller than a block, so wherever it overlaps real snow the real snow wins.
  */
@@ -39,6 +40,8 @@ public final class SnowAnimation {
     private static final long LINGER_MS = 400;
     private static final int MAX = 2048;
     private static final float INSET = 0.002f;
+    /** Melting snow shows as water from this share of the animation on, fading out. */
+    private static final float WATER_FROM = 0.6f;
     /** Client flags of a server block change (ClientPacketListener). */
     private static final int SERVER_FLAGS = 19;
 
@@ -73,6 +76,15 @@ public final class SnowAnimation {
             float t = Mth.clamp((now - start) / (float) duration(), 0, 1);
             t = t * t * (3 - 2 * t); // smoothstep: starts and ends softly
             return Mth.lerp(t, from, to);
+        }
+
+        /** Progress 0..1 (linear). */
+        float progress(long now) {
+            return Mth.clamp((now - start) / (float) duration(), 0, 1);
+        }
+
+        boolean melting() {
+            return pending == null && to < from;
         }
 
         float shownHeight(long now) {
@@ -180,11 +192,22 @@ public final class SnowAnimation {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         BlockRenderDispatcher blocks = mc.getBlockRenderer();
         RandomSource random = RandomSource.create();
-        boolean drew = false;
+        boolean drew = false, water = false;
         for (Anim anim : ANIMS.values()) {
             float offset = anim.offset(now);
             if (offset <= -anim.ghostHeight + 1e-4f) continue; // all sunk
             BlockPos p = anim.pos;
+            float progress = anim.progress(now);
+            if (anim.melting() && progress >= WATER_FROM) {
+                // The last part of melting: the snow has turned to water, which soaks away.
+                float height = Math.max(anim.ghostHeight + offset, 1 / 32f);
+                float alpha = 0.8f * (1 - (progress - WATER_FROM) / (1 - WATER_FROM));
+                if (alpha > 0.01f) {
+                    drawWater(level, p, height, alpha, camera, pose, buffers.getBuffer(RenderType.translucent()));
+                    water = true;
+                }
+                continue;
+            }
             pose.pushPose();
             pose.translate(p.getX() - camera.x + 0.5, p.getY() - camera.y + offset - INSET, p.getZ() - camera.z + 0.5);
             pose.scale(1 - INSET, 1, 1 - INSET);
@@ -196,9 +219,53 @@ public final class SnowAnimation {
             drew = true;
         }
         if (drew) buffers.endBatch(RenderType.solid());
+        if (water) buffers.endBatch(RenderType.translucent());
         long took = System.nanoTime() - benchStart;
         benchDrawNanos += took;
         benchMaxDrawNanos = Math.max(benchMaxDrawNanos, took);
+    }
+
+    /** A box of still water from the ground up to height: top and sides, the biome's water color. */
+    private static void drawWater(ClientLevel level, BlockPos p, float height, float alpha, Vec3 camera, PoseStack pose,
+                                  com.mojang.blaze3d.vertex.VertexConsumer out) {
+        net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = Minecraft.getInstance()
+                .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                .apply(net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_still"));
+        int color = net.minecraft.client.renderer.BiomeColors.getAverageWaterColor(level, p);
+        float r = (color >> 16 & 0xFF) / 255f, g = (color >> 8 & 0xFF) / 255f, b = (color & 0xFF) / 255f;
+        int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(level, p);
+        pose.pushPose();
+        pose.translate(p.getX() - camera.x, p.getY() - camera.y, p.getZ() - camera.z);
+        PoseStack.Pose last = pose.last();
+        float e = INSET, h = height, u0 = sprite.getU0(), u1 = sprite.getU1(), v0 = sprite.getV0();
+        float vh = sprite.getV(h); // side faces: only as much texture as the water is high
+        // top
+        quad(out, last, light, r, g, b, alpha, 0, 1, 0,
+                e, h, e, u0, v0, e, h, 1 - e, u0, sprite.getV1(), 1 - e, h, 1 - e, u1, sprite.getV1(), 1 - e, h, e, u1, v0);
+        // north, south, west, east
+        both(out, last, light, r, g, b, alpha, 0, 0, -1, e, 0, e, u0, vh, e, h, e, u0, v0, 1 - e, h, e, u1, v0, 1 - e, 0, e, u1, vh);
+        both(out, last, light, r, g, b, alpha, 0, 0, 1, 1 - e, 0, 1 - e, u0, vh, 1 - e, h, 1 - e, u0, v0, e, h, 1 - e, u1, v0, e, 0, 1 - e, u1, vh);
+        both(out, last, light, r, g, b, alpha, -1, 0, 0, e, 0, 1 - e, u0, vh, e, h, 1 - e, u0, v0, e, h, e, u1, v0, e, 0, e, u1, vh);
+        both(out, last, light, r, g, b, alpha, 1, 0, 0, 1 - e, 0, e, u0, vh, 1 - e, h, e, u0, v0, 1 - e, h, 1 - e, u1, v0, 1 - e, 0, 1 - e, u1, vh);
+        pose.popPose();
+    }
+
+    /** A side face drawn from both sides (whichever way the corners turn, it shows from outside). */
+    private static void both(com.mojang.blaze3d.vertex.VertexConsumer out, PoseStack.Pose pose, int light, float r, float g, float b, float a,
+                             float nx, float ny, float nz, float... v) {
+        quad(out, pose, light, r, g, b, a, nx, ny, nz, v);
+        float[] back = new float[20];
+        for (int i = 0; i < 4; i++) System.arraycopy(v, (3 - i) * 5, back, i * 5, 5);
+        quad(out, pose, light, r, g, b, a, -nx, -ny, -nz, back);
+    }
+
+    private static void quad(com.mojang.blaze3d.vertex.VertexConsumer out, PoseStack.Pose pose, int light, float r, float g, float b, float a,
+                             float nx, float ny, float nz, float... v) {
+        for (int i = 0; i < 4; i++) {
+            int k = i * 5;
+            out.addVertex(pose, v[k], v[k + 1], v[k + 2]).setColor(r, g, b, a).setUv(v[k + 3], v[k + 4])
+                    .setLight(light).setNormal(pose, nx, ny, nz);
+        }
     }
 
     /** Leaving the world: held-back blocks don't matter any more (the chunks go too). */
