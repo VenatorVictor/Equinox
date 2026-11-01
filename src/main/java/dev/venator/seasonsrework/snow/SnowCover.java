@@ -264,9 +264,10 @@ public final class SnowCover {
             return;
         }
         // Where the snow of this column is: a snow layer or plant at top, or a fence or wall just under it.
-        boolean inFence = topState.isAir() && SnowyPlants.maxLayers(belowState) > 0 && SnowyPlants.holds(belowState);
+        boolean inFence = topState.isAir() && SnowyPlants.holds(belowState)
+                && (SnowMap.holds(belowState) || SnowyPlants.maxLayers(belowState) == 1);
         int now = topState.getBlock() instanceof SnowLayerBlock ? topState.getValue(SnowLayerBlock.LAYERS)
-                : SnowyPlants.layers(topState) > 0 ? SnowyPlants.layers(topState) : inFence ? SnowyPlants.layers(belowState) : 0;
+                : SnowyPlants.layers(topState) > 0 ? SnowyPlants.layers(topState) : inFence ? SnowyPlants.layers(level, below, belowState) : 0;
 
         // One temperature lookup per position (the rules below all need it).
         float here = Climate.temperature(biome.value(), top);

@@ -44,6 +44,7 @@ public final class SeasonsReworkClient {
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyPlantModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyBlockModel::onModifyBakingResult);
+        modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowMapModel::onModifyBakingResult);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, SnowAnimation::onRenderStage);
         modBus.addListener(RegisterColorHandlersEvent.Block.class, SnowyBlockModel::colors);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
@@ -51,7 +52,10 @@ public final class SeasonsReworkClient {
         RenderBench.init();
         SnowAnimBench.init();
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, CropTooltips::onTooltip);
-        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> dev.venator.seasonsrework.climate.ClimateBlend.clearClient());
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
+            dev.venator.seasonsrework.climate.ClimateBlend.clearClient();
+            dev.venator.seasonsrework.snow.SnowMap.clearClient();
+        });
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
             ColorClock.reset();
             CropLookModel.reset();
