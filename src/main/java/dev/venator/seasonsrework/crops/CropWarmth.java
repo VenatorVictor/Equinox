@@ -1,54 +1,60 @@
 package dev.venator.seasonsrework.crops;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import dev.venator.seasonsrework.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Heaters and coolers for crops (data map data/<namespace>/data_maps/block/crop_temperature.json): a block pulls the
- * temperature of crops within `radius` blocks (a box) toward `target` °C by at most |strength| (above 0 warms, below 0
- * cools), never past the target, so a heater does nothing on a warm day. Only the strongest heater and the strongest
- * cooler near a crop count. Blocks with a "lit" property count only while lit. Glass does nothing.
+ * Heaters and coolers for crops (server config crop_heaters / crop_coolers). A heater keeps crops within `radius`
+ * blocks at least `target` °C, a cooler at most `target` °C; only the strongest of each near a crop counts. Distance is
+ * counted like light (steps along x, y and z), and the default heaters are the blocks that melt snow in vanilla (block
+ * light above 11 reaches radius = light - 12 blocks), so crops are kept from frost exactly where snow can't lie. A light
+ * source counts only while it shines that bright (lit furnaces, lamps, cave vines with berries, a full respawn anchor).
  *
  * No scans per crop: each chunk keeps the positions of its sources, built the first time a crop near it asks (a
  * section whose block palette has no source is skipped), updated when blocks change (LevelChunkMixin), dropped when
- * the chunk unloads or the data reloads. Synced: the client uses it too for the crop looks (CropLookModel), from the
- * chunk mesh threads, so every access locks the index.
+ * the chunk unloads or the config changes. The client uses it too for the crop looks (CropLookModel; the server
+ * config is synced), from the chunk mesh threads, so every access locks the index.
  */
-public record CropWarmth(float target, float strength, int radius) {
-    public static final Codec<CropWarmth> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.FLOAT.fieldOf("target").forGetter(CropWarmth::target),
-            Codec.FLOAT.fieldOf("strength").forGetter(CropWarmth::strength),
-            Codec.intRange(1, 16).fieldOf("radius").forGetter(CropWarmth::radius)
-    ).apply(instance, CropWarmth::new));
+public record CropWarmth(float target, boolean heats, int radius, boolean needsLight) {
+    /** Block light above this melts snow and ice in vanilla. */
+    public static final int MELTING_LIGHT = 12;
 
-    public static final DataMapType<Block, CropWarmth> TYPE = DataMapType.builder(
-            ResourceLocation.fromNamespaceAndPath("seasonsrework", "crop_temperature"), Registries.BLOCK, CODEC).synced(CODEC, false).build();
+    /** The configured heaters and coolers by block, rebuilt when the config loads. */
+    private static volatile Map<Block, CropWarmth> sources = Map.of();
 
     private static final Map<Level, Long2ObjectOpenHashMap<LongArrayList>> INDEX = new WeakHashMap<>();
     private static int maxRadius;
-    /** The data reloaded: forget every chunk's list. */
-    static synchronized void reset() {
+    /** The config changed: rebuild the sources, forget every chunk's list. */
+    public static synchronized void reset() {
         INDEX.clear();
+        Map<Block, CropWarmth> map = new java.util.IdentityHashMap<>();
+        put(map, Config.cropHeaters(), true);
+        put(map, Config.cropCoolers(), false);
         int max = 0;
-        for (Map.Entry<?, CropWarmth> entry : BuiltInRegistries.BLOCK.getDataMap(TYPE).entrySet()) max = Math.max(max, entry.getValue().radius);
+        for (CropWarmth warmth : map.values()) max = Math.max(max, warmth.radius);
+        sources = map;
         maxRadius = max;
+    }
+
+    private static void put(Map<Block, CropWarmth> map, Map<ResourceLocation, float[]> entries, boolean heats) {
+        entries.forEach((id, values) -> BuiltInRegistries.BLOCK.getOptional(id).ifPresent(block -> {
+            int brightest = 0;
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) brightest = Math.max(brightest, state.getLightEmission());
+            map.put(block, new CropWarmth(values[0], heats, (int) values[1], brightest >= MELTING_LIGHT));
+        }));
     }
 
     static synchronized void onChunkUnload(Level level, ChunkPos pos) {
@@ -84,15 +90,15 @@ public record CropWarmth(float target, float strength, int radius) {
                     cursor.set(list.getLong(i));
                     BlockState state = level.getBlockState(cursor);
                     CropWarmth warmth = data(state);
-                    if (warmth == null || state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT)) continue;
-                    int r = warmth.radius;
-                    if (Math.abs(cursor.getX() - pos.getX()) > r || Math.abs(cursor.getY() - pos.getY()) > r || Math.abs(cursor.getZ() - pos.getZ()) > r) continue;
-                    if (warmth.strength > 0 && (heater == null || warmth.strength > heater.strength)) heater = warmth;
-                    if (warmth.strength < 0 && (cooler == null || warmth.strength < cooler.strength)) cooler = warmth;
+                    if (warmth == null || warmth.needsLight && state.getLightEmission() < MELTING_LIGHT) continue;
+                    int distance = Math.abs(cursor.getX() - pos.getX()) + Math.abs(cursor.getY() - pos.getY()) + Math.abs(cursor.getZ() - pos.getZ());
+                    if (distance > warmth.radius) continue;
+                    if (warmth.heats && (heater == null || warmth.target > heater.target)) heater = warmth;
+                    if (!warmth.heats && (cooler == null || warmth.target < cooler.target)) cooler = warmth;
                 }
             }
-        if (heater != null && t < heater.target) t = Math.min(heater.target, t + heater.strength);
-        if (cooler != null && t > cooler.target) t = Math.max(cooler.target, t + cooler.strength);
+        if (heater != null) t = Math.max(t, heater.target);
+        if (cooler != null) t = Math.min(t, cooler.target);
         return t;
     }
 
@@ -131,6 +137,6 @@ public record CropWarmth(float target, float strength, int radius) {
     }
 
     private static CropWarmth data(BlockState state) {
-        return state.getBlockHolder().getData(TYPE);
+        return sources.get(state.getBlock());
     }
 }

@@ -14,7 +14,9 @@ import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
  * and sunrise colors, stars, the clock item), on both sides, so all of it follows.
  *
  * How long the sun is up comes from the latitude and the date, as on Earth (longest day at mid summer, equinoxes at
- * mid spring and mid autumn), scaled so an equinox day is vanilla's. Latitude 0: vanilla days all year.
+ * mid spring and mid autumn): the hour angle where a real sun sets, through vanilla's sun curve, so an equinox day is
+ * vanilla's. Sky mods with the same latitude (north positive here), tilt 23.44, a year of 4 seasons and the year
+ * starting 1/8 before the spring equinox (315 degrees after it) draw the sun setting at the same time. Latitude 0: vanilla days all year.
  */
 public final class DayLength {
     /** Vanilla's sun is up for 2 * SUN_UP of the day (about 13.6 hours): where its curve crosses the horizon. */
@@ -56,7 +58,10 @@ public final class DayLength {
         double declination = TILT * Math.sin(2 * Math.PI * (year - 0.125)); // highest at mid summer (0.375)
         double cosHour = Mth.clamp(-Math.tan(latitude) * Math.tan(declination), -1, 1);
         double earthDay = Math.acos(cosHour) / Math.PI; // 0.5 at the equinoxes
-        return Mth.clamp(SUN_UP + (earthDay - 0.5) / 2, MIN_HALF, MAX_HALF);
+        // The sun reaches the horizon at earthDay / 2 of a turn from noon; vanilla's curve turns that into time (the
+        // same sky geometry as a sky mod drawing a real sun at this latitude, so both agree; SUN_UP at the equinoxes).
+        double half = solve(d -> curve(d) - earthDay / 2, 0, 0.5);
+        return Mth.clamp(half, MIN_HALF, MAX_HALF);
     }
 
     /**

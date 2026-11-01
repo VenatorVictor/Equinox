@@ -86,7 +86,6 @@ public final class SeasonsRework {
             event.register(BiomeCelsius.TYPE);
             event.register(dev.venator.seasonsrework.climate.BiomeSnow.TYPE);
             event.register(CropClimate.TYPE);
-            event.register(CropWarmth.TYPE);
         });
         CropBlocks.register(modBus);
         dev.venator.seasonsrework.snow.SnowBlocks.register(modBus);
