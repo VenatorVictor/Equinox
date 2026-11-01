@@ -69,11 +69,12 @@ public final class FarBlend {
     }
 
     /** One cell's mix. */
-    public record Entry(long key, List<Holder<Biome>> biomes, List<Float> weights) {
+    public record Entry(long key, List<Holder<Biome>> biomes, List<Float> weights, float cooling) {
         public static final StreamCodec<RegistryFriendlyByteBuf, Entry> CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_LONG, Entry::key,
                 ByteBufCodecs.holderRegistry(Registries.BIOME).apply(ByteBufCodecs.list()), Entry::biomes,
                 ByteBufCodecs.FLOAT.apply(ByteBufCodecs.list()), Entry::weights,
+                ByteBufCodecs.FLOAT, Entry::cooling,
                 Entry::new);
     }
 
@@ -95,10 +96,10 @@ public final class FarBlend {
     public static volatile Runnable onReceived = () -> {};
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1").optional();
+        var registrar = event.registrar("2").optional();
         registrar.playToServer(Request.TYPE, Request.CODEC, (payload, context) -> context.enqueueWork(() -> request(payload, context)));
         registrar.playToClient(Batch.TYPE, Batch.CODEC, (payload, context) -> context.enqueueWork(() -> {
-            for (Entry entry : payload.entries) ClimateBlend.putFar(payload.cell, entry.key, ClimateBlendPayload.toMix(entry.biomes, entry.weights));
+            for (Entry entry : payload.entries) ClimateBlend.putFar(payload.cell, entry.key, ClimateBlendPayload.toMix(entry.biomes, entry.weights, entry.cooling));
             onReceived.run();
         }));
     }
@@ -120,7 +121,7 @@ public final class FarBlend {
         ServerLevel level = server.getLevel(Level.OVERWORLD);
         if (level == null || !Config.hasSeasons(level.dimension())) return;
         int radius = ClimateBlend.radius(level);
-        if (radius <= 0) return;
+        if (radius <= 0 && !Config.climateZones()) return;
         int cell = Math.max(32, radius / 2);
         long deadline = System.nanoTime() + BUDGET_NANOS;
         for (ServerPlayer player : level.players()) {
@@ -186,7 +187,7 @@ public final class FarBlend {
             ClimateBlend.Mix mix = ClimateBlend.mixAt(level, x * cell + cell / 2, z * cell + cell / 2);
             List<Holder<Biome>> holders = new ArrayList<>();
             List<Float> weights = new ArrayList<>();
-            if (mix != null && ClimateBlendPayload.toHolders(level, mix, holders, weights)) batch.add(new Entry(key, holders, weights));
+            if (mix != null && ClimateBlendPayload.toHolders(level, mix, holders, weights)) batch.add(new Entry(key, holders, weights, mix.cooling()));
             if (batch.size() >= BATCH) {
                 PacketDistributor.sendToPlayer(player, new Batch(cell, batch));
                 batch = new ArrayList<>();

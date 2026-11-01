@@ -23,12 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Server to client: a chunk's climate blend mix (ClimateBlend), sent with the chunk. */
-public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<Float> weights) implements CustomPacketPayload {
+public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<Float> weights, float cooling) implements CustomPacketPayload {
     public static final Type<ClimateBlendPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(SeasonsRework.MOD_ID, "climate_blend"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ClimateBlendPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_LONG, ClimateBlendPayload::chunk,
             ByteBufCodecs.holderRegistry(Registries.BIOME).apply(ByteBufCodecs.list()), ClimateBlendPayload::biomes,
             ByteBufCodecs.FLOAT.apply(ByteBufCodecs.list()), ClimateBlendPayload::weights,
+            ByteBufCodecs.FLOAT, ClimateBlendPayload::cooling,
             ClimateBlendPayload::new);
 
     @Override
@@ -38,11 +39,11 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
 
     // Optional: a client without the mod still connects (without blending).
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("1").optional().playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(payload::receive));
+        event.registrar("2").optional().playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(payload::receive));
     }
 
     private void receive() {
-        ClimateBlend.put(chunk, toMix(biomes, weights));
+        ClimateBlend.put(chunk, toMix(biomes, weights, cooling));
     }
 
     /** Server: work out mixes as chunks load, send them as chunks are sent; forget them when the server stops. */
@@ -59,12 +60,12 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
             List<Holder<Biome>> holders = new ArrayList<>();
             List<Float> weights = new ArrayList<>();
             if (toHolders(level, mix, holders, weights))
-                PacketDistributor.sendToPlayer(e.getPlayer(), new ClimateBlendPayload(pos.toLong(), holders, weights));
+                PacketDistributor.sendToPlayer(e.getPlayer(), new ClimateBlendPayload(pos.toLong(), holders, weights, mix.cooling()));
         });
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, e -> ClimateBlend.clearServer());
     }
 
-    /** A mix as registry holders (only registered biomes can be sent, by id). False if none is left. */
+    /** A mix as registry holders (only registered biomes can be sent, by id). False if nothing is left to send. */
     static boolean toHolders(ServerLevel level, ClimateBlend.Mix mix, List<Holder<Biome>> holders, List<Float> weights) {
         var registry = level.registryAccess().registryOrThrow(Registries.BIOME);
         for (int i = 0; i < mix.biomes().length; i++) {
@@ -73,10 +74,10 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
             holders.add(registry.getHolderOrThrow(key.get()));
             weights.add(mix.weights()[i]);
         }
-        return !holders.isEmpty();
+        return !holders.isEmpty() || !Float.isNaN(mix.cooling());
     }
 
-    static ClimateBlend.Mix toMix(List<Holder<Biome>> biomes, List<Float> weights) {
+    static ClimateBlend.Mix toMix(List<Holder<Biome>> biomes, List<Float> weights, float cooling) {
         int count = Math.min(biomes.size(), weights.size());
         Biome[] array = new Biome[count];
         float[] values = new float[count];
@@ -84,6 +85,6 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
             array[i] = biomes.get(i).value();
             values[i] = weights.get(i);
         }
-        return new ClimateBlend.Mix(array, values);
+        return new ClimateBlend.Mix(array, values, cooling);
     }
 }

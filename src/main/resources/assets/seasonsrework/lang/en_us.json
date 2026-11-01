@@ -2,6 +2,7 @@
   "commands.seasonsrework.season.show": "%s %s: day %s of %s, year %s",
   "commands.seasonsrework.season.celsius": "Air here %s °C (today %s..%s °C), water %s °C",
   "commands.seasonsrework.season.blend": "Surroundings: %s here (%s)",
+  "commands.seasonsrework.season.zone": "Climate zone: %s of the winter's cold",
   "commands.seasonsrework.season.snow": "Snow: %s days a year (of 365); warmest since the last snowfall %s; snow lies here: %s",
   "commands.seasonsrework.season.climate": "Climate %s: temperature change %s (variation: season %s, day %s); here %s",
   "commands.seasonsrework.season.unknown": "Unknown season: %s",
