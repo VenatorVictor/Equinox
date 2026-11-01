@@ -54,7 +54,7 @@ public final class DhSnow {
         return block;
     }
 
-    /** Snow color for the top of a column where snow would lie. */
+    /** Snow color for the top of a column where snow would lie, faded in over 4 steps (SnowRules look steps). */
     public static int color(int original, IClientLevelWrapper levelWrapper, IBiomeWrapper biomeWrapper, FullDataSourceV2 source, IBlockStateWrapper block,
                             DhBlockPos dhPos, LongArrayList column, FullDataPointIdMap mapping, int index, int topY, int skyLight, int blockLight) {
         // Cheap checks first: this runs for every block run DH colors.
@@ -66,8 +66,23 @@ public final class DhSnow {
         Holder<Biome> biome = biome(biomeWrapper, level);
         if (biome == null) return original;
         BlockPos pos = POS.get().set(dhPos.getX(), topY + levelWrapper.getMinHeight(), dhPos.getZ());
-        if (!SnowRules.lies(biome, pos, ClientSnow.warmest())) return original;
-        return snowColor(levelWrapper, biomeWrapper, source, dhPos);
+        float here = dev.venator.seasonsrework.climate.Climate.temperature(biome.value(), pos);
+        // Fades to white in 4 steps, as the snowy textures (texture_mode): by the snow lying there, or by the calendar.
+        int step = ClientConfig.SNOW_LOOK.get() == ClientConfig.SnowLook.CALENDAR ? SnowRules.calendarStep(here)
+                : SnowRules.groundStep(biome, pos, ClientSnow.warmest(), here);
+        if (step <= 0) return original;
+        int snow = snowColor(levelWrapper, biomeWrapper, source, dhPos);
+        return step >= 4 ? snow : mix(original, snow, step / 4F);
+    }
+
+    /** ARGB colors mixed channel by channel (alpha kept from the original). */
+    private static int mix(int from, int to, float t) {
+        int r = channel(from >> 16 & 0xFF, to >> 16 & 0xFF, t), g = channel(from >> 8 & 0xFF, to >> 8 & 0xFF, t), b = channel(from & 0xFF, to & 0xFF, t);
+        return from & 0xFF000000 | r << 16 | g << 8 | b;
+    }
+
+    private static int channel(int a, int b, float t) {
+        return Math.round(a + (b - a) * t);
     }
 
     static void clearCache() {

@@ -22,6 +22,11 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue SNOW_ANIMATION;
     public static final ModConfigSpec.IntValue SNOW_ANIMATION_MS;
     public static final ModConfigSpec.IntValue SNOW_ANIMATION_DISTANCE;
+    public static final ModConfigSpec.EnumValue<SnowLook> SNOW_LOOK;
+    public static final ModConfigSpec.IntValue REDRAW_SECONDS;
+
+    /** What makes snowy textures and LOD snow fade in (4 steps). */
+    public enum SnowLook { GROUND, CALENDAR }
 
     /** Colors of crops that don't grow. ECLIPTIC: Ecliptic Seasons' winter beige and autumn dry orange. */
     public enum CropColors { DEFAULT, ECLIPTIC }
@@ -63,6 +68,16 @@ public final class ClientConfig {
                 .defineInRange("animation_ms", 600, 50, 5000);
         SNOW_ANIMATION_DISTANCE = BUILDER.comment("Only snow this close to you (blocks) is animated; further away it just changes.")
                 .defineInRange("animation_distance", 48, 4, 256);
+        SNOW_LOOK = BUILDER.comment("Snowy textures (resource packs) and Distant Horizons LOD snow fade in over 4 steps; the steps between",
+                        "draw the snowy texture over the normal one from the top down (top faces first). What sets the step:",
+                        "GROUND: the snow that's there. Plants follow the snow in them, leaves the snow on them, crops their own",
+                        "  snow (it comes with the snowfall), the rest where snow lies; deeper/colder = more steps.",
+                        "CALENDAR: the temperature now (season, day, height), like the seasonal colors; not under a roof or near a heater.",
+                        "Takes effect as chunks redraw (F3+A to see it at once).")
+                .defineEnum("texture_mode", SnowLook.GROUND);
+        REDRAW_SECONDS = BUILDER.comment("When snowy textures or colors change, nearby chunks are redrawn nearest first over this many seconds",
+                        "instead of all at once (0 = all at once).")
+                .defineInRange("redraw_seconds", 5, 0, 60);
         BUILDER.pop().push("distant_horizons");
         DH_REFRESH = BUILDER.comment("Re-color Distant Horizons LODs when the season colors change (nearest first).")
                 .define("refresh_lods", true);
