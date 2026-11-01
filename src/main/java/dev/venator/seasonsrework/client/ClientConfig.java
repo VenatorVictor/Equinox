@@ -65,7 +65,7 @@ public final class ClientConfig {
         SNOW_ANIMATION = BUILDER.comment("Snow that falls or melts near you slides up out of the ground / sinks into it instead of popping.")
                 .define("animation", true);
         SNOW_ANIMATION_MS = BUILDER.comment("How long the slide takes (milliseconds).")
-                .defineInRange("animation_ms", 600, 50, 5000);
+                .defineInRange("animation_ms", 1000, 50, 5000);
         SNOW_ANIMATION_DISTANCE = BUILDER.comment("Only snow this close to you (blocks) is animated; further away it just changes.")
                 .defineInRange("animation_distance", 48, 4, 256);
         SNOW_LOOK = BUILDER.comment("Snowy textures (resource packs) and Distant Horizons LOD snow fade in over 4 steps; the steps between",
