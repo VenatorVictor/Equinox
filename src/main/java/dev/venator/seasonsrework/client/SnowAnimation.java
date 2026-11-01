@@ -6,55 +6,48 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.model.BakedModelWrapper;
 import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Snow that comes and goes near the player slides up out of the block below / sinks back into it, instead of popping.
- * Client only. When the server changes a block's snow (a snow layer, or the snow state of a plant or fence), the chunk
- * mesh draws that block without its snow while a moving copy of the snow is drawn here; the part below the surface is
- * hidden by the ground block. At the end the mesh gets its snow back and the copy stays a moment (drawn a hair smaller,
- * so the mesh covers it) until the chunk is redrawn, so there is no blink.
+ * Client only; the server's world is never changed by this, only when the client shows the server's change:
+ * - more snow: the client keeps the old block until the slide ends, while a moving copy of the new snow rises out
+ *   of the ground (the ground's top face hides the part below). Then the server's block is put in.
+ * - less snow: the server's block is put in at once, and a copy of the old snow sinks into the ground.
+ * The chunk mesh always shows a real block, so the ground and the neighbours' sides are drawn as usual. The copy is
+ * drawn a hair smaller than a block, so wherever it overlaps real snow the real snow wins.
  */
 public final class SnowAnimation {
-    /** Read by the models: hide the snow at this block (it's being animated). */
-    static final ModelProperty<Boolean> HIDDEN = new ModelProperty<>();
     private static final float LAYER = 1 / 8f;
-    /** The copy stays this long after the end (ms), until the mesh has the snow again. */
+    /** The copy stays this long after the new block is put in (ms), until the chunk is redrawn with it. */
     private static final long LINGER_MS = 400;
     private static final int MAX = 2048;
     private static final float INSET = 0.002f;
+    /** Client flags of a server block change (ClientPacketListener). */
+    private static final int SERVER_FLAGS = 19;
 
     private static final Map<Long, Anim> ANIMS = new ConcurrentHashMap<>();
+    /** Set while we put a held-back block in, so the mixin lets it through. */
+    private static boolean applying;
 
-    // TEMPORARY measuring (SnowAnimBench): time spent drawing the moving copies, and redraws asked at the ends.
-    static long benchDrawNanos, benchMaxDrawNanos, benchActive, benchMaxActive, benchStarted, benchEndRedraws;
-    static final java.util.Set<Long> BENCH_SECTIONS = new java.util.HashSet<>();
+    // TEMPORARY measuring (SnowAnimBench).
+    static long benchDrawNanos, benchMaxDrawNanos, benchActive, benchMaxActive, benchStarted, benchApplied;
 
     private static final class Anim {
         final BlockPos pos;
@@ -63,21 +56,27 @@ public final class SnowAnimation {
         /** Y offset of the copy at the start and the end (0: in place, -ghostHeight: all sunk). */
         final float from, to;
         final long start;
-        volatile boolean done;
+        /** The server's block, held back until the copy has risen (null: already in). */
+        @Nullable BlockState pending;
 
-        Anim(BlockPos pos, BlockState ghost, float from, float to, long start) {
+        Anim(BlockPos pos, BlockState ghost, float from, float to, long start, @Nullable BlockState pending) {
             this.pos = pos;
             this.ghost = ghost;
             this.ghostHeight = ghost.getValue(SnowLayerBlock.LAYERS) * LAYER;
             this.from = from;
             this.to = to;
             this.start = start;
+            this.pending = pending;
         }
 
         float offset(long now) {
             float t = Mth.clamp((now - start) / (float) duration(), 0, 1);
             t = t * t * (3 - 2 * t); // smoothstep: starts and ends softly
             return Mth.lerp(t, from, to);
+        }
+
+        float shownHeight(long now) {
+            return ghostHeight + offset(now);
         }
     }
 
@@ -97,74 +96,92 @@ public final class SnowAnimation {
         return SnowyPlants.stateMaxLayers(state) > 0 ? SnowyPlants.withLayers(state, 0) : state;
     }
 
-    /** ClientLevel: the server changed a block (not the player's own predicted change). */
-    public static void onServerChange(ClientLevel level, BlockPos pos, BlockState old, BlockState now) {
-        if (old == now || !ClientConfig.SNOW_ANIMATION.get()) return;
-        int a = layers(old), b = layers(now);
-        if (a == b) return;
+    private static BlockState snow(int layers) {
+        return Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, Mth.clamp(layers, 1, 8));
+    }
+
+    /**
+     * ClientLevel.setServerVerifiedBlockState: the server changed a block (not the player's own predicted change).
+     * Returns true when the change is held back (more snow: put in when the copy has risen).
+     */
+    public static boolean onServerChange(ClientLevel level, BlockPos pos, BlockState old, BlockState now) {
+        if (applying) return false;
+        long key = pos.asLong();
+        Anim running = ANIMS.remove(key);
+        long time = System.currentTimeMillis();
+        // A newer change replaces a held-back one; the copy carries on from where it is.
+        float shown = running != null ? running.shownHeight(time) : layers(old) * LAYER;
+        if (old == now && running == null || !ClientConfig.SNOW_ANIMATION.get()) return false;
         // Only snow changing on the same block: a plant broken with its snow, snow turning into ice etc. just change.
-        if (!base(old).equals(base(now))) return;
+        if (!base(old).equals(base(now))) return false;
         // Rising out of the ground only looks right on a full block (not leaves, glass...).
         BlockPos below = pos.below();
-        if (!level.getBlockState(below).isSolidRender(level, below)) return;
+        if (!level.getBlockState(below).isSolidRender(level, below)) return false;
         Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         int distance = ClientConfig.SNOW_ANIMATION_DISTANCE.get();
-        if (camera.distanceToSqr(Vec3.atCenterOf(pos)) > (double) distance * distance) return;
-        long key = pos.asLong();
-        if (ANIMS.size() >= MAX && !ANIMS.containsKey(key)) return;
+        if (camera.distanceToSqr(Vec3.atCenterOf(pos)) > (double) distance * distance) return false;
+        if (ANIMS.size() >= MAX) return false;
 
-        long now_ = System.currentTimeMillis();
-        int top = Math.max(a, b);
-        BlockState ghost = Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, top);
+        float target = layers(now) * LAYER;
+        if (Math.abs(target - shown) < 1e-4f) return false;
+        if (target > shown) {
+            // More snow: rise from the shown height to the new one, then put the server's block in.
+            ANIMS.put(key, new Anim(pos.immutable(), snow(layers(now)), shown - target, 0, time, now));
+            benchStarted++;
+            return true;
+        }
+        // Less snow: the new block goes in now, a copy of what was shown sinks to the new height.
+        int top = Mth.ceil(shown / LAYER - 1e-4f);
         float height = top * LAYER;
-        // Interrupted animation: carry on from where the copy is now.
-        Anim running = ANIMS.get(key);
-        float shownHeight = running != null && !running.done ? running.ghostHeight + running.offset(now_) : a * LAYER;
-        ANIMS.put(key, new Anim(pos.immutable(), ghost, shownHeight - height, b * LAYER - height, now_));
+        ANIMS.put(key, new Anim(pos.immutable(), snow(top), shown - height, target - height, time, null));
         benchStarted++;
+        return false;
     }
 
-    /** Models (chunk meshing, any thread): leave out the snow at this block. */
-    public static boolean hidden(BlockPos pos) {
-        if (ANIMS.isEmpty()) return false;
-        Anim anim = ANIMS.get(pos.asLong());
-        return anim != null && !anim.done;
-    }
-
-    static boolean hidden(ModelData data) {
-        return Boolean.TRUE.equals(data.get(HIDDEN));
+    /** Client tick: put held-back blocks in once their copy has risen, drop finished copies. */
+    public static void tick() {
+        if (ANIMS.isEmpty()) return;
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) {
+            ANIMS.clear();
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long duration = duration();
+        for (Iterator<Anim> it = ANIMS.values().iterator(); it.hasNext(); ) {
+            Anim anim = it.next();
+            long age = now - anim.start;
+            if (age >= duration && anim.pending != null) {
+                BlockState state = anim.pending;
+                anim.pending = null;
+                applying = true;
+                try {
+                    level.setServerVerifiedBlockState(anim.pos, state, SERVER_FLAGS);
+                } finally {
+                    applying = false;
+                }
+                benchApplied++;
+            }
+            if (age >= duration + LINGER_MS) it.remove();
+        }
     }
 
     public static void onRenderStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ANIMS.isEmpty()) return;
-        long benchStart = System.nanoTime();
-        benchActive += ANIMS.size();
-        benchMaxActive = Math.max(benchMaxActive, ANIMS.size());
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) return;
+        long benchStart = System.nanoTime();
+        benchActive += ANIMS.size();
+        benchMaxActive = Math.max(benchMaxActive, ANIMS.size());
         long now = System.currentTimeMillis();
-        long duration = duration();
         Vec3 camera = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         BlockRenderDispatcher blocks = mc.getBlockRenderer();
         RandomSource random = RandomSource.create();
         boolean drew = false;
-        for (Iterator<Anim> it = ANIMS.values().iterator(); it.hasNext(); ) {
-            Anim anim = it.next();
-            long age = now - anim.start;
-            if (age >= duration + LINGER_MS) {
-                it.remove();
-                continue;
-            }
-            if (age >= duration && !anim.done) {
-                anim.done = true; // the mesh draws the snow again
-                BlockPos p = anim.pos;
-                mc.levelRenderer.setBlocksDirty(p.getX(), p.getY(), p.getZ(), p.getX(), p.getY(), p.getZ());
-                benchEndRedraws++;
-                BENCH_SECTIONS.add(net.minecraft.core.SectionPos.asLong(p));
-            }
+        for (Anim anim : ANIMS.values()) {
             float offset = anim.offset(now);
             if (offset <= -anim.ghostHeight + 1e-4f) continue; // all sunk
             BlockPos p = anim.pos;
@@ -184,34 +201,9 @@ public final class SnowAnimation {
         benchMaxDrawNanos = Math.max(benchMaxDrawNanos, took);
     }
 
+    /** Leaving the world: held-back blocks don't matter any more (the chunks go too). */
     public static void clear() {
         ANIMS.clear();
-    }
-
-    /** Wraps vanilla's snow layer models so an animated block's layer can be left out of the mesh. */
-    public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
-        for (BlockState state : Blocks.SNOW.getStateDefinition().getPossibleStates()) {
-            ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
-            BakedModel model = event.getModels().get(location);
-            if (model != null && !(model instanceof LayerModel)) event.getModels().put(location, new LayerModel(model));
-        }
-    }
-
-    private static final class LayerModel extends BakedModelWrapper<BakedModel> {
-        LayerModel(BakedModel model) {
-            super(model);
-        }
-
-        @Override
-        public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
-            data = super.getModelData(region, pos, state, data);
-            return hidden(pos) ? data.derive().with(HIDDEN, true).build() : data;
-        }
-
-        @Override
-        public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
-            return hidden(data) ? List.of() : super.getQuads(state, side, rand, data, renderType);
-        }
     }
 
     private SnowAnimation() {}
