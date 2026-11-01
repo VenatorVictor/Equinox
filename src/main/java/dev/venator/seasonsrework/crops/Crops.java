@@ -77,7 +77,7 @@ public final class Crops {
     }
 
     public static void onDataMapsUpdated(DataMapsUpdatedEvent event) {
-        if (event.getRegistryKey() == Registries.BLOCK) CropWarmth.reset();
+        // Heaters come from the config now (CropWarmth.reset on config load).
     }
 
     public static void onChunkUnload(ChunkEvent.Unload event) {

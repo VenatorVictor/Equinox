@@ -28,6 +28,18 @@ public final class Config {
             "rainforest=0,0,0,0", "monsoon=1,0,-1,-10", "savanna=0,0,0,-4", "warm_ocean=0,1,0,-1",
             "lukewarm_ocean=-2,3,2,-3", "ocean=-2,4,2,-4", "cold_ocean=-2,4,2,-4");
     // Vanilla temperatures of the biomes WWOO changes (it uses temperature to tint grass and leaves).
+    // Crop heaters: the vanilla blocks that melt snow (block light 12+), reach = light - 12. Real flames warm, cold lights only stop frost.
+    private static final List<String> DEFAULT_CROP_HEATERS = List.of(
+            "minecraft:lava=20,3", "minecraft:lava_cauldron=20,3", "minecraft:fire=16,3", "minecraft:campfire=16,3",
+            "minecraft:furnace=12,1", "minecraft:smoker=12,1", "minecraft:blast_furnace=12,1",
+            "minecraft:torch=5,2", "minecraft:wall_torch=5,2", "minecraft:lantern=5,3", "minecraft:jack_o_lantern=5,3",
+            "minecraft:glowstone=2,3", "minecraft:sea_lantern=2,3", "minecraft:shroomlight=2,3", "minecraft:ochre_froglight=2,3",
+            "minecraft:verdant_froglight=2,3", "minecraft:pearlescent_froglight=2,3", "minecraft:redstone_lamp=2,3",
+            "minecraft:copper_bulb=2,3", "minecraft:waxed_copper_bulb=2,3", "minecraft:beacon=2,3", "minecraft:conduit=2,3",
+            "minecraft:respawn_anchor=2,3", "minecraft:end_rod=2,2", "minecraft:cave_vines=2,2", "minecraft:cave_vines_plant=2,2",
+            "minecraft:magma_block=10,2");
+    private static final List<String> DEFAULT_CROP_COOLERS = List.of(
+            "minecraft:snow_block=22,2", "minecraft:ice=20,3", "minecraft:packed_ice=18,4", "minecraft:blue_ice=15,5");
     private static final List<String> DEFAULT_BIOME_TEMPERATURES = List.of(
             "minecraft:badlands=2.0", "minecraft:eroded_badlands=2.0", "minecraft:bamboo_jungle=0.95",
             "minecraft:jungle=0.95", "minecraft:beach=0.8", "minecraft:birch_forest=0.6",
@@ -124,8 +136,8 @@ public final class Config {
             .comment("Crops follow the temperature in °C: each has a range (data map seasonsrework:crop_climate; crops only",
                     "in the season tags seasonsrework:<season>_crops or Serene Seasons' get one from their seasons).",
                     "Ideal: grows faster. Cool or warm: slow. Near the limits: stops. Past them (tonight's low, today's",
-                    "high): farmland crops die. Heaters and coolers nearby (data map seasonsrework:crop_temperature)",
-                    "change the temperature. Unlisted plants and dimensions without seasons grow as in vanilla.")
+                    "high): farmland crops die. Heaters and coolers nearby (crop_heaters, crop_coolers below)",
+                    "change the temperature. Unlisted plants, and plants outside the overworld, grow as in vanilla.")
             .define("seasonal_crops", true);
     public static final ModConfigSpec.IntValue SLOW_GROWTH = BUILDER
             .comment("Cool or warm (outside the ideal range): a crop grows on 1 in this many growth chances (bone meal",
@@ -137,6 +149,19 @@ public final class Config {
     public static final ModConfigSpec.DoubleValue FARMLAND_HEAT = BUILDER
             .comment("When today's high is at least this (°C), farmland only stays wet with water within 2 blocks, not 4.")
             .defineInRange("farmland_heat", 30.0, -100.0, 100.0);
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> CROP_HEATERS = BUILDER
+            .comment("Blocks that keep crops near them at least this warm: \"block=°C,distance\". Distance counts like light",
+                    "(steps along x, y and z). The defaults are the blocks that melt snow in vanilla, with the same reach (light",
+                    "above 11: light - 12 blocks), so crops are safe from frost where snow can't lie. Light sources count only",
+                    "while they shine that bright (lit, full). Flames warm enough to grow crops; cold lights only keep frost off",
+                    "(2 °C: every vanilla crop survives it except cocoa). Magma isn't a light but is hot.")
+            .defineListAllowEmpty("crop_heaters", DEFAULT_CROP_HEATERS, () -> "minecraft:torch=5,2",
+                    value -> value instanceof String s && parseWarmth(s) != null);
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> CROP_COOLERS = BUILDER
+            .comment("Blocks that keep crops near them at most this warm: \"block=°C,distance\" (same distance as heaters).")
+            .defineListAllowEmpty("crop_coolers", DEFAULT_CROP_COOLERS, () -> "minecraft:ice=20,3",
+                    value -> value instanceof String s && parseWarmth(s) != null);
 
     public static final ModConfigSpec.DoubleValue LATITUDE = BUILDER
             .comment("Latitude for the seasonal day length: the sun is up longer in summer and shorter in winter, as at",
@@ -154,6 +179,7 @@ public final class Config {
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
+    private static volatile Map<ResourceLocation, float[]> cropHeaters = Map.of(), cropCoolers = Map.of();
     private static volatile boolean seasonalCrops = true;
     private static volatile int slowGrowth = 6;
     private static volatile float idealBonus = 0.15F, farmlandHeat = 30;
@@ -178,6 +204,9 @@ public final class Config {
         dailyVariation = DAILY_VARIATION.get().floatValue();
         variationSeed = VARIATION_SEED.get();
         biomeTemperatures = toMap(BIOME_TEMPERATURES.get());
+        cropHeaters = toWarmthMap(CROP_HEATERS.get());
+        cropCoolers = toWarmthMap(CROP_COOLERS.get());
+        dev.venator.seasonsrework.crops.CropWarmth.reset();
         seasonalCrops = SEASONAL_CROPS.get();
         slowGrowth = SLOW_GROWTH.get();
         idealBonus = IDEAL_BONUS.get().floatValue();
@@ -209,6 +238,41 @@ public final class Config {
             if (parsed != null) map.put(parsed.getKey(), parsed.getValue());
         }
         return Map.copyOf(map);
+    }
+
+    private static Map<ResourceLocation, float[]> toWarmthMap(List<? extends String> entries) {
+        Map<ResourceLocation, float[]> map = new HashMap<>();
+        for (String entry : entries) {
+            Map.Entry<ResourceLocation, float[]> parsed = parseWarmth(entry);
+            if (parsed != null) map.put(parsed.getKey(), parsed.getValue());
+        }
+        return Map.copyOf(map);
+    }
+
+    /** "minecraft:torch=5,2": a block, °C and distance (0..16), or null. */
+    private static Map.Entry<ResourceLocation, float[]> parseWarmth(String entry) {
+        int split = entry.indexOf('=');
+        if (split < 0) return null;
+        ResourceLocation id = ResourceLocation.tryParse(entry.substring(0, split).trim());
+        String[] parts = entry.substring(split + 1).split(",");
+        if (id == null || parts.length != 2) return null;
+        try {
+            float celsius = Float.parseFloat(parts[0].trim());
+            int distance = Integer.parseInt(parts[1].trim());
+            return distance < 0 || distance > 16 || !(celsius >= -100 && celsius <= 100) ? null : Map.entry(id, new float[] {celsius, distance});
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** Crop heaters: block id -> {°C at least, distance}. */
+    public static Map<ResourceLocation, float[]> cropHeaters() {
+        return cropHeaters;
+    }
+
+    /** Crop coolers: block id -> {°C at most, distance}. */
+    public static Map<ResourceLocation, float[]> cropCoolers() {
+        return cropCoolers;
     }
 
     private static Map.Entry<ResourceLocation, Float> parseBiomeTemperature(String entry) {
