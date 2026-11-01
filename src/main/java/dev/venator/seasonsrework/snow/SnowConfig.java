@@ -14,7 +14,6 @@ public final class SnowConfig {
     public static final ModConfigSpec.IntValue BUDGET_MICROS;
     public static final ModConfigSpec.IntValue SPARE_MICROS;
     public static final ModConfigSpec.IntValue BIOME_CELL;
-    public static final ModConfigSpec.BooleanValue SNOWY_LEAF_LITTER;
     public static final ModConfigSpec.BooleanValue SNOWY_PLANTS;
     public static final ModConfigSpec.BooleanValue SNOW_DEPTH;
     public static final ModConfigSpec.EnumValue<Storage> STORAGE;
@@ -59,10 +58,6 @@ public final class SnowConfig {
         BIOME_CELL = BUILDER.comment("Biome edges of snow and ice: 1 = vanilla's irregular edges, checked per block (slowest);",
                         "2 or 4 = one check per 2x2 or 4x4 blocks (faster, edges show small squares).")
                 .defineInRange("biome_cell", 1, 1, 4);
-        SNOWY_LEAF_LITTER = BUILDER.comment("With Snow! Real Magic: snow covers leaf litter (Vanilla Backport / vanilla) and gives it back when it melts.",
-                        "false = leaf litter stays bare inside the snow. Applies to Snow! Real Magic's own snowfall too. Needs a restart.")
-                .worldRestart()
-                .define("snowy_leaf_litter", true);
         BUILDER.pop().comment(
                 "Snowy plants: snow lies in grass, ferns, flowers and other plants (a block state of the plant: it stays itself),",
                 "and one layer around fences and walls. Breaking takes the snow first. Removing the mod just takes the snow away.",

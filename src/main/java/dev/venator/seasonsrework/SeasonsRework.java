@@ -98,9 +98,6 @@ public final class SeasonsRework {
     /** Built-in data packs putting more plants in Snow! Real Magic's plants tag, so snow covers them too. */
     private static void addPacks(AddPackFindersEvent event) {
         if (!ModList.get().isLoaded("snowrealmagic")) return;
-        if (SnowConfig.SNOWY_LEAF_LITTER.get())
-            event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/snowy_leaf_litter"), PackType.SERVER_DATA,
-                    Component.literal("Seasons Rework: snowy leaf litter"), PackSource.BUILT_IN, true, Pack.Position.TOP);
         if (ModList.get().isLoaded("farmersdelight"))
             event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/srm_farmers_delight"), PackType.SERVER_DATA,
                     Component.literal("Seasons Rework: snowy Farmer's Delight wild crops"), PackSource.BUILT_IN, true, Pack.Position.TOP);
