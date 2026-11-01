@@ -252,6 +252,9 @@ public final class Climate {
 
     /** Vanilla snows and freezes below this temperature. */
     public static final float SNOW_LINE = 0.15F;
+
+    /** True on a thread while it generates a chunk (WorldgenClimateMixin): biomes then give vanilla's temperature and rain. */
+    public static final ThreadLocal<Boolean> WORLDGEN = ThreadLocal.withInitial(() -> Boolean.FALSE);
     private static final int SAMPLES = 336;
 
     /**

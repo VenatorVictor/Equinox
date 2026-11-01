@@ -23,7 +23,8 @@
     "SpreadingSnowyDirtMixin",
     "WallSnowShapeMixin",
     "SnowyNeighbourMixin",
-    "SnowyDoublePlantMixin"
+    "SnowyDoublePlantMixin",
+    "WorldgenClimateMixin"
   ],
   "client": [
     "client.BiomeColorMixin",

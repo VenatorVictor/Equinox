@@ -121,6 +121,7 @@ public abstract class BiomeMixin implements ClimateBiome {
     // At RETURN, so vanilla's per-position cache keeps the plain value and the offset is always the current one.
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void seasonsrework$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
+        if (Climate.WORLDGEN.get()) return; // world generation keeps vanilla's climate
         float[] changes = seasonsrework$changes;
         float shift = seasonsrework$shift + seasonsrework$snowShift;
         if (changes != null) shift += Climate.change(changes, seasonsrework$zone.factor);
@@ -130,6 +131,7 @@ public abstract class BiomeMixin implements ClimateBiome {
 
     @Inject(method = "hasPrecipitation", at = @At("HEAD"), cancellable = true)
     private void seasonsrework$wetAndDry(CallbackInfoReturnable<Boolean> cir) {
+        if (Climate.WORLDGEN.get()) return;
         Boolean rain = Climate.precipitation(seasonsrework$zone);
         if (rain != null) cir.setReturnValue(rain);
     }
