@@ -14,15 +14,16 @@ import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Snow on crops, like snow on grass: farmland crops get a snowy block state (added by BlockSnowyMixin) that the
- * snowy textures follow. Set on the crop's random tick while it snows on it (open sky, no heater, first snow fallen,
- * block light below 10 as vanilla snowfall); melts on a later random tick under a roof, near a heater, in block light
- * above 11 (as vanilla snow layers: a torch or campfire melts it and stops new snow) or where snow no longer lies
- * (SnowRules.lies: a thaw, rain), so it goes
- * block by block. It stays when the crop grows, is bonemealed, a stem takes its fruit or the crop freezes (keep).
+ * Snow on crops, like snow on grass: farmland crops (and frozen dead crops) get a snowy block state (added by
+ * BlockSnowyMixin) that the snowy textures follow. It comes with the snowfall, the same snowfall that lays snow on
+ * the ground: the snow cover's columns (SnowCover) and vanilla's own snowfall (SnowyPlants.onSnowfall) put it on the
+ * crop at the top of a column instead of failing on it. So a glass roof keeps it off (the snowfall stops on the roof)
+ * and crops in the middle of a field get it like the ground around them. Not while a heater is near or in block light
+ * 10 or more (vanilla's snowfall rule). It melts on a later random tick, or by the snow cover, where snow no longer
+ * lies (a thaw, rain), near a heater or in block light above 11 (as vanilla snow layers); a roof built over it later
+ * doesn't melt it. It stays when the crop grows, is bonemealed, a stem takes its fruit or the crop freezes (keep).
  * is() runs while blocks are built, so it touches only vanilla classes.
  */
 public final class SnowyCrops {
@@ -33,17 +34,31 @@ public final class SnowyCrops {
         return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock;
     }
 
-    /** Whether snow lies on the crop (or frozen dead crop) after this random tick; state holds SNOWY. */
+    /** Whether this block takes snow as a crop: a living farmland crop or a frost-killed dead crop. */
+    public static boolean holds(BlockState state) {
+        if (state.getBlock() instanceof DeadCropBlock) return state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.FROST;
+        return is(state.getBlock()) && state.hasProperty(SNOWY);
+    }
+
+    /** Snowfall reached the crop at pos (it's the top of its column): it gets snow. False if it can't. */
+    public static boolean cover(ServerLevel level, BlockPos pos, BlockState state) {
+        if (!holds(state) || state.getValue(SNOWY) || level.getBrightness(LightLayer.BLOCK, pos) >= 10 || CropWarmth.heated(level, pos)) return false;
+        level.setBlock(pos, state.setValue(SNOWY, true), Block.UPDATE_CLIENTS);
+        return true;
+    }
+
+    /** Takes the crop's snow off. False if it had none. */
+    public static boolean melt(ServerLevel level, BlockPos pos, BlockState state) {
+        if (!holds(state) || !state.getValue(SNOWY)) return false;
+        level.setBlock(pos, state.setValue(SNOWY, false), Block.UPDATE_CLIENTS);
+        return true;
+    }
+
+    /** Random tick: whether the crop's snow (if any) stays. Snow only comes with the snowfall, never from this. */
     public static boolean snowy(BlockState state, ServerLevel level, BlockPos pos) {
+        if (!state.getValue(SNOWY)) return false;
         Holder<Biome> biome = level.getBiome(pos);
-        // Melts: warm, a heater nearby, or a roof (glass too; leaves aren't one).
-        int light = level.getBrightness(LightLayer.BLOCK, pos);
-        if (!SnowRules.lies(biome, pos, Snowpack.warmest()) || CropWarmth.heated(level, pos) || light > 11
-                || pos.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ())) return false;
-        if (state.getValue(SNOWY)) return true;
-        // Settles only while it snows on it.
-        return light < 10 && level.isRaining() && biome.value().hasPrecipitation()
-                && pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
+        return SnowRules.lies(biome, pos, Snowpack.warmest()) && !CropWarmth.heated(level, pos) && level.getBrightness(LightLayer.BLOCK, pos) <= 11;
     }
 
     /**
