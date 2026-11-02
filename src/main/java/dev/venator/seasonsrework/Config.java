@@ -3,12 +3,17 @@ package dev.venator.seasonsrework;
 import dev.venator.seasonsrework.climate.Climate;
 import dev.venator.seasonsrework.climate.Zone;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Server config (per world; NeoForge sends it to clients, so both sides count the year the same way). */
+/** Seasons config: config/seasonsrework-server.toml, the same for every world; a server sends its values to players (ConfigSync). */
 public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
     private static final List<String> DEFAULT_CLIMATE_CHANGES = Arrays.stream(Zone.values())
@@ -89,7 +94,7 @@ public final class Config {
                     "not lagged. Grass and leaf colors don't follow it. 0: off.")
             .defineInRange("daily_variation", 0.133, 0.0, 1.0);
     public static final ModConfigSpec.LongValue VARIATION_SEED = BUILDER
-            .comment("Seed for the season and daily variation. 0: set from the world seed when the world loads.")
+            .comment("Seed for the season and daily variation. 0: each world uses its own world seed.")
             .defineInRange("variation_seed", 0L, Long.MIN_VALUE, Long.MAX_VALUE);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> BIOME_TEMPERATURES = BUILDER
@@ -191,44 +196,98 @@ public final class Config {
     private static volatile float zoneWarmStart = 0, zoneWarmEnd = 0.2F;
 
     public static void refresh() {
-        daysPerSeason = DAYS_PER_SEASON.get();
+        daysPerSeason = val(DAYS_PER_SEASON);
         Map<Zone, float[]> changes = new HashMap<>();
-        for (String entry : CLIMATE_CHANGES.get()) {
+        for (String entry : val(CLIMATE_CHANGES)) {
             Map.Entry<Zone, float[]> parsed = parseClimateChange(entry);
             if (parsed != null) changes.put(parsed.getKey(), parsed.getValue());
         }
         climateChanges = Map.copyOf(changes);
-        celsiusChanges = toCelsiusMap(CELSIUS_CHANGES.get());
-        temperatureLag = TEMPERATURE_LAG.get();
-        seasonVariation = SEASON_VARIATION.get().floatValue();
-        dailyVariation = DAILY_VARIATION.get().floatValue();
-        variationSeed = VARIATION_SEED.get();
-        biomeTemperatures = toMap(BIOME_TEMPERATURES.get());
-        cropHeaters = toWarmthMap(CROP_HEATERS.get());
-        cropCoolers = toWarmthMap(CROP_COOLERS.get());
+        celsiusChanges = toCelsiusMap(val(CELSIUS_CHANGES));
+        temperatureLag = val(TEMPERATURE_LAG);
+        seasonVariation = val(SEASON_VARIATION).floatValue();
+        dailyVariation = val(DAILY_VARIATION).floatValue();
+        variationSeed = val(VARIATION_SEED) != 0 ? val(VARIATION_SEED) : worldSeed;
+        biomeTemperatures = toMap(val(BIOME_TEMPERATURES));
+        cropHeaters = toWarmthMap(val(CROP_HEATERS));
+        cropCoolers = toWarmthMap(val(CROP_COOLERS));
         dev.venator.seasonsrework.crops.CropWarmth.reset();
-        seasonalCrops = SEASONAL_CROPS.get();
-        slowGrowth = SLOW_GROWTH.get();
-        idealBonus = IDEAL_BONUS.get().floatValue();
-        farmlandHeat = FARMLAND_HEAT.get().floatValue();
-        latitude = LATITUDE.get();
-        blendRadius = BLEND_RADIUS.get();
-        blendRadiusLarge = BLEND_RADIUS_LARGE.get();
-        blendStrength = BLEND_STRENGTH.get().floatValue();
-        dhBlendDistance = DH_BLEND_DISTANCE.get();
-        climateZones = CLIMATE_ZONES.get();
-        zoneWarmStart = ZONE_WARM_START.get().floatValue();
-        zoneWarmEnd = ZONE_WARM_END.get().floatValue();
+        seasonalCrops = val(SEASONAL_CROPS);
+        slowGrowth = val(SLOW_GROWTH);
+        idealBonus = val(IDEAL_BONUS).floatValue();
+        farmlandHeat = val(FARMLAND_HEAT).floatValue();
+        latitude = val(LATITUDE);
+        blendRadius = val(BLEND_RADIUS);
+        blendRadiusLarge = val(BLEND_RADIUS_LARGE);
+        blendStrength = val(BLEND_STRENGTH).floatValue();
+        dhBlendDistance = val(DH_BLEND_DISTANCE);
+        climateZones = val(CLIMATE_ZONES);
+        zoneWarmStart = val(ZONE_WARM_START).floatValue();
+        zoneWarmEnd = val(ZONE_WARM_END).floatValue();
         Climate.recategorize();
     }
 
-    /** A new world: takes the variation seed from the world seed (after the server config loads, before players join). */
+    /** A world starts: with variation_seed 0 the variation follows this world's seed (kept in memory, not in the shared file). */
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-        if (VARIATION_SEED.get() != 0) return;
         long seed = event.getServer().getWorldData().worldGenOptions().seed();
-        VARIATION_SEED.set(seed != 0 ? seed : 1);
-        VARIATION_SEED.save();
-        variationSeed = VARIATION_SEED.get();
+        worldSeed = seed != 0 ? seed : 1;
+        refresh();
+    }
+
+    // ---- Sync: the file is global (config/), so NeoForge doesn't send it; a server sends its values to players.
+
+    private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, CLIMATE_CHANGES, CELSIUS_CHANGES,
+            TEMPERATURE_LAG, SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
+            BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, SLOW_GROWTH,
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE);
+    /** The server's values while connected to one (path -> value); empty: this computer's file. */
+    private static volatile Map<String, Object> remote = Map.of();
+    private static volatile long worldSeed = 1;
+
+    @SuppressWarnings("unchecked")
+    private static <T> T val(ModConfigSpec.ConfigValue<T> value) {
+        Object from = remote.get(String.join(".", value.getPath()));
+        return from != null ? (T) from : value.get();
+    }
+
+    /** This server's values, the variation seed as worked out for the world. */
+    public static CompoundTag syncTag() {
+        CompoundTag tag = new CompoundTag();
+        for (ModConfigSpec.ConfigValue<?> value : SYNCED) {
+            String key = String.join(".", value.getPath());
+            Object v = value == VARIATION_SEED ? (Object) variationSeed : value.get();
+            if (v instanceof Boolean b) tag.putBoolean(key, b);
+            else if (v instanceof Integer i) tag.putInt(key, i);
+            else if (v instanceof Long l) tag.putLong(key, l);
+            else if (v instanceof Double d) tag.putDouble(key, d);
+            else if (v instanceof List<?> list) {
+                ListTag entries = new ListTag();
+                for (Object entry : list) entries.add(StringTag.valueOf(String.valueOf(entry)));
+                tag.put(key, entries);
+            }
+        }
+        return tag;
+    }
+
+    /** Client: use the server's values (null: back to this computer's file). */
+    public static void receive(CompoundTag tag) {
+        Map<String, Object> values = new HashMap<>();
+        if (tag != null) for (ModConfigSpec.ConfigValue<?> value : SYNCED) {
+            String key = String.join(".", value.getPath());
+            if (!tag.contains(key)) continue;
+            Object def = value.getDefault();
+            if (def instanceof Boolean) values.put(key, tag.getBoolean(key));
+            else if (def instanceof Integer) values.put(key, tag.getInt(key));
+            else if (def instanceof Long) values.put(key, tag.getLong(key));
+            else if (def instanceof Double) values.put(key, tag.getDouble(key));
+            else if (def instanceof List) {
+                List<String> list = new ArrayList<>();
+                for (Tag entry : tag.getList(key, Tag.TAG_STRING)) list.add(entry.getAsString());
+                values.put(key, List.copyOf(list));
+            }
+        }
+        remote = Map.copyOf(values);
+        refresh();
     }
 
     private static Map<ResourceLocation, Float> toMap(List<? extends String> entries) {
