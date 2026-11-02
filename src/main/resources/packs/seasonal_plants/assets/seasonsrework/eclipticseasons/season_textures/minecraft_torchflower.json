@@ -1,0 +1,68 @@
+{
+  "target": [
+    "minecraft:block/torchflower"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "cold_dew",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_bud_green_petals",
+        "cross": "seasonsrework:block/plants/minecraft_torchflower_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_bud_green_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_torchflower_bud_green_stem"
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "lesser_fullness",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "grain_in_ear",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_opening_petals_snow"
+      }
+    },
+    {
+      "start": "summer_solstice",
+      "end": "end_of_heat",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "white_dew",
+      "end": "autumnal_equinox",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_torchflower_seed_petals_snow"
+      }
+    }
+  ]
+}

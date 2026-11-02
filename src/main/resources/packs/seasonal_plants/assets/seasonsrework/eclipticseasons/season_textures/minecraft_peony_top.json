@@ -1,0 +1,68 @@
+{
+  "target": [
+    "minecraft:block/peony_top"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "greater_heat",
+      "end": "spring_equinox",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_bud_green_petals",
+        "cross": "seasonsrework:block/plants/minecraft_peony_top_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_bud_green_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_peony_top_bud_green_stem"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_opening_petals_snow"
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "grain_in_ear",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "summer_solstice",
+      "end": "lesser_heat",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_peony_top_seed_petals_snow"
+      }
+    }
+  ]
+}

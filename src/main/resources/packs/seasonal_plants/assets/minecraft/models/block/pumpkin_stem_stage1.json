@@ -1,0 +1,182 @@
+{
+  "ambientocclusion": false,
+  "elements": [
+    {
+      "from": [
+        0,
+        -1,
+        8
+      ],
+      "to": [
+        16,
+        3,
+        8
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#stem",
+          "tintindex": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            0,
+            0,
+            4
+          ],
+          "texture": "#stem",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        8,
+        -1,
+        0
+      ],
+      "to": [
+        8,
+        3,
+        16
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#stem",
+          "tintindex": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            0,
+            0,
+            4
+          ],
+          "texture": "#stem",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        -1,
+        8
+      ],
+      "to": [
+        16,
+        3,
+        8
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#flower"
+        },
+        "south": {
+          "uv": [
+            16,
+            0,
+            0,
+            4
+          ],
+          "texture": "#flower"
+        }
+      }
+    },
+    {
+      "from": [
+        8,
+        -1,
+        0
+      ],
+      "to": [
+        8,
+        3,
+        16
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#flower"
+        },
+        "east": {
+          "uv": [
+            16,
+            0,
+            0,
+            4
+          ],
+          "texture": "#flower"
+        }
+      }
+    }
+  ],
+  "textures": {
+    "stem": "minecraft:block/pumpkin_stem",
+    "particle": "minecraft:block/pumpkin_stem",
+    "flower": "seasonsrework:block/plants/minecraft_pumpkin_stem_pumpkin_stem_stage1_empty"
+  }
+}

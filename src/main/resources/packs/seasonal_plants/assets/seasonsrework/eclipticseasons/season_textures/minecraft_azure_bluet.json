@@ -1,0 +1,68 @@
+{
+  "target": [
+    "minecraft:block/azure_bluet"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "beginning_of_autumn",
+      "end": "rain_water",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_leaves_petals",
+        "cross": "seasonsrework:block/plants/minecraft_azure_bluet_leaves_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_leaves_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_azure_bluet_leaves_stem"
+      }
+    },
+    {
+      "start": "insects_awakening",
+      "end": "insects_awakening",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bud_green_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bud_green_petals_snow"
+      }
+    },
+    {
+      "start": "spring_equinox",
+      "end": "spring_equinox",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_opening_petals_snow"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "summer_solstice",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "lesser_heat",
+      "end": "greater_heat",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_azure_bluet_seed_petals_snow"
+      }
+    }
+  ]
+}

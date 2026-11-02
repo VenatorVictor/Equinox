@@ -96,8 +96,12 @@ public final class SeasonsRework {
         if (FMLEnvironment.dist == Dist.CLIENT) SeasonsReworkClient.init(container, modBus);
     }
 
-    /** Built-in data packs putting more plants in Snow! Real Magic's plants tag, so snow covers them too. */
+    /** Built-in packs: the vanilla plants' seasonal looks (always on, made by packsrc/make_plants.py --vanilla),
+     *  and data packs putting more plants in Snow! Real Magic's plants tag, so snow covers them too. */
     private static void addPacks(AddPackFindersEvent event) {
+        if (event.getPackType() == PackType.CLIENT_RESOURCES)
+            event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/seasonal_plants"), PackType.CLIENT_RESOURCES,
+                    Component.literal("Seasons Rework: seasonal plants"), PackSource.BUILT_IN, true, Pack.Position.TOP);
         if (!ModList.get().isLoaded("snowrealmagic")) return;
         if (ModList.get().isLoaded("farmersdelight"))
             event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/srm_farmers_delight"), PackType.SERVER_DATA,

@@ -1,0 +1,74 @@
+{
+  "target": [
+    "minecraft:block/oxeye_daisy"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "first_frost",
+      "end": "spring_equinox",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_green_petals",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_green_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_green_stem"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_color_petals",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_color_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_color_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_bud_color_stem"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_opening_petals",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_opening_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_opening_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_opening_stem"
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "white_dew",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "autumnal_equinox",
+      "end": "cold_dew",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_seed_petals",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_seed_stem"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_seed_petals_snow",
+        "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_seed_stem"
+      }
+    }
+  ]
+}

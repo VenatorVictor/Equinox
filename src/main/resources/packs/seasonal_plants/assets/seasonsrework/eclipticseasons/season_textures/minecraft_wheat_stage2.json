@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/wheat_stage2"
+  ],
+  "snow_needs_sky": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_wheat_stage2_snow"
+      },
+      "snow_tint": {
+        "flower": -1
+      }
+    }
+  ]
+}

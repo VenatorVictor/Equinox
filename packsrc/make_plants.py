@@ -1,6 +1,8 @@
 """Builds the "Seasons Rework Seasonal Plants" resource pack.
 
-Usage: python make_plants.py <output folder> <jar> [<jar> ...] [--preview <png>]
+Usage: python make_plants.py <output folder> <jar> [<jar> ...] [--vanilla | --addon] [--preview <png>]
+The first jar must be the Minecraft client jar. --vanilla: only plants whose block model is in it (the pack built
+into the mod, src/main/resources/packs/seasonal_plants). --addon: only the others (a separate resource pack).
 Jars: the Minecraft client resources jar, plus Vanilla Backport, Blooming Nature and Immersive Weathering (Renewed)
 if their plants should be covered (plants whose texture isn't in any jar are skipped). Needs Pillow.
 
@@ -163,6 +165,11 @@ class Jars:
             if path in z.namelist():
                 return z.read(path)
         return None
+
+    def vanilla(self, model_id):
+        """True when the block model comes with Minecraft itself (the first jar)."""
+        ns, path = model_id.split(":")
+        return f"assets/{ns}/models/{path}.json" in self.zips[0].namelist()
 
     def model(self, model_id):
         ns, path = model_id.split(":")
@@ -797,7 +804,11 @@ class Pack:
 
 def main():
     args = sys.argv[1:]
-    preview = None
+    preview, mode = None, None
+    for flag in ("--vanilla", "--addon"):
+        if flag in args:
+            mode = flag[2:]
+            args.remove(flag)
     if "--preview" in args:
         i = args.index("--preview")
         preview = Path(args[i + 1])
@@ -805,30 +816,34 @@ def main():
     out, jars = Path(args[0]), Jars(args[1:])
     pack = Pack(out, jars)
     done, skipped = 0, []
+    wanted = lambda m: mode is None or (mode == "vanilla") == jars.vanilla(m)
     for key, window in BLOOM.items():
-        for model_id in expand(key):
+        for model_id in filter(wanted, expand(key)):
             if pack.flower(model_id, window):
                 done += 1
             else:
                 skipped.append(model_id)
     for make, keys in ((pack.grass, GRASS + CROPS + WILD), (pack.stem, STEMS), (pack.evergreen, EVERGREEN + jars.saplings())):
-        for model_id in [m for key in keys for m in expand(key)]:
+        for model_id in [m for key in keys for m in expand(key) if wanted(m)]:
             if make(model_id):
                 done += 1
             else:
                 skipped.append(model_id)
-    for model_id, var in BAMBOO_PARTS:
+    for model_id, var in [(m, v) for m, v in BAMBOO_PARTS if wanted(m)]:
         if pack.evergreen(model_id, var, "snow_needs_sky"):
             done += 1
         else:
             skipped.append(model_id)
-    if pack.bamboo_stalk():
+    if not wanted(BAMBOO_STALK):
+        pass
+    elif pack.bamboo_stalk():
         done += 1
     else:
         skipped.append(BAMBOO_STALK)
     (out / "pack.mcmeta").write_text(json.dumps({"pack": {
         "pack_format": 34,
-        "description": "Seasons Rework: flowers bud, bloom, seed and die back; grass dries in winter",
+        "description": "Seasons Rework: seasonal looks for modded flowers and plants" if mode == "addon"
+        else "Seasons Rework: flowers bud, bloom, seed and die back; grass dries in winter",
     }}, indent=2))
     print(f"{done} plants, skipped (not in the jars): {', '.join(skipped) or 'none'}")
     if preview:

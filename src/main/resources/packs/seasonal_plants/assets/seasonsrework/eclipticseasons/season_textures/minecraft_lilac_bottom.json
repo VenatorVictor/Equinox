@@ -1,0 +1,66 @@
+{
+  "target": [
+    "minecraft:block/lilac_bottom"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "lesser_heat",
+      "end": "insects_awakening",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "spring_equinox",
+      "end": "spring_equinox",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_bud_green_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_bud_green_petals_snow"
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_opening_petals_snow"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "lesser_fullness",
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "summer_solstice",
+      "textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "seasonsrework:block/plants/minecraft_lilac_bottom_seed_petals_snow"
+      }
+    }
+  ]
+}
