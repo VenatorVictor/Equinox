@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_peony_bottom_stem",
+    "cross": "equinox:block/plants/minecraft_peony_bottom_stem",
     "particle": "minecraft:block/peony_bottom",
-    "flower": "seasonsrework:block/plants/minecraft_peony_bottom_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_peony_bottom_bloom_petals"
   }
 }

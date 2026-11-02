@@ -1,0 +1,122 @@
+package dev.venatorvictor.equinox;
+
+import com.mojang.logging.LogUtils;
+import dev.venatorvictor.equinox.client.EquinoxClient;
+import dev.venatorvictor.equinox.climate.BiomeCelsius;
+import dev.venatorvictor.equinox.climate.Climate;
+import dev.venatorvictor.equinox.crops.CropBlocks;
+import dev.venatorvictor.equinox.crops.CropClimate;
+import dev.venatorvictor.equinox.crops.CropWarmth;
+import dev.venatorvictor.equinox.crops.Crops;
+import dev.venatorvictor.equinox.daylength.DayLength;
+import dev.venatorvictor.equinox.season.SeasonClock;
+import dev.venatorvictor.equinox.season.SeasonCommand;
+import dev.venatorvictor.equinox.snow.Snowpack;
+import dev.venatorvictor.equinox.snow.SnowConfig;
+import dev.venatorvictor.equinox.snow.SnowCover;
+import dev.venatorvictor.equinox.snow.SnowpackPayload;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
+import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
+import net.neoforged.neoforge.event.entity.player.BonemealEvent;
+import net.neoforged.neoforge.event.level.BlockGrowFeatureEvent;
+import net.neoforged.neoforge.event.level.block.CropGrowEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import org.slf4j.Logger;
+
+@Mod(Equinox.MOD_ID)
+public final class Equinox {
+    public static final String MOD_ID = "equinox";
+    public static final Logger LOGGER = LogUtils.getLogger();
+
+    public Equinox(IEventBus modBus, ModContainer container) {
+        // Global (config/, the same for every world); a server sends its values to players (ConfigSync).
+        container.registerConfig(ModConfig.Type.COMMON, Config.SPEC, "equinox-server.toml");
+        modBus.addListener(ModConfigEvent.Loading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
+        modBus.addListener(ModConfigEvent.Reloading.class, event -> {
+            if (event.getConfig().getSpec() != Config.SPEC) return;
+            Config.refresh();
+            ConfigSync.sendToAll();
+        });
+        modBus.addListener(RegisterPayloadHandlersEvent.class, ConfigSync::register);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class, ConfigSync::onLogin);
+        container.registerConfig(ModConfig.Type.COMMON, SnowConfig.SPEC);
+        // snow_locks changes which biomes are locked.
+        modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == SnowConfig.SPEC) dev.venatorvictor.equinox.climate.Climate.recategorize(); });
+
+        NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SeasonClock::onLevelTick);
+        NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);
+        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, SeasonClock::onServerStopped);
+        NeoForge.EVENT_BUS.addListener(ServerAboutToStartEvent.class, Config::onServerAboutToStart);
+        NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Climate::categorize);
+        NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Crops::onTagsUpdated);
+        NeoForge.EVENT_BUS.addListener(CropGrowEvent.Pre.class, Crops::onCropGrow);
+        NeoForge.EVENT_BUS.addListener(BlockGrowFeatureEvent.class, Crops::onTreeGrow);
+        NeoForge.EVENT_BUS.addListener(BonemealEvent.class, Crops::onBonemeal);
+        NeoForge.EVENT_BUS.addListener(SleepFinishedTimeEvent.class, DayLength::onSleepFinished);
+        NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, SeasonCommand::register);
+
+        // Snowpack (sent to clients for LOD snow and snowy textures) and snow cover.
+        modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);
+        modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venatorvictor.equinox.climate.ClimateBlendPayload::register);
+        dev.venatorvictor.equinox.climate.ClimateBlendPayload.init();
+        modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venatorvictor.equinox.climate.FarBlend::register);
+        dev.venatorvictor.equinox.climate.FarBlend.init();
+        Snowpack.init();
+        SnowCover.init(modBus);
+        dev.venatorvictor.equinox.snow.SnowMap.init(modBus);
+        dev.venatorvictor.equinox.snow.SnowyPlants.init();
+        modBus.addListener(AddPackFindersEvent.class, Equinox::addPacks);
+        modBus.addListener(RegisterDataMapTypesEvent.class, event -> {
+            event.register(BiomeCelsius.TYPE);
+            event.register(dev.venatorvictor.equinox.climate.BiomeSnow.TYPE);
+            event.register(CropClimate.TYPE);
+        });
+        CropBlocks.register(modBus);
+        dev.venatorvictor.equinox.snow.SnowBlocks.register(modBus);
+        NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
+        NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, Crops::onChunkUnload);
+
+        if (FMLEnvironment.dist == Dist.CLIENT) EquinoxClient.init(container, modBus);
+    }
+
+    /** A built-in resource pack, always on (made by the packsrc scripts). */
+    private static void clientPack(AddPackFindersEvent event, String folder, String name) {
+        event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/" + folder), PackType.CLIENT_RESOURCES,
+                Component.literal("Equinox: " + name), PackSource.BUILT_IN, true, Pack.Position.TOP);
+    }
+
+    /** Built-in packs: the vanilla plants' seasonal looks (always on, made by packsrc/make_plants.py --vanilla), and
+     *  data packs putting more plants in the snowy plants tag of a snow mod, so snow covers them too. */
+    private static void addPacks(AddPackFindersEvent event) {
+        if (event.getPackType() == PackType.CLIENT_RESOURCES) {
+            clientPack(event, "seasonal_plants", "seasonal plants");
+        }
+        if (!ModList.get().isLoaded("snowrealmagic")) return;
+        if (ModList.get().isLoaded("farmersdelight"))
+            event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/snowy_wild_crops"), PackType.SERVER_DATA,
+                    Component.literal("Equinox: snowy wild crops"), PackSource.BUILT_IN, true, Pack.Position.TOP);
+    }
+}

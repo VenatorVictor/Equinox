@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/jungle_sapling"
+  ],
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "cross": "equinox:block/plants/minecraft_jungle_sapling_snowy"
+      },
+      "snow_tint": {
+        "cross": -1
+      }
+    }
+  ]
+}

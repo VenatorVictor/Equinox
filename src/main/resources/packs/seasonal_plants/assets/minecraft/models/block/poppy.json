@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_poppy_stem",
+    "cross": "equinox:block/plants/minecraft_poppy_stem",
     "particle": "minecraft:block/poppy",
-    "flower": "seasonsrework:block/plants/minecraft_poppy_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_poppy_bloom_petals"
   }
 }

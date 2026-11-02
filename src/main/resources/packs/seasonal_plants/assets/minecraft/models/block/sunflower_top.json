@@ -222,10 +222,10 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_sunflower_top_stem",
+    "cross": "equinox:block/plants/minecraft_sunflower_top_stem",
     "back": "minecraft:block/sunflower_back",
     "front": "minecraft:block/sunflower_front",
     "particle": "minecraft:block/sunflower_top",
-    "flower": "seasonsrework:block/plants/minecraft_sunflower_top_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_sunflower_top_bloom_petals"
   }
 }

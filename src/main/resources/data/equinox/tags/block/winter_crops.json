@@ -1,0 +1,11 @@
+{
+  "values": [
+    "#equinox:year_round_crops",
+    "minecraft:spruce_sapling",
+    "minecraft:sweet_berry_bush",
+    {
+      "id": "#sereneseasons:winter_crops",
+      "required": false
+    }
+  ]
+}

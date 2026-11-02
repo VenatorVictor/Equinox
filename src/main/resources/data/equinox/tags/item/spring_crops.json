@@ -1,0 +1,9 @@
+{
+  "values": [
+    "#equinox:year_round_crops",
+    {
+      "id": "#sereneseasons:spring_crops",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/bamboo1_age0"
+  ],
+  "snow_needs_sky": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "all": "equinox:block/plants/minecraft_bamboo_stalk_snowy"
+      },
+      "snow_tint": {
+        "all": -1
+      }
+    }
+  ]
+}

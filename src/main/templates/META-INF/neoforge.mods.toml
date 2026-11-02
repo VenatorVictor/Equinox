@@ -22,7 +22,7 @@ description='''A seasons mod where the whole world follows the year, in one mod 
 [[mixins]]
     config="${mod_id}.mixins.json"
 
-# Distant Horizons and Snow! Real Magic hooks; skipped when those mods aren't installed.
+# Distant Horizons and snow mod hooks; skipped when those mods aren't installed.
 [[mixins]]
     config="${mod_id}.compat.mixins.json"
 
@@ -47,7 +47,7 @@ description='''A seasons mod where the whole world follows the year, in one mod 
 [[dependencies.${mod_id}]]
     modId="sereneseasons"
     type="incompatible"
-    reason="Seasons Rework replaces Serene Seasons (and Serene Tweaks, which needs it). Remove them."
+    reason="Equinox replaces this seasons mod. Remove it."
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"
@@ -55,7 +55,7 @@ description='''A seasons mod where the whole world follows the year, in one mod 
 [[dependencies.${mod_id}]]
     modId="eclipticseasons"
     type="incompatible"
-    reason="Seasons Rework replaces Ecliptic Seasons. Remove it."
+    reason="Equinox replaces this seasons mod. Remove it."
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"
@@ -80,7 +80,7 @@ description='''A seasons mod where the whole world follows the year, in one mod 
 [[dependencies.${mod_id}]]
     modId="immersive_snow_reloaded"
     type="incompatible"
-    reason="Seasons Rework already has a snow cover. Remove Immersive Snow (Reloaded)."
+    reason="Equinox already has a snow cover. Remove this mod."
     versionRange="[0,)"
     ordering="NONE"
     side="BOTH"

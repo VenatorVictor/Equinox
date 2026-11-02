@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_orange_tulip_stem",
+    "cross": "equinox:block/plants/minecraft_orange_tulip_stem",
     "particle": "minecraft:block/orange_tulip",
-    "flower": "seasonsrework:block/plants/minecraft_orange_tulip_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_orange_tulip_bloom_petals"
   }
 }

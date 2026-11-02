@@ -277,6 +277,6 @@
   "textures": {
     "crop": "minecraft:block/beetroots_stage1",
     "particle": "minecraft:block/beetroots_stage1",
-    "flower": "seasonsrework:block/plants/minecraft_beetroots_stage1_empty"
+    "flower": "equinox:block/plants/minecraft_beetroots_stage1_empty"
   }
 }

@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_cornflower_stem",
+    "cross": "equinox:block/plants/minecraft_cornflower_stem",
     "particle": "minecraft:block/cornflower",
-    "flower": "seasonsrework:block/plants/minecraft_cornflower_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_cornflower_bloom_petals"
   }
 }

@@ -181,6 +181,6 @@
   "textures": {
     "cross": "minecraft:block/tall_grass_top",
     "particle": "minecraft:block/tall_grass_top",
-    "flower": "seasonsrework:block/plants/minecraft_tall_grass_top_empty"
+    "flower": "equinox:block/plants/minecraft_tall_grass_top_empty"
   }
 }

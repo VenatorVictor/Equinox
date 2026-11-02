@@ -277,6 +277,6 @@
   "textures": {
     "crop": "minecraft:block/carrots_stage0",
     "particle": "minecraft:block/carrots_stage0",
-    "flower": "seasonsrework:block/plants/minecraft_carrots_stage0_empty"
+    "flower": "equinox:block/plants/minecraft_carrots_stage0_empty"
   }
 }

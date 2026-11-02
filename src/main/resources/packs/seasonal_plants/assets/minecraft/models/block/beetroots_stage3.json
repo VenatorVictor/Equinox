@@ -275,8 +275,8 @@
     }
   ],
   "textures": {
-    "crop": "seasonsrework:block/plants/minecraft_beetroots_stage3_stem",
+    "crop": "equinox:block/plants/minecraft_beetroots_stage3_stem",
     "particle": "minecraft:block/beetroots_stage3",
-    "flower": "seasonsrework:block/plants/minecraft_beetroots_stage3_rest"
+    "flower": "equinox:block/plants/minecraft_beetroots_stage3_rest"
   }
 }
