@@ -7,17 +7,31 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="venatorvictor"
-description='''A seasons mod where the whole world follows the year, in one mod with no library dependencies.
+description='''§fThe whole world follows the year: §aSpring§f, §eSummer§f, §6Autumn§f and §bWinter§f.
 
-- Four seasons, each with an early, mid and late part; the year length is up to you.
-- A real climate in °C: each climate zone has its own seasons (mild coasts, cold north, tundra, deserts, tropical wet and dry seasons), warmer days and colder nights, random warm and cold spells, and the warmest weeks coming after midsummer as in real life.
-- Neighbouring biomes blend their climates, and winter fades out near jungles and deserts.
-- Day length changes with the season: long summer days, short winter days.
-- Snow falls and builds up while it's cold and melts in a thaw; it settles in grass, flowers and plants and on fences, and slides in and out instead of popping. Lakes and rivers freeze.
-- Crops grow by temperature: fast in their ideal range, slowly when it's cool or warm, dormant in the cold, and killed by frost or heat. Campfires, torches and other heat sources protect them; ice cools them. On hot days farmland needs water closer by.
-- Grass and leaves change color through the year, birches turn yellow and orange in autumn, and flowers bud, bloom and go to seed.
-- Distant Horizons: far terrain follows the colors and the snow.
-- A temperature API for other mods, and a config screen with tabs, descriptions and the performance cost of each setting.'''
+§6§lClimate
+§7• Each biome has its own seasons: mild coasts, a cold north, deserts, rainy and dry tropics.
+§7• Neighbouring biomes blend, and winter fades out near jungles and deserts.
+§7• Long summer days, short winter days.
+
+§b§lSnow
+§7• Snow builds up while it's cold and melts in a thaw.
+§7• It settles in grass, flowers and plants and on fences, and slides in and out instead of popping.
+§7• Lakes and rivers freeze.
+
+§a§lCrops
+§7• Crops grow by temperature: fast when it's ideal, slowly when it's cool or warm, dormant in the cold, killed by frost or heat.
+§7• Campfires, torches and other heat sources protect them; ice cools them.
+§7• On hot days farmland needs water closer by.
+
+§d§lColors
+§7• Grass and leaves change color through the year; birches turn yellow and orange in autumn.
+§7• Flowers bud, bloom and go to seed.
+
+§9§lMore
+§7• Distant Horizons: far terrain follows the colors and the snow.
+§7• A config screen with tabs, descriptions and the performance cost of each setting.
+§7• No library mods needed; a temperature API for other mods.'''
 
 [[mixins]]
     config="${mod_id}.mixins.json"
