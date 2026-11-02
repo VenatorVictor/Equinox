@@ -305,8 +305,6 @@
   "seasonsrework.settings.locked.no_world": "Each world has its own: open a world to change this.",
   "seasonsrework.settings.locked.lan": "Can't change world settings while the world is open to LAN.",
   "seasonsrework.settings.search": "Search settings",
-  "seasonsrework.settings.plain_list": "Plain list",
-  "seasonsrework.settings.plain_list.tooltip": "NeoForge's own config screen with every setting as it is in the files (saves your changes here first).",
   "seasonsrework.settings.edit_list": "Edit list (%s)",
   "seasonsrework.settings.entries": "%s entries",
   "seasonsrework.settings.unsaved": "%s changes not saved yet",
