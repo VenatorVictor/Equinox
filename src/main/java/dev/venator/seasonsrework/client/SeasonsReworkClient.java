@@ -35,6 +35,8 @@ public final class SeasonsReworkClient {
 
     public static void init(ModContainer container, IEventBus modBus) {
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
+        // In-game config screen (Mods list > Seasons Rework > Config).
+        container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, net.neoforged.neoforge.client.gui.ConfigurationScreen::new);
         dhLoaded = ModList.get().isLoaded("distanthorizons");
         // LOWEST so our leaf colors replace vanilla's (and any other mod's).
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerLeaves);
