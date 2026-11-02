@@ -35,7 +35,7 @@ public final class SeasonsReworkClient {
 
     public static void init(ModContainer container, IEventBus modBus) {
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
-        // In-game config screen (Mods list > Seasons Rework > Config): tabs, real units, costs; NeoForge's plain list behind a button.
+        // In-game config screen (Mods list > Equinox > Config): tabs, real units, costs; NeoForge's plain list behind a button.
         container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, dev.venator.seasonsrework.client.config.SettingsScreen::new);
         dhLoaded = ModList.get().isLoaded("distanthorizons");
         // LOWEST so our leaf colors replace vanilla's (and any other mod's).
@@ -83,7 +83,7 @@ public final class SeasonsReworkClient {
             WATCHER.reset(); // dimension change
             SnowAnimation.clear();
         });
-        SeasonsRework.LOGGER.info("Seasons Rework: seasonal colors on, Distant Horizons {}", dhLoaded ? "found" : "not installed");
+        SeasonsRework.LOGGER.info("Equinox: seasonal colors on, Distant Horizons {}", dhLoaded ? "found" : "not installed");
     }
 
     private static void tick() {

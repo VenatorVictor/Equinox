@@ -10,21 +10,7 @@ import java.util.Map;
 /** One row of the config screen: a config value plus how to show it (tab, name, description, cost, units). */
 public final class Setting {
     /** Which file holds it, which decides who may change it. */
-    public enum Side {
-        CLIENT("config/seasonsrework-client.toml"),
-        COMMON("config/seasonsrework-common.toml"),
-        SERVER("config/seasonsrework-server.toml");
-
-        final String file;
-
-        Side(String file) {
-            this.file = file;
-        }
-
-        String label() {
-            return I18n.get(PREFIX + "side." + name().toLowerCase(java.util.Locale.ROOT));
-        }
-    }
+    public enum Side { CLIENT, COMMON, SERVER }
 
     /** How much it costs to have it on or set high (the colored mark in front of the name). */
     public enum Cost {

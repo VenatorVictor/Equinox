@@ -96,7 +96,7 @@ public final class DhRefresher {
 
     private static void fail(Throwable t) {
         broken = true;
-        SeasonsRework.LOGGER.warn("Seasons Rework: Distant Horizons LOD refresh disabled (DH version not supported?)", t);
+        SeasonsRework.LOGGER.warn("Equinox: Distant Horizons LOD refresh disabled (DH version not supported?)", t);
     }
 
     private DhRefresher() {}
