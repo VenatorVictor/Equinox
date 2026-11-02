@@ -111,7 +111,6 @@
   "seasonsrework.configuration.texture_mode": "Texture mode",
   "seasonsrework.configuration.textures": "Textures",
   "seasonsrework.configuration.updates_per_step": "Updates per step",
-  "seasonsrework.configuration.variation_seed": "Variation seed",
   "seasonsrework.configuration.zone_warm_end": "Zone warm end",
   "seasonsrework.configuration.zone_warm_start": "Zone warm start",
   "seasonsrework.settings.days_per_season.name": "Season length",
@@ -127,8 +126,8 @@
   "seasonsrework.settings.season_variation.desc": "Each season is warmer or colder than usual by up to this, so no two years are the same. Small changes are more likely than big ones, and one season blends into the next.\nScaled per climate: tropics x0.3, temperate x1, deserts x0.8, the cold north and mountains x1.5.\nGrass and leaf colors don't follow it.",
   "seasonsrework.settings.daily_variation.name": "Daily variation",
   "seasonsrework.settings.daily_variation.desc": "Each day is warmer or colder than usual by up to this, on top of the season's. Blended from one day's noon to the next, so warm and cold spells last a few days. Same climate scaling as above.\nNot lagged. Grass and leaf colors don't follow it.",
-  "seasonsrework.settings.variation_seed.name": "Variation seed",
-  "seasonsrework.settings.variation_seed.desc": "Seed for the random season and daily variation. 0: each world uses its own world seed.",
+  "seasonsrework.settings.variation_seed.name": "Fixed variation seed",
+  "seasonsrework.settings.variation_seed.desc": "Seed for the random season and daily variation. 0 (default): each world uses its own world seed. Any other number: every world gets the same random seasons and days from this seed.",
   "seasonsrework.settings.blend_radius.name": "Blend radius",
   "seasonsrework.settings.heading.blending": "Blending",
   "seasonsrework.settings.blend_radius.desc": "A place's temperature mixes its biome with the biomes around it, up to this far (nearer ones count more). A river in the jungle is tropical, one in the taiga cold, and a forest next to a desert is warmer than one next to snowy plains. World generation doesn't change.",
@@ -336,5 +335,6 @@
   "seasonsrework.settings.unit.band.cold": "cold",
   "seasonsrework.settings.unit.band.temperate": "temperate",
   "seasonsrework.settings.unit.band.warm": "warm",
-  "seasonsrework.settings.unit.band.hot": "hot"
+  "seasonsrework.settings.unit.band.hot": "hot",
+  "seasonsrework.configuration.fixed_variation_seed": "Variation seed"
 }
