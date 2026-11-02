@@ -52,10 +52,16 @@ public final class SeasonsRework {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public SeasonsRework(IEventBus modBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
-        // The mod has three configs; only the server one feeds Config's copies.
+        // Global (config/, the same for every world); a server sends its values to players (ConfigSync).
+        container.registerConfig(ModConfig.Type.COMMON, Config.SPEC, "seasonsrework-server.toml");
         modBus.addListener(ModConfigEvent.Loading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
-        modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
+        modBus.addListener(ModConfigEvent.Reloading.class, event -> {
+            if (event.getConfig().getSpec() != Config.SPEC) return;
+            Config.refresh();
+            ConfigSync.sendToAll();
+        });
+        modBus.addListener(RegisterPayloadHandlersEvent.class, ConfigSync::register);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class, ConfigSync::onLogin);
         container.registerConfig(ModConfig.Type.COMMON, SnowConfig.SPEC);
         // snow_locks changes which biomes are locked.
         modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == SnowConfig.SPEC) dev.venator.seasonsrework.climate.Climate.recategorize(); });

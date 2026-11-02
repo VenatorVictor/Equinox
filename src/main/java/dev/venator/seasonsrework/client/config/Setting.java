@@ -13,7 +13,7 @@ public final class Setting {
     public enum Side {
         CLIENT("config/seasonsrework-client.toml"),
         COMMON("config/seasonsrework-common.toml"),
-        SERVER("<world>/serverconfig/seasonsrework-server.toml");
+        SERVER("config/seasonsrework-server.toml");
 
         final String file;
 

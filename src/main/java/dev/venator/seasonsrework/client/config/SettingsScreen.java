@@ -66,14 +66,9 @@ public final class SettingsScreen extends Screen implements Setting.Values {
 
     // ---- values
 
-    /** The value being edited, else the saved one, else (world settings outside a world) the default. */
+    /** The value being edited, else the one in the file. */
     Object current(Setting s) {
-        if (pending.containsKey(s.value)) return pending.get(s.value);
-        return readable(s) ? s.value.get() : s.value.getDefault();
-    }
-
-    private static boolean readable(Setting s) {
-        return s.side != Side.SERVER || Config.SPEC.isLoaded();
+        return pending.containsKey(s.value) ? pending.get(s.value) : s.value.get();
     }
 
     @Override
@@ -86,13 +81,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     String locked(Setting s) {
         if (s.side == Side.CLIENT || minecraft == null) return null;
         boolean remote = minecraft.getConnection() != null && !minecraft.hasSingleplayerServer();
-        if (remote) return t("locked.remote");
-        if (s.side == Side.SERVER) {
-            if (!Config.SPEC.isLoaded()) return t("locked.no_world");
-            if (minecraft.getSingleplayerServer() != null && minecraft.getSingleplayerServer().isPublished())
-                return t("locked.lan");
-        }
-        return null;
+        return remote ? t("locked.remote") : null;
     }
 
     private static boolean same(Object a, Object b) {
@@ -101,8 +90,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     }
 
     void edit(Setting s, Object value) {
-        Object saved = readable(s) ? s.value.get() : s.value.getDefault();
-        if (same(value, saved)) pending.remove(s.value);
+        if (same(value, s.value.get())) pending.remove(s.value);
         else pending.put(s.value, value);
     }
 
