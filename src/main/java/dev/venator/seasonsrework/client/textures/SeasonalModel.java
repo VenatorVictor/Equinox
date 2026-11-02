@@ -87,6 +87,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             if (biome == null) biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
             if (!rule.biomes().test(biome)) continue;
             int step = hasSnow ? snowStep(rule, region, level, biome, pos, state, inSnow) : 0;
+            if (rule.full() && step > 0) step = 4;
             SeasonalTextures.Variant normal = hasNormal ? choose(variants, pos) : null;
             if (step >= 4) return pick(choose(snowVariants, pos), null);
             if (step > 0) {
@@ -100,13 +101,13 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
     }
 
     private static @Nullable Pick pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay) {
-        if (variant != null && variant.remap.isEmpty()) variant = null;
+        if (variant != null && variant.isEmpty()) variant = null;
         return variant == null && overlay == null ? null : new Pick(variant, overlay);
     }
 
     private static @Nullable SeasonalTextures.Variant choose(SeasonalTextures.Variant[] variants, BlockPos pos) {
         SeasonalTextures.Variant variant = variants.length == 1 ? variants[0] : variants[Math.floorMod(Mth.getSeed(pos), variants.length)];
-        return variant.remap.isEmpty() ? null : variant;
+        return variant.isEmpty() ? null : variant;
     }
 
     /** How snowy the position looks, 0 (not) .. 4 (the snowy texture), per the client's texture_mode. */

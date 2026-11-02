@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/deepslate_tile_wall_side"
+  ],
+  "snow_full_texture": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "wall": "seasonsrework:block/snow/minecraft_deepslate_tiles_snowy"
+      },
+      "snow_tint": {
+        "wall": -1
+      }
+    }
+  ]
+}

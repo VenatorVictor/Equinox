@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/polished_blackstone_brick_wall_side"
+  ],
+  "snow_full_texture": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "wall": "seasonsrework:block/snow/minecraft_polished_blackstone_bricks_snowy"
+      },
+      "snow_tint": {
+        "wall": -1
+      }
+    }
+  ]
+}
