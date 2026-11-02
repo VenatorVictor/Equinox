@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/birch_sapling"
+  ],
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "cross": "seasonsrework:block/plants/minecraft_birch_sapling_snowy"
+      },
+      "snow_tint": {
+        "cross": -1
+      }
+    }
+  ]
+}
