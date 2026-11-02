@@ -94,8 +94,9 @@ public final class Config {
                     "not lagged. Grass and leaf colors don't follow it. 0: off.")
             .defineInRange("daily_variation", 0.133, 0.0, 1.0);
     public static final ModConfigSpec.LongValue VARIATION_SEED = BUILDER
-            .comment("Seed for the season and daily variation. 0: each world uses its own world seed.")
-            .defineInRange("variation_seed", 0L, Long.MIN_VALUE, Long.MAX_VALUE);
+            .comment("Seed for the season and daily variation. 0 (default): each world uses its own world seed.",
+                    "Any other number: every world gets the same random seasons and days from this seed.")
+            .defineInRange("fixed_variation_seed", 0L, Long.MIN_VALUE, Long.MAX_VALUE);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> BIOME_TEMPERATURES = BUILDER
             .comment("Temperature a biome has for the climate (snow, rain, freezing, crops), as \"biome=temperature\".",
