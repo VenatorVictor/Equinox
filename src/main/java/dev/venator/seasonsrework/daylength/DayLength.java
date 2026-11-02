@@ -64,10 +64,18 @@ public final class DayLength {
         return half;
     }
 
+    /** Hours of daylight at a latitude and point of the year (0.375 = mid summer, 0.875 = mid winter), for the config screen. */
+    public static double daylightHours(double degrees, double yearProgress) {
+        return solveHalfDay(degrees, yearProgress) * 2 * 24;
+    }
+
     private static double solveHalfDay(long dayTime, int daysPerSeason, double degrees) {
+        return solveHalfDay(degrees, new SeasonState(dayTime, daysPerSeason).yearProgress());
+    }
+
+    private static double solveHalfDay(double degrees, double year) {
         double latitude = Math.toRadians(degrees);
         if (latitude == 0) return SUN_UP;
-        double year = new SeasonState(dayTime, daysPerSeason).yearProgress();
         double declination = TILT * Math.sin(2 * Math.PI * (year - 0.125)); // highest at mid summer (0.375)
         double cosHour = Mth.clamp(-Math.tan(latitude) * Math.tan(declination), -1, 1);
         double earthDay = Math.acos(cosHour) / Math.PI; // 0.5 at the equinoxes
