@@ -190,8 +190,6 @@
   "seasonsrework.settings.locked.no_world": "Cada mundo tem a sua: abra um mundo para mudar isto.",
   "seasonsrework.settings.locked.lan": "Não dá para mudar opções do mundo enquanto ele está aberto para LAN.",
   "seasonsrework.settings.search": "Buscar opções",
-  "seasonsrework.settings.plain_list": "Lista simples",
-  "seasonsrework.settings.plain_list.tooltip": "A tela de configuração do próprio NeoForge, com cada opção como está nos arquivos (salva antes as suas mudanças daqui).",
   "seasonsrework.settings.edit_list": "Editar lista (%s)",
   "seasonsrework.settings.entries": "%s itens",
   "seasonsrework.settings.unsaved": "%s mudanças ainda não salvas",

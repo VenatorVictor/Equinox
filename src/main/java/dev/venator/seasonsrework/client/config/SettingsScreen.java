@@ -19,7 +19,6 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.ArrayList;
@@ -42,7 +41,6 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     private static final int WHITE = 0xFFFFFFFF, CHANGED = 0xFFFFD27F, QUIET = 0xFFA0A0A0, LOCKED = 0xFF707070, NOTICE = 0xFFFFAA00;
 
     private final Screen parent;
-    private final ModContainer container;
     private final Map<ModConfigSpec.ConfigValue<?>, Object> pending = new LinkedHashMap<>();
     private String tab = Settings.TABS.get(0);
     private String query = "";
@@ -58,7 +56,6 @@ public final class SettingsScreen extends Screen implements Setting.Values {
 
     public SettingsScreen(ModContainer container, Screen parent) {
         super(Component.literal("Seasons Rework"));
-        this.container = container;
         this.parent = parent;
     }
 
@@ -217,11 +214,8 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         }
 
         int buttonsY = height - 26, w = 100;
-        addRenderableWidget(Button.builder(Component.translatable(Setting.PREFIX + "plain_list"), b -> openClassic())
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable(Setting.PREFIX + "plain_list.tooltip")))
-                .bounds(width / 2 - w * 3 / 2 - 4, buttonsY, w, 20).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> cancel()).bounds(width / 2 - w / 2, buttonsY, w, 20).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(width / 2 + w / 2 + 4, buttonsY, w, 20).build());
+        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> cancel()).bounds(width / 2 - w - 2, buttonsY, w, 20).build());
+        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(width / 2 + 2, buttonsY, w, 20).build());
         if (searching) setFocused(search);
     }
 
@@ -429,11 +423,6 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     private void cancel() {
         pending.clear();
         minecraft.setScreen(parent);
-    }
-
-    private void openClassic() {
-        save();
-        minecraft.setScreen(new ConfigurationScreen(container, parent));
     }
 
     @Override
