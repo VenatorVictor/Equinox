@@ -4,7 +4,8 @@ Usage: python make_plants.py <output folder> <jar> [<jar> ...] [--preview <png>]
 Jars: the Minecraft client resources jar, plus Vanilla Backport
 if their plants should be covered (plants whose texture isn't in any jar are skipped). Needs Pillow.
 
-Flowers get one bloom window per year (real-life order, see BLOOM): bud before it, seed head after it, green leaves
+Flowers get one bloom window per year (real-world seasons, see BLOOM): a green bud, then a bud showing its color
+before it, the petals opening in its first term, seed head after it, green leaves
 the rest of the year (winter too: like grass, their green parts take the color of the block they stand on, which
 the season colors turn olive-brown in winter). Grass and ferns get snow on top where real snow lies.
 Every stage also has a snowy version, shown where real snow lies. Seasonal biomes only (tropical ones keep blooming).
@@ -38,21 +39,24 @@ PUFF = [(176, 176, 168), (214, 214, 206), (244, 244, 238)]  # dandelion clock
 
 # (first term, last term) of the bloom, inclusive; may wrap past the end of the year.
 # Models listed together share the window (tall plants: both halves).
+# Real-world bloom seasons of a temperate climate (term 0 starts Feb 4, ~15 days each, term 3 = March equinox):
+# the window is the season a patch of them is in flower, not one flower's life. Made-up and tropical plants keep
+# rough windows.
 BLOOM = {
     # vanilla
-    "minecraft:block/dandelion": (1, 14),
-    "minecraft:block/pink_petals_1 2 3 4": (1, 4),
-    "minecraft:block/red_tulip": (2, 5), "minecraft:block/orange_tulip": (2, 5),
-    "minecraft:block/white_tulip": (2, 5), "minecraft:block/pink_tulip": (2, 5),
-    "minecraft:block/lily_of_the_valley": (3, 6),
-    "minecraft:block/lilac_top lilac_bottom": (3, 6),
-    "minecraft:block/azure_bluet": (3, 8),
-    "minecraft:block/allium": (5, 8),
-    "minecraft:block/peony_top peony_bottom": (5, 8),
-    "minecraft:block/poppy": (5, 10),
-    "minecraft:block/oxeye_daisy": (5, 11),
-    "minecraft:block/cornflower": (6, 12),
-    "minecraft:block/rose_bush_top rose_bush_bottom": (6, 14),
+    "minecraft:block/dandelion": (3, 16),
+    "minecraft:block/pink_petals_1 2 3 4": (3, 5),
+    "minecraft:block/red_tulip": (3, 6), "minecraft:block/orange_tulip": (3, 6),
+    "minecraft:block/white_tulip": (3, 6), "minecraft:block/pink_tulip": (3, 6),
+    "minecraft:block/lily_of_the_valley": (5, 7),
+    "minecraft:block/lilac_top lilac_bottom": (5, 7),
+    "minecraft:block/azure_bluet": (4, 9),
+    "minecraft:block/allium": (6, 8),
+    "minecraft:block/peony_top peony_bottom": (6, 8),
+    "minecraft:block/poppy": (6, 12),
+    "minecraft:block/oxeye_daisy": (6, 14),
+    "minecraft:block/cornflower": (7, 14),
+    "minecraft:block/rose_bush_top rose_bush_bottom": (7, 14),
     "minecraft:block/blue_orchid": (7, 12),
     "minecraft:block/torchflower": (8, 13),
     "minecraft:block/sunflower_top sunflower_bottom": (10, 15),
@@ -92,7 +96,10 @@ BAMBOO_PARTS = [("minecraft:block/bamboo_small_leaves", "texture"), ("minecraft:
 BAMBOO_STALK = "minecraft:block/bamboo1_age0"
 BAMBOO_TOP = (13, 0, 16, 3)  # the stalk's up face in bamboo_stalk.png (2 px thin stalks use the corner of it)
 
-FLOWER_STAGES = ["bud", "bloom", "seed", "leaves"]
+FLOWER_STAGES = ["bud_green", "bud_color", "opening", "bloom", "seed", "leaves"]
+# Opening, like a real flower: a small green bud (closed sepals), then a bigger bud with the petal color showing,
+# then the petals opening from the middle out. (part of the flower kept from its center, share still green)
+OPENING = {"bud_green": (0.30, 0.80), "bud_color": (0.60, 0.25), "opening": (0.80, 0.08)}
 # Green parts are levelled to the grass block top's grey (average 0.58, from 0.44 to 0.76), so with the same grass
 # tint every plant shows the same green as the ground.
 GRASS_TOP_GREY, GREY_MIN, GREY_MAX = 0.58, 0.44, 0.76
@@ -301,8 +308,8 @@ def stage_layers(image, stage, puff=False, head=False, grounded=False):
     petals, kept_groups = set(), []
     for group in petal_groups(image):
         kept = set()
-        if stage == "bud":
-            kept = set(shrink(group, 0.45))
+        if stage in OPENING:
+            kept = set(shrink(group, OPENING[stage][0]))
         elif stage == "seed":
             kept = set(group) if puff else set(shrink(group, 0.65))
         petals |= kept
@@ -311,8 +318,8 @@ def stage_layers(image, stage, puff=False, head=False, grounded=False):
             r, g, b, a = px[x, y]
             if (x, y) not in kept:
                 px[x, y] = (0, 0, 0, 0)
-            elif stage == "bud":
-                px[x, y] = blend((r, g, b), green, 0.55) + (a,)
+            elif stage in OPENING:
+                px[x, y] = blend((r, g, b), green, OPENING[stage][1]) + (a,)
             else:
                 px[x, y] = ramp(PUFF if puff else SEED, luma((r, g, b))) + (a,)
     if grounded:
@@ -391,9 +398,12 @@ def flower_term(window, term):
     length = (last - first) % 24
     offset = (term - first) % 24
     if offset <= length:
-        return "bloom"
-    if (first - term) % 24 in (1, 2):
-        return "bud"
+        # the first bloom term shows the petals still opening (windows of 3 terms or more)
+        return "opening" if offset == 0 and length >= 2 else "bloom"
+    if (first - term) % 24 == 2:
+        return "bud_green"
+    if (first - term) % 24 == 1:
+        return "bud_color"
     if (term - last) % 24 in (1, 2):
         return "seed"
     return "leaves"
@@ -473,7 +483,7 @@ class Pack:
         stem = self.save(cross_id, "stem", base_stem)
         empty = self.save(cross_id, "empty", Image.new("RGBA", image.size))
         petals, petals_snow, stems, preview = {}, {}, {}, []
-        for stage in ("bud", "bloom", "seed", "leaves"):
+        for stage in FLOWER_STAGES:
             staged, kept = stage_layers(image, stage, puff, grounded=True)
             layer = only(staged, kept)
             stage_stem = levelled(staged, kept, ref)
@@ -776,7 +786,7 @@ def main():
     }}, indent=2))
     print(f"{done} plants, skipped (not in the jars): {', '.join(skipped) or 'none'}")
     if preview:
-        pack.write_preview(preview, 6)
+        pack.write_preview(preview, 7)
 
 
 if __name__ == "__main__":
