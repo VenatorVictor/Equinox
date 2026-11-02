@@ -14,6 +14,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.fml.ModContainer;
@@ -60,6 +62,11 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         this.parent = parent;
     }
 
+    /** A screen text from the language file: seasonsrework.settings.<key>. */
+    static String t(String key, Object... args) {
+        return I18n.get(Setting.PREFIX + key, args);
+    }
+
     // ---- values
 
     /** The value being edited, else the saved one, else (world settings outside a world) the default. */
@@ -82,11 +89,11 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     String locked(Setting s) {
         if (s.side == Side.CLIENT || minecraft == null) return null;
         boolean remote = minecraft.getConnection() != null && !minecraft.hasSingleplayerServer();
-        if (remote) return "On this server the server's own file decides this; changing it here would do nothing.";
+        if (remote) return t("locked.remote");
         if (s.side == Side.SERVER) {
-            if (!Config.SPEC.isLoaded()) return "Each world has its own: open a world to change this.";
+            if (!Config.SPEC.isLoaded()) return t("locked.no_world");
             if (minecraft.getSingleplayerServer() != null && minecraft.getSingleplayerServer().isPublished())
-                return "Can't change world settings while the world is open to LAN.";
+                return t("locked.lan");
         }
         return null;
     }
@@ -115,13 +122,13 @@ public final class SettingsScreen extends Screen implements Setting.Values {
 
     String labelOf(Setting s, Object stored) {
         return switch (s.kind) {
-            case TOGGLE -> Boolean.TRUE.equals(stored) ? "On" : "Off";
+            case TOGGLE -> (Boolean.TRUE.equals(stored) ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF).getString();
             case CHOICE -> {
-                for (Map.Entry<Object, String> choice : s.choices.entrySet()) if (same(choice.getKey(), stored)) yield choice.getValue();
+                for (Map.Entry<Object, String> choice : s.choices.entrySet()) if (same(choice.getKey(), stored)) yield t("choice." + choice.getValue());
                 yield String.valueOf(stored);
             }
             case SLIDER -> s.label.apply(toShown(s, stored), this);
-            case LIST -> ((List<?>) stored).size() + " entries";
+            case LIST -> t("entries", ((List<?>) stored).size());
             case TEXT -> String.valueOf(stored);
         };
     }
@@ -134,16 +141,16 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         if (q.isEmpty()) {
             for (Setting s : Settings.ALL) {
                 if (!s.tab.equals(tab)) continue;
-                if (s.heading != null) out.add(s.heading);
+                if (s.heading != null) out.add(s.headingText());
                 out.add(s);
             }
             return out;
         }
         String lastTab = null;
         for (Setting s : Settings.ALL) {
-            if (!(s.name.toLowerCase(Locale.ROOT).contains(q) || s.description.toLowerCase(Locale.ROOT).contains(q)
+            if (!(s.name().toLowerCase(Locale.ROOT).contains(q) || s.description().toLowerCase(Locale.ROOT).contains(q)
                     || s.path().toLowerCase(Locale.ROOT).contains(q))) continue;
-            if (!s.tab.equals(lastTab)) out.add(lastTab = s.tab);
+            if (!s.tab.equals(lastTab)) out.add(t("tab." + (lastTab = s.tab)));
             out.add(s);
         }
         return out;
@@ -160,7 +167,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         if (search == null) {
             search = new EditBox(font, 0, 0, 200, 16, Component.literal("Search"));
             search.setMaxLength(64);
-            search.setHint(Component.literal("Search settings").withStyle(ChatFormatting.DARK_GRAY));
+            search.setHint(Component.translatable(Setting.PREFIX + "search").withStyle(ChatFormatting.DARK_GRAY));
             search.setResponder(text -> {
                 if (!text.equals(query)) {
                     query = text;
@@ -175,13 +182,13 @@ public final class SettingsScreen extends Screen implements Setting.Values {
 
         boolean searching = !query.isBlank();
         int namesWidth = 0;
-        for (String name : Settings.TABS) namesWidth += font.width(name) + 12;
+        for (String name : Settings.TABS) namesWidth += font.width(t("tab." + name)) + 12;
         int gaps = GAP * (Settings.TABS.size() - 1), room = width - 8;
         double squeeze = namesWidth + gaps > room ? (double) (room - gaps) / namesWidth : 1;
         int tabX = (width - (int) (namesWidth * squeeze) - gaps) / 2;
         for (String name : Settings.TABS) {
-            int w = (int) ((font.width(name) + 12) * squeeze);
-            Button button = Button.builder(Component.literal(name), b -> {
+            int w = (int) ((font.width(t("tab." + name)) + 12) * squeeze);
+            Button button = Button.builder(Component.literal(t("tab." + name)), b -> {
                 tab = name;
                 scroll = 0;
                 query = "";
@@ -210,12 +217,11 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         }
 
         int buttonsY = height - 26, w = 100;
-        addRenderableWidget(Button.builder(Component.literal("Plain list"), b -> openClassic())
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
-                        "NeoForge's own config screen with every setting as it is in the files (saves your changes here first).")))
+        addRenderableWidget(Button.builder(Component.translatable(Setting.PREFIX + "plain_list"), b -> openClassic())
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable(Setting.PREFIX + "plain_list.tooltip")))
                 .bounds(width / 2 - w * 3 / 2 - 4, buttonsY, w, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> cancel()).bounds(width / 2 - w / 2, buttonsY, w, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose()).bounds(width / 2 + w / 2 + 4, buttonsY, w, 20).build());
+        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> cancel()).bounds(width / 2 - w / 2, buttonsY, w, 20).build());
+        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(width / 2 + w / 2 + 4, buttonsY, w, 20).build());
         if (searching) setFocused(search);
     }
 
@@ -227,7 +233,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         int x = controlX();
         Object value = current(s);
         boolean active = locked(s) == null;
-        Component name = Component.literal(s.name);
+        Component name = Component.literal(s.name());
         switch (s.kind) {
             case TOGGLE -> {
                 CycleButton<Boolean> button = CycleButton.onOffBuilder(Boolean.TRUE.equals(value)).displayOnlyValue()
@@ -253,7 +259,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
             }
             case LIST -> {
                 @SuppressWarnings("unchecked") List<String> list = (List<String>) value;
-                Button button = Button.builder(Component.literal("Edit list (" + list.size() + ")"),
+                Button button = Button.builder(Component.literal(t("edit_list", list.size())),
                         b -> minecraft.setScreen(new ListEditScreen(this, s, list, active))).bounds(x, y, CONTROL, 20).build();
                 addRenderableWidget(button);
             }
@@ -273,7 +279,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
                 addRenderableWidget(box);
             }
         }
-        Button reset = Button.builder(Component.literal("Reset"), b -> { edit(s, s.value.getDefault()); dirty = true; })
+        Button reset = Button.builder(Component.translatable("controls.reset"), b -> { edit(s, s.value.getDefault()); dirty = true; })
                 .bounds(listX + listWidth - RESET, y, RESET, 20).build();
         reset.active = active && !same(value, s.value.getDefault());
         addRenderableWidget(reset);
@@ -318,7 +324,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
         gfx.drawCenteredString(font, title, width / 2, 6, WHITE);
-        String status = pending.isEmpty() ? "" : pending.size() + (pending.size() == 1 ? " change" : " changes") + " not saved yet";
+        String status = pending.isEmpty() ? "" : t(pending.size() == 1 ? "unsaved.one" : "unsaved", pending.size());
         gfx.drawString(font, status, listX + listWidth - font.width(status), 6, CHANGED);
         if (note != null) gfx.drawCenteredString(font, note, width / 2, 65, NOTICE);
 
@@ -328,7 +334,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
             gfx.fill(listX, y + 5, listX + 4, y + 14, s.cost.color);
             boolean locked = locked(s) != null;
             int color = locked ? LOCKED : same(current(s), s.value.getDefault()) ? WHITE : CHANGED;
-            String name = font.plainSubstrByWidth(s.name, controlX() - listX - 14);
+            String name = font.plainSubstrByWidth(s.name(), controlX() - listX - 14);
             gfx.drawString(font, name, listX + 8, y + 6, color);
         }
         for (Object[] heading : headings) {
@@ -346,19 +352,19 @@ public final class SettingsScreen extends Screen implements Setting.Values {
             gfx.fill(barX, top, barX + 3, top + height, 0x30FFFFFF);
             gfx.fill(barX, thumbY, barX + 3, thumbY + thumb, 0xA0FFFFFF);
         }
-        if (total == 0) gfx.drawCenteredString(font, "No setting matches that.", width / 2, top + 8, QUIET);
+        if (total == 0) gfx.drawCenteredString(font, t("no_match"), width / 2, top + 8, QUIET);
 
         // Cost key.
-        String lead = "Performance cost:";
+        String lead = t("cost_key");
         int keyWidth = font.width(lead) + 8;
-        for (Cost cost : Cost.values()) keyWidth += 7 + font.width(cost.key) + 10;
+        for (Cost cost : Cost.values()) keyWidth += 7 + font.width(cost.key()) + 10;
         int keyX = width / 2 - keyWidth / 2, keyY = height - 41;
         gfx.drawString(font, lead, keyX, keyY, QUIET);
         keyX += font.width(lead) + 8;
         for (Cost cost : Cost.values()) {
             gfx.fill(keyX, keyY - 1, keyX + 4, keyY + 8, cost.color);
-            gfx.drawString(font, cost.key, keyX + 7, keyY, QUIET);
-            keyX += 7 + font.width(cost.key) + 10;
+            gfx.drawString(font, cost.key(), keyX + 7, keyY, QUIET);
+            keyX += 7 + font.width(cost.key()) + 10;
         }
 
         Setting over = hovered(mouseX, mouseY);
@@ -377,18 +383,20 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     private List<FormattedCharSequence> describe(Setting s) {
         int wrap = Math.min(300, width - 24);
         List<FormattedCharSequence> out = new ArrayList<>();
-        out.addAll(font.split(Component.literal(s.name).withStyle(ChatFormatting.BOLD), wrap));
-        for (String line : s.description.split("\n")) out.addAll(font.split(Component.literal(line), wrap));
+        out.addAll(font.split(Component.literal(s.name()).withStyle(ChatFormatting.BOLD), wrap));
+        for (String line : s.description().split("\n")) out.addAll(font.split(Component.literal(line), wrap));
         out.add(FormattedCharSequence.EMPTY);
-        out.add(Component.literal("Performance cost: ").withStyle(ChatFormatting.GRAY)
-                .append(Component.literal(s.cost.label).withColor(s.cost.color & 0xFFFFFF)).getVisualOrderText());
-        if (s.costNote != null) out.addAll(font.split(Component.literal(s.costNote).withStyle(ChatFormatting.GRAY), wrap));
-        out.add(Component.literal("Default: " + labelOf(s, s.value.getDefault())).withStyle(ChatFormatting.GRAY).getVisualOrderText());
-        if (s.applies != null) out.addAll(font.split(Component.literal(s.applies).withStyle(ChatFormatting.AQUA), wrap));
+        out.add(Component.literal(t("tooltip.cost") + " ").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(s.cost.label()).withColor(s.cost.color & 0xFFFFFF)).getVisualOrderText());
+        String costNote = s.costNote();
+        if (costNote != null) out.addAll(font.split(Component.literal(costNote).withStyle(ChatFormatting.GRAY), wrap));
+        out.add(Component.literal(t("tooltip.default", labelOf(s, s.value.getDefault()))).withStyle(ChatFormatting.GRAY).getVisualOrderText());
+        String applies = s.appliesText();
+        if (applies != null) out.addAll(font.split(Component.literal(applies).withStyle(ChatFormatting.AQUA), wrap));
         String locked = locked(s);
         if (locked != null) out.addAll(font.split(Component.literal(locked).withStyle(ChatFormatting.GOLD), wrap));
         out.add(FormattedCharSequence.EMPTY);
-        out.addAll(font.split(Component.literal(s.side.label).withStyle(ChatFormatting.DARK_GRAY), wrap));
+        out.addAll(font.split(Component.literal(s.side.label()).withStyle(ChatFormatting.DARK_GRAY), wrap));
         out.addAll(font.split(Component.literal(s.side.file + " > " + s.path()).withStyle(ChatFormatting.DARK_GRAY), wrap));
         return out;
     }
@@ -410,7 +418,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
                 case SERVER -> Config.SPEC;
             });
             if (s.value == ClientConfig.CROP_COLORS) textures = true;
-            else if (s.applies != null && s.applies.startsWith("Redraws")) redraw = true;
+            else if ("redraw".equals(s.applies)) redraw = true;
         }
         pending.clear();
         for (ModConfigSpec spec : specs) spec.save();
