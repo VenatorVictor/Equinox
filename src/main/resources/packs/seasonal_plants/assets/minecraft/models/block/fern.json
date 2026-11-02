@@ -181,6 +181,6 @@
   "textures": {
     "cross": "minecraft:block/fern",
     "particle": "minecraft:block/fern",
-    "flower": "seasonsrework:block/plants/minecraft_fern_empty"
+    "flower": "equinox:block/plants/minecraft_fern_empty"
   }
 }

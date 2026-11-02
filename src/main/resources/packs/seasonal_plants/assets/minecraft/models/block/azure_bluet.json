@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_azure_bluet_stem",
+    "cross": "equinox:block/plants/minecraft_azure_bluet_stem",
     "particle": "minecraft:block/azure_bluet",
-    "flower": "seasonsrework:block/plants/minecraft_azure_bluet_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_azure_bluet_bloom_petals"
   }
 }

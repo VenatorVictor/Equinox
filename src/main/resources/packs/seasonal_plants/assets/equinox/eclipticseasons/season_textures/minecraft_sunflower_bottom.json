@@ -1,0 +1,66 @@
+{
+  "target": [
+    "minecraft:block/sunflower_bottom"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "beginning_of_winter",
+      "end": "lesser_fullness",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "grain_in_ear",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_bud_green_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_bud_green_petals_snow"
+      }
+    },
+    {
+      "start": "summer_solstice",
+      "end": "summer_solstice",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "lesser_heat",
+      "end": "lesser_heat",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_opening_petals_snow"
+      }
+    },
+    {
+      "start": "greater_heat",
+      "end": "autumnal_equinox",
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "cold_dew",
+      "end": "first_frost",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_sunflower_bottom_seed_petals_snow"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.venatorvictor.equinox.mixin.compat",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "FullDataToRenderDataTransformerMixin",
+    "SnowModRenderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

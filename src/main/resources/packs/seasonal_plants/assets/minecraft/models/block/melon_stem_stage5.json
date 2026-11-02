@@ -177,6 +177,6 @@
   "textures": {
     "stem": "minecraft:block/melon_stem",
     "particle": "minecraft:block/melon_stem",
-    "flower": "seasonsrework:block/plants/minecraft_melon_stem_melon_stem_stage5_empty"
+    "flower": "equinox:block/plants/minecraft_melon_stem_melon_stem_stage5_empty"
   }
 }

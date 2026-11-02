@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "cause=frost": {
+      "model": "equinox:block/dead_fruit"
+    },
+    "cause=heat": {
+      "model": "equinox:block/dead_fruit"
+    }
+  }
+}

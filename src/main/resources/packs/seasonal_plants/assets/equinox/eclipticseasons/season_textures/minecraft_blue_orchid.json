@@ -1,0 +1,70 @@
+{
+  "target": [
+    "minecraft:block/blue_orchid"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "autumnal_equinox",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_leaves_petals",
+        "cross": "equinox:block/plants/minecraft_blue_orchid_leaves_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_leaves_petals_snow",
+        "cross": "equinox:block/plants/minecraft_blue_orchid_leaves_stem"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_bud_green_petals",
+        "cross": "equinox:block/plants/minecraft_blue_orchid_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_bud_green_petals_snow",
+        "cross": "equinox:block/plants/minecraft_blue_orchid_bud_green_stem"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "lesser_fullness",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_opening_petals_snow"
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "beginning_of_autumn",
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "end_of_heat",
+      "end": "white_dew",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_blue_orchid_seed_petals_snow"
+      }
+    }
+  ]
+}

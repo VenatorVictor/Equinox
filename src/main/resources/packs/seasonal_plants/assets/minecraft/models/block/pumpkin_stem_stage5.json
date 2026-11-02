@@ -177,6 +177,6 @@
   "textures": {
     "stem": "minecraft:block/pumpkin_stem",
     "particle": "minecraft:block/pumpkin_stem",
-    "flower": "seasonsrework:block/plants/minecraft_pumpkin_stem_pumpkin_stem_stage5_empty"
+    "flower": "equinox:block/plants/minecraft_pumpkin_stem_pumpkin_stem_stage5_empty"
   }
 }

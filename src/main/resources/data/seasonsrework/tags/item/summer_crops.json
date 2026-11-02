@@ -1,9 +1,0 @@
-{
-  "values": [
-    "#seasonsrework:year_round_crops",
-    {
-      "id": "#sereneseasons:summer_crops",
-      "required": false
-    }
-  ]
-}

@@ -179,8 +179,8 @@
     }
   ],
   "textures": {
-    "cross": "seasonsrework:block/plants/minecraft_oxeye_daisy_stem",
+    "cross": "equinox:block/plants/minecraft_oxeye_daisy_stem",
     "particle": "minecraft:block/oxeye_daisy",
-    "flower": "seasonsrework:block/plants/minecraft_oxeye_daisy_bloom_petals"
+    "flower": "equinox:block/plants/minecraft_oxeye_daisy_bloom_petals"
   }
 }

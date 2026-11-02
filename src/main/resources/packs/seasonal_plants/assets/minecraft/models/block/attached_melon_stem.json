@@ -244,7 +244,7 @@
     "stem": "minecraft:block/melon_stem",
     "upperstem": "minecraft:block/attached_melon_stem",
     "particle": "minecraft:block/melon_stem",
-    "flower": "seasonsrework:block/plants/minecraft_melon_stem_attached_melon_stem_empty",
-    "flower_upperstem": "seasonsrework:block/plants/minecraft_attached_melon_stem_attached_melon_stem_empty"
+    "flower": "equinox:block/plants/minecraft_melon_stem_attached_melon_stem_empty",
+    "flower_upperstem": "equinox:block/plants/minecraft_attached_melon_stem_attached_melon_stem_empty"
   }
 }

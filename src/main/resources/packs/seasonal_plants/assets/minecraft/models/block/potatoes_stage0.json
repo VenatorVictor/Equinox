@@ -277,6 +277,6 @@
   "textures": {
     "crop": "minecraft:block/potatoes_stage0",
     "particle": "minecraft:block/potatoes_stage0",
-    "flower": "seasonsrework:block/plants/minecraft_potatoes_stage0_empty"
+    "flower": "equinox:block/plants/minecraft_potatoes_stage0_empty"
   }
 }

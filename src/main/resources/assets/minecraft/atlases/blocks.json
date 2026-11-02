@@ -1,7 +1,7 @@
 {
   "sources": [
     {
-      "type": "seasonsrework:dead_crops"
+      "type": "equinox:dead_crops"
     }
   ]
 }

@@ -275,8 +275,8 @@
     }
   ],
   "textures": {
-    "crop": "seasonsrework:block/plants/minecraft_potatoes_stage1_stem",
+    "crop": "equinox:block/plants/minecraft_potatoes_stage1_stem",
     "particle": "minecraft:block/potatoes_stage1",
-    "flower": "seasonsrework:block/plants/minecraft_potatoes_stage1_rest"
+    "flower": "equinox:block/plants/minecraft_potatoes_stage1_rest"
   }
 }

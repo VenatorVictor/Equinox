@@ -1,9 +1,9 @@
-"""Builds the "Seasons Rework Seasonal Plants" resource pack.
+"""Builds the "Equinox Seasonal Plants" resource pack.
 
 Usage: python make_plants.py <output folder> <jar> [<jar> ...] [--vanilla | --addon] [--preview <png>]
 The first jar must be the Minecraft client jar. --vanilla: only plants whose block model is in it (the pack built
 into the mod, src/main/resources/packs/seasonal_plants). --addon: only the others (a separate resource pack).
-Jars: the Minecraft client resources jar, plus Vanilla Backport, Blooming Nature and Immersive Weathering (Renewed)
+Jars: the Minecraft client resources jar, plus the jars of the plant mods to cover
 if their plants should be covered (plants whose texture isn't in any jar are skipped). Needs Pillow.
 
 Flowers get one bloom window per year (real-world seasons, see BLOOM): a green bud, then a bud showing its color
@@ -13,7 +13,7 @@ the season colors turn olive-brown in winter). Grass and ferns get snow on top w
 Every stage also has a snowy version, shown where real snow lies. Seasonal biomes only (tropical ones keep blooming).
 All textures are made from the jars' own textures, so the style matches whatever is installed.
 
-Flowers become two layers: the green parts in grey, tinted with the biome's grass color (Seasons Rework colors them,
+Flowers become two layers: the green parts in grey, tinted with the biome's grass color (Equinox colors them,
 so they follow the season colors), and the petals untinted on top. Their block models are replaced to draw both.
 """
 import copy
@@ -62,9 +62,9 @@ BLOOM = {
     "minecraft:block/blue_orchid": (7, 12),
     "minecraft:block/torchflower": (8, 13),
     "minecraft:block/sunflower_top sunflower_bottom": (10, 15),
-    # Vanilla Backport
+    # Backported plants
     "minecraft:block/wildflowers_1 2 3 4": (4, 12),
-    # Blooming Nature
+    # Flower mod
     "bloomingnature:block/daphne": (0, 4),
     "bloomingnature:block/forsythia": (2, 4),
     "bloomingnature:block/anemone": (2, 6),
@@ -94,7 +94,7 @@ BLOOM = {
     "bloomingnature:block/wild_sunflower_top wild_sunflower_bottom": (10, 15),
     "bloomingnature:block/sunflower_bottom": (10, 15),
     "bloomingnature:block/golden_rod": (12, 16),
-    # Immersive Weathering
+    # Weathering mod
     "immersive_weathering:block/weeds_0 1 2 3 4 5 6 7": (6, 13),
 }
 
@@ -120,18 +120,18 @@ GRASS = [
 
 # Crops: green parts in the grass color, the rest (ripe wheat, carrots) as it is, snow on top.
 # Snow: crops get it on top whenever it lies there and they're under open sky; every other plant only when it sits
-# inside a Snow! Real Magic snow layer (otherwise it just keeps its color).
+# inside a snow mod's snow layer (otherwise it just keeps its color).
 CROPS = ["minecraft:block/wheat_stage0 1 2 3 4 5 6 7", "minecraft:block/carrots_stage0 1 2 3",
          "minecraft:block/potatoes_stage0 1 2 3", "minecraft:block/beetroots_stage0 1 2 3",
          "farmersdelight:block/cabbages_stage0 1 2 3 4 5 6 7", "farmersdelight:block/onions_stage0 1 2 3",
          "farmersdelight:block/budding_tomatoes_stage0 1 2 3", "farmersdelight:block/tomatoes_stage0 1 2 3",
          "farmersdelight:block/tomatoes_on_rope_stage0 1 2 3", "farmersdelight:block/tomatoes_old_stage0 1 2 3",
          "farmersdelight:block/rice_stage0 1 2 3", "farmersdelight:block/rice_panicles_stage0 1 2 3"]
-# Farmer's Delight's wild crops: plants like any other (Seasons Rework puts them in Snow! Real Magic's plants tag).
+# Wild crops from a farming mod: plants like any other (Equinox puts them in the snow mod's plants tag).
 WILD = ["farmersdelight:block/wild_cabbages", "farmersdelight:block/wild_onions", "farmersdelight:block/wild_tomatoes",
         "farmersdelight:block/wild_carrots", "farmersdelight:block/wild_potatoes", "farmersdelight:block/wild_beetroots",
         "farmersdelight:block/wild_rice_bottom", "farmersdelight:block/wild_rice_top"]
-# Pumpkin and melon stems: crops too, but their texture is already grey (tinted; Seasons Rework gives them the grass
+# Pumpkin and melon stems: crops too, but their texture is already grey (tinted; Equinox gives them the grass
 # color instead of vanilla's ripening green-to-yellow) and each growth stage shows only the top rows of it.
 STEMS = ["minecraft:block/pumpkin_stem_stage0 1 2 3 4 5 6 7", "minecraft:block/melon_stem_stage0 1 2 3 4 5 6 7",
          "minecraft:block/attached_pumpkin_stem", "minecraft:block/attached_melon_stem"]
@@ -479,8 +479,8 @@ def slices_for(states):
 class Pack:
     def __init__(self, out, jars):
         self.out, self.jars = out, jars
-        self.textures = out / "assets/seasonsrework/textures/block/plants"
-        self.rules = out / "assets/seasonsrework/eclipticseasons/season_textures"
+        self.textures = out / "assets/equinox/textures/block/plants"
+        self.rules = out / "assets/equinox/eclipticseasons/season_textures"
         self.textures.mkdir(parents=True, exist_ok=True)
         self.rules.mkdir(parents=True, exist_ok=True)
         self.preview = []  # (label, [images])
@@ -489,7 +489,7 @@ class Pack:
         ns, path = texture_id.split(":")
         name = f"{ns}_{path.rsplit('/', 1)[1]}_{suffix}"
         image.save(self.textures / f"{name}.png")
-        return f"seasonsrework:block/plants/{name}"
+        return f"equinox:block/plants/{name}"
 
     def rule(self, model_id, runs, textures_for, snow_for, tint=None, untinted=None, biomes=BIOMES, snow_mode="snow_only_in_snow_layer"):
         """untinted(state): texture variables to draw without tint in that state (default: all swapped ones)."""
@@ -842,8 +842,8 @@ def main():
         skipped.append(BAMBOO_STALK)
     (out / "pack.mcmeta").write_text(json.dumps({"pack": {
         "pack_format": 34,
-        "description": "Seasons Rework: seasonal looks for modded flowers and plants" if mode == "addon"
-        else "Seasons Rework: flowers bud, bloom, seed and die back; grass dries in winter",
+        "description": "Equinox: seasonal looks for modded flowers and plants" if mode == "addon"
+        else "Equinox: flowers bud, bloom, seed and die back; grass dries in winter",
     }}, indent=2))
     print(f"{done} plants, skipped (not in the jars): {', '.join(skipped) or 'none'}")
     if preview:

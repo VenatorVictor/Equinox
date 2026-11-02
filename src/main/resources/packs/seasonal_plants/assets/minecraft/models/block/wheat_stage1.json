@@ -277,6 +277,6 @@
   "textures": {
     "crop": "minecraft:block/wheat_stage1",
     "particle": "minecraft:block/wheat_stage1",
-    "flower": "seasonsrework:block/plants/minecraft_wheat_stage1_empty"
+    "flower": "equinox:block/plants/minecraft_wheat_stage1_empty"
   }
 }

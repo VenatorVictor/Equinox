@@ -275,8 +275,8 @@
     }
   ],
   "textures": {
-    "crop": "seasonsrework:block/plants/minecraft_wheat_stage6_stem",
+    "crop": "equinox:block/plants/minecraft_wheat_stage6_stem",
     "particle": "minecraft:block/wheat_stage6",
-    "flower": "seasonsrework:block/plants/minecraft_wheat_stage6_rest"
+    "flower": "equinox:block/plants/minecraft_wheat_stage6_rest"
   }
 }

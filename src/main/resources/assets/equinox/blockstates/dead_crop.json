@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "cause=frost,snowy=false": {
+      "model": "equinox:block/dead_crop"
+    },
+    "cause=frost,snowy=true": {
+      "model": "equinox:block/dead_crop"
+    },
+    "cause=heat,snowy=false": {
+      "model": "equinox:block/dead_crop"
+    },
+    "cause=heat,snowy=true": {
+      "model": "equinox:block/dead_crop"
+    }
+  }
+}

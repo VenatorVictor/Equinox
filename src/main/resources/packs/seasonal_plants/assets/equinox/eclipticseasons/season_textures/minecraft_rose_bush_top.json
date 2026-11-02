@@ -1,0 +1,74 @@
+{
+  "target": [
+    "minecraft:block/rose_bush_top"
+  ],
+  "biomes": "#eclipticseasons:rain/seasonal",
+  "snow_only_in_snow_layer": true,
+  "slices": [
+    {
+      "start": "first_frost",
+      "end": "fresh_green",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_green_petals",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_green_petals_snow",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_green_stem"
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_color_petals",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_color_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_color_petals_snow",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_color_stem"
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "lesser_fullness",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_opening_petals",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_opening_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_opening_petals_snow",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_opening_stem"
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "white_dew",
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "autumnal_equinox",
+      "end": "cold_dew",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_seed_petals",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_seed_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_rose_bush_top_seed_petals_snow",
+        "cross": "equinox:block/plants/minecraft_rose_bush_top_seed_stem"
+      }
+    }
+  ]
+}

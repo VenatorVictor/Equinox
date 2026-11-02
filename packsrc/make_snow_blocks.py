@@ -1,7 +1,7 @@
 """Builds the snow cap textures drawn over blocks where snow lies (client/SnowOverlayModel.java).
 
 Usage: python make_snow_blocks.py <src/main/resources folder>
-Writes assets/seasonsrework/textures/block/snow_cap.png (cap at the top edge: fences, walls, gates, chains, leaves,
+Writes assets/equinox/textures/block/snow_cap.png (cap at the top edge: fences, walls, gates, chains, leaves,
 grass) and snow_cap_half.png (also at the half-block line: stairs and slabs, whose lower faces use the texture's lower
 half). Snow pattern: the plants' rule, thicker: a cap that drifts 2-4 pixels deep per column, then a shade pixel.
 The overlay uses each face's own texture coordinates, so the cap sits at the top of every face.
@@ -29,7 +29,7 @@ def cap(rows):
 
 
 def main():
-    out = Path(sys.argv[1]) / "assets/seasonsrework/textures/block"
+    out = Path(sys.argv[1]) / "assets/equinox/textures/block"
     out.mkdir(parents=True, exist_ok=True)
     cap((0,)).save(out / "snow_cap.png")
     cap((0, 8)).save(out / "snow_cap_half.png")
