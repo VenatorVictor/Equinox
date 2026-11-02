@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/cherry_fence_gate"
+  ],
+  "snow_full_texture": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "texture": "seasonsrework:block/snow/minecraft_cherry_planks_snowy"
+      },
+      "snow_tint": {
+        "texture": -1
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "target": [
+    "minecraft:block/chain"
+  ],
+  "snow_full_texture": true,
+  "slices": [
+    {
+      "start": "beginning_of_spring",
+      "end": "greater_cold",
+      "snow_textures": {
+        "all": "seasonsrework:block/snow/minecraft_chain_snowy"
+      },
+      "snow_tint": {
+        "all": -1
+      }
+    }
+  ]
+}
