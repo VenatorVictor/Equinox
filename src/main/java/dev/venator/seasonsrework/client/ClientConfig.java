@@ -26,24 +26,8 @@ public final class ClientConfig {
     public static final ModConfigSpec.EnumValue<SnowLook> SNOW_LOOK;
     public static final ModConfigSpec.IntValue REDRAW_SECONDS;
 
-    /** Snowy leaves: NEW = a snow layer on top (new model), VANILLA = snow drawn on the leaf texture. */
+    /** Snowy leaves: NEW = a thin snow layer on top, VANILLA = snow drawn on their own faces. */
     public enum SnowModels { NEW, VANILLA }
-
-    /** snow_models, also before the config is loaded (resource packs are listed early): read from the file. */
-    public static SnowModels snowModels() {
-        try {
-            return SNOW_MODELS.get();
-        } catch (IllegalStateException notLoaded) {
-            try {
-                java.nio.file.Path file = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("seasonsrework-client.toml");
-                if (java.nio.file.Files.exists(file))
-                    for (String line : java.nio.file.Files.readAllLines(file))
-                        if (line.trim().startsWith("snow_models") && line.contains("VANILLA")) return SnowModels.VANILLA;
-            } catch (java.io.IOException ignored) {
-            }
-            return SnowModels.NEW;
-        }
-    }
 
     /** What makes snowy textures and LOD snow fade in (4 steps). */
     public enum SnowLook { GROUND, CALENDAR }
@@ -74,8 +58,8 @@ public final class ClientConfig {
         SEASONAL_TEXTURES = BUILDER.comment("Seasonal block textures from resource packs in Ecliptic Seasons' format",
                         "(assets/<namespace>/eclipticseasons/season_textures/*.json), e.g. Seasonal Plants and Seasonal Trees.")
                 .define("seasonal_textures", true);
-        SNOW_MODELS = BUILDER.comment("Snowy leaves: NEW = a snow layer on top of the leaves (new model), VANILLA = snow drawn on the",
-                        "leaf texture (vanilla model). Needs a game restart.")
+        SNOW_MODELS = BUILDER.comment("Snowy leaves: NEW = a thin snow layer on top of the leaves, VANILLA = snow drawn on the leaves'",
+                        "own faces (their shape as it is).")
                 .defineEnum("snow_models", SnowModels.NEW);
         BUILDER.pop().push("crops");
         CROP_LOOKS = BUILDER.comment("Crops that don't grow show it, in 4 steps: a hint while they grow slowly near a limit,",

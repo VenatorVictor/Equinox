@@ -102,15 +102,11 @@ public final class SeasonsRework {
                 Component.literal("Seasons Rework: " + name), PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
-    /** Built-in packs: the vanilla plants' seasonal looks, snowy blocks and snowy leaves (snow_models picks which; made
-     *  by packsrc/make_plants.py --vanilla and make_snow_blocks.py), and data packs putting more plants in
-     *  Snow! Real Magic's plants tag, so snow covers them too. */
+    /** Built-in packs: the vanilla plants' seasonal looks (always on, made by packsrc/make_plants.py --vanilla), and
+     *  data packs putting more plants in Snow! Real Magic's plants tag, so snow covers them too. */
     private static void addPacks(AddPackFindersEvent event) {
         if (event.getPackType() == PackType.CLIENT_RESOURCES) {
             clientPack(event, "seasonal_plants", "seasonal plants");
-            clientPack(event, "snowy_blocks", "snowy blocks");
-            boolean flat = dev.venator.seasonsrework.client.ClientConfig.snowModels() == dev.venator.seasonsrework.client.ClientConfig.SnowModels.VANILLA;
-            clientPack(event, flat ? "snowy_leaves_flat" : "snowy_leaves_new", "snowy leaves");
         }
         if (!ModList.get().isLoaded("snowrealmagic")) return;
         if (ModList.get().isLoaded("farmersdelight"))

@@ -152,7 +152,7 @@ public final class SeasonalTextures {
         SnowMode snowMode = GsonHelper.getAsBoolean(json, "snow_only_in_snow_layer", false) ? SnowMode.SNOW_LAYER
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, GsonHelper.getAsBoolean(json, "snow_full_texture", false));
+        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode);
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -162,27 +162,17 @@ public final class SeasonalTextures {
         List<Variant> variants = new ArrayList<>();
         for (JsonObject textures : objects(texturesJson)) {
             Map<TextureAtlasSprite, Swap> remap = new IdentityHashMap<>();
-            Map<Direction, Map<TextureAtlasSprite, Swap>> faces = new java.util.EnumMap<>(Direction.class);
             for (Map.Entry<String, JsonElement> texture : textures.entrySet()) {
                 TextureAtlasSprite to = sprites.apply(new Material(InventoryMenu.BLOCK_ATLAS, ResourceLocation.parse(texture.getValue().getAsString())));
                 if (missing(to)) continue;
-                // "<direction>:<variable>" (up:top, down:bottom): only the faces of that texture pointing that way
-                // (stairs and slabs use one texture for top, bottom and sides).
-                String key = texture.getKey();
-                int colon = key.indexOf(':');
-                Direction only = colon < 0 ? null : Direction.byName(key.substring(0, colon));
-                if (only != null) key = key.substring(colon + 1);
                 Integer tint = tints.get(texture.getKey());
                 for (BlockModel model : models) {
-                    TextureAtlasSprite from = sprites.apply(model.getMaterial(key));
-                    if (missing(from)) continue;
-                    if (only != null) faces.computeIfAbsent(only, d -> new IdentityHashMap<>()).put(from, new Swap(to, tint == null ? KEEP_TINT : tint));
-                    else if (from != to || tint != null) remap.put(from, new Swap(to, tint == null ? KEEP_TINT : tint));
+                    TextureAtlasSprite from = sprites.apply(model.getMaterial(texture.getKey()));
+                    if (!missing(from) && (from != to || tint != null)) remap.put(from, new Swap(to, tint == null ? KEEP_TINT : tint));
                 }
             }
             used.addAll(remap.keySet());
-            faces.values().forEach(m -> used.addAll(m.keySet()));
-            variants.add(new Variant(remap, faces));
+            variants.add(new Variant(remap));
         }
         return variants.toArray(Variant[]::new);
     }
@@ -265,12 +255,10 @@ public final class SeasonalTextures {
     enum SnowMode { COLD, SKY, SNOW_LAYER, SNOW_ABOVE }
 
     /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
-    /** full: snow textures replace the normal ones at once instead of fading in over the look steps
-     *  ("snow_full_texture": solid blocks, where the drawn-over snow can't show). */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean full, boolean hasSnow) {
-        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode, boolean full) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, full, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
+                SnowMode snowMode, boolean hasSnow) {
+        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode) {
+            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
         }
     }
 
@@ -282,20 +270,13 @@ public final class SeasonalTextures {
     /** One texture set: sprite swaps, plus the ModelData that carries it and its swapped quads. */
     static final class Variant {
         final Map<TextureAtlasSprite, Swap> remap;
-        /** Swaps only for faces pointing one way (win over remap). */
-        final Map<Direction, Map<TextureAtlasSprite, Swap>> faces;
         final ModelData data;
         // Filled from chunk-meshing threads.
         private final Map<BakedQuad, BakedQuad> quads = new ConcurrentHashMap<>();
 
-        Variant(Map<TextureAtlasSprite, Swap> remap, Map<Direction, Map<TextureAtlasSprite, Swap>> faces) {
+        Variant(Map<TextureAtlasSprite, Swap> remap) {
             this.remap = remap.isEmpty() ? Map.of() : new HashMap<>(remap);
-            this.faces = faces.isEmpty() ? Map.of() : new java.util.EnumMap<>(faces);
             this.data = ModelData.builder().with(SeasonalModel.VARIANT, this).build();
-        }
-
-        boolean isEmpty() {
-            return remap.isEmpty() && faces.isEmpty();
         }
 
         private final Overlay[] overlays = new Overlay[3];
@@ -308,15 +289,8 @@ public final class SeasonalTextures {
         }
 
         BakedQuad swap(BakedQuad quad) {
-            Swap swap = swapFor(quad);
-            return swap == null ? quad : quads.computeIfAbsent(quad, q -> swap.to() == q.getSprite() && swap.tint() == KEEP_TINT ? q : retexture(q, swap));
-        }
-
-        /** The swap for a quad: its direction's own first, then the general one. */
-        @Nullable Swap swapFor(BakedQuad quad) {
-            Map<TextureAtlasSprite, Swap> own = faces.get(quad.getDirection());
-            Swap swap = own == null ? null : own.get(quad.getSprite());
-            return swap != null ? swap : remap.get(quad.getSprite());
+            Swap swap = remap.get(quad.getSprite());
+            return swap == null ? quad : quads.computeIfAbsent(quad, q -> retexture(q, swap));
         }
 
         /** Same quad, with its UVs moved from the old sprite's place in the atlas to the new one's. */
@@ -360,7 +334,7 @@ public final class SeasonalTextures {
         }
 
         private @Nullable BakedQuad make(BakedQuad quad) {
-            if (snow.swapFor(quad) == null) return null;
+            if (!snow.remap.containsKey(quad.getSprite())) return null;
             BakedQuad swapped = snow.swap(quad);
             int[] v = swapped.getVertices().clone();
             int stride = v.length / 4;
