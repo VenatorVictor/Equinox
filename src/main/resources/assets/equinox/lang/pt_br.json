@@ -218,5 +218,6 @@
   "equinox.settings.unit.band.cold": "frio",
   "equinox.settings.unit.band.temperate": "temperado",
   "equinox.settings.unit.band.warm": "quente",
-  "equinox.settings.unit.band.hot": "muito quente"
+  "equinox.settings.unit.band.hot": "muito quente",
+  "fml.menu.mods.info.description.equinox": "§fO mundo todo segue o ano: §aPrimavera§f, §eVerão§f, §6Outono§f e §bInverno§f.\n\n§6§lClima\n§7• Cada bioma tem as suas estações: costas amenas, um norte frio, desertos, trópicos chuvosos e secos.\n§7• Biomas vizinhos se misturam, e o inverno some perto de selvas e desertos.\n§7• Dias longos no verão, dias curtos no inverno.\n\n§b§lNeve\n§7• A neve acumula enquanto está frio e derrete no degelo.\n§7• Ela fica na grama, nas flores e plantas e nas cercas, e sobe e afunda em vez de aparecer de repente.\n§7• Lagos e rios congelam.\n\n§a§lPlantações\n§7• As plantações crescem pela temperatura: rápido quando está ideal, devagar quando está fresco ou quente, dormentes no frio, mortas pela geada ou pelo calor.\n§7• Fogueiras, tochas e outras fontes de calor as protegem; o gelo as resfria.\n§7• Em dias quentes a terra arada precisa de água mais perto.\n\n§d§lCores\n§7• A grama e as folhas mudam de cor ao longo do ano; as bétulas ficam amarelas e laranjas no outono.\n§7• As flores brotam, florescem e dão sementes.\n\n§9§lMais\n§7• Distant Horizons: o terreno distante segue as cores e a neve.\n§7• Uma tela de configuração com abas, descrições e o custo de desempenho de cada opção.\n§7• Não precisa de mods de biblioteca; uma API de temperatura para outros mods."
 }

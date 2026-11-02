@@ -333,5 +333,6 @@
   "equinox.settings.unit.band.temperate": "temperate",
   "equinox.settings.unit.band.warm": "warm",
   "equinox.settings.unit.band.hot": "hot",
-  "equinox.configuration.fixed_variation_seed": "Variation seed"
+  "equinox.configuration.fixed_variation_seed": "Variation seed",
+  "fml.menu.mods.info.description.equinox": "§fThe whole world follows the year: §aSpring§f, §eSummer§f, §6Autumn§f and §bWinter§f.\n\n§6§lClimate\n§7• Each biome has its own seasons: mild coasts, a cold north, deserts, rainy and dry tropics.\n§7• Neighbouring biomes blend, and winter fades out near jungles and deserts.\n§7• Long summer days, short winter days.\n\n§b§lSnow\n§7• Snow builds up while it's cold and melts in a thaw.\n§7• It settles in grass, flowers and plants and on fences, and slides in and out instead of popping.\n§7• Lakes and rivers freeze.\n\n§a§lCrops\n§7• Crops grow by temperature: fast when it's ideal, slowly when it's cool or warm, dormant in the cold, killed by frost or heat.\n§7• Campfires, torches and other heat sources protect them; ice cools them.\n§7• On hot days farmland needs water closer by.\n\n§d§lColors\n§7• Grass and leaves change color through the year; birches turn yellow and orange in autumn.\n§7• Flowers bud, bloom and go to seed.\n\n§9§lMore\n§7• Distant Horizons: far terrain follows the colors and the snow.\n§7• A config screen with tabs, descriptions and the performance cost of each setting.\n§7• No library mods needed; a temperature API for other mods."
 }
