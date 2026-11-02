@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * The mod's config screen (Mods > Seasons Rework > Config): tabs, search, one row per setting with a cost mark,
+ * The mod's config screen (Mods > Equinox > Config): tabs, search, one row per setting with a cost mark,
  * a control in real units (days, °C, blocks, seconds) and a reset button; hovering a name explains it. Changes are
  * kept until Done (or Esc) and then saved to their files, which reloads them.
  */
@@ -55,7 +55,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     private String note;
 
     public SettingsScreen(ModContainer container, Screen parent) {
-        super(Component.literal("Seasons Rework"));
+        super(Component.literal("Equinox"));
         this.parent = parent;
     }
 
@@ -377,9 +377,6 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         if (applies != null) out.addAll(font.split(Component.literal(applies).withStyle(ChatFormatting.AQUA), wrap));
         String locked = locked(s);
         if (locked != null) out.addAll(font.split(Component.literal(locked).withStyle(ChatFormatting.GOLD), wrap));
-        out.add(FormattedCharSequence.EMPTY);
-        out.addAll(font.split(Component.literal(s.side.label()).withStyle(ChatFormatting.DARK_GRAY), wrap));
-        out.addAll(font.split(Component.literal(s.side.file + " > " + s.path()).withStyle(ChatFormatting.DARK_GRAY), wrap));
         return out;
     }
 

@@ -105,7 +105,7 @@ public final class SeasonsRework {
     /** A built-in resource pack, always on (made by the packsrc scripts). */
     private static void clientPack(AddPackFindersEvent event, String folder, String name) {
         event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/" + folder), PackType.CLIENT_RESOURCES,
-                Component.literal("Seasons Rework: " + name), PackSource.BUILT_IN, true, Pack.Position.TOP);
+                Component.literal("Equinox: " + name), PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
     /** Built-in packs: the vanilla plants' seasonal looks (always on, made by packsrc/make_plants.py --vanilla), and
@@ -117,6 +117,6 @@ public final class SeasonsRework {
         if (!ModList.get().isLoaded("snowrealmagic")) return;
         if (ModList.get().isLoaded("farmersdelight"))
             event.addPackFinders(ResourceLocation.fromNamespaceAndPath(MOD_ID, "packs/srm_farmers_delight"), PackType.SERVER_DATA,
-                    Component.literal("Seasons Rework: snowy Farmer's Delight wild crops"), PackSource.BUILT_IN, true, Pack.Position.TOP);
+                    Component.literal("Equinox: snowy Farmer's Delight wild crops"), PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 }

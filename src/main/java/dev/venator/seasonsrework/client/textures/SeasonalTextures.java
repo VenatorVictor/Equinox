@@ -75,7 +75,7 @@ public final class SeasonalTextures {
                 Rule rule = parse(file.getKey(), GsonHelper.parse(reader), event, sprites);
                 if (rule != null) rules.add(rule);
             } catch (Exception e) {
-                SeasonsRework.LOGGER.warn("Seasons Rework: skipping seasonal texture file {}: {}", file.getKey(), e.toString());
+                SeasonsRework.LOGGER.warn("Equinox: skipping seasonal texture file {}: {}", file.getKey(), e.toString());
             }
         }
         any = !rules.isEmpty();
@@ -102,7 +102,7 @@ public final class SeasonalTextures {
             entry.setValue(new SeasonalModel(entry.getValue(), modelRules.toArray(Rule[]::new)));
             wrapped++;
         }
-        SeasonsRework.LOGGER.info("Seasons Rework: {} seasonal texture files, {} block models", rules.size(), wrapped);
+        SeasonsRework.LOGGER.info("Equinox: {} seasonal texture files, {} block models", rules.size(), wrapped);
     }
 
     private static Set<TextureAtlasSprite> usedSprites(BakedModel model, RandomSource random) {

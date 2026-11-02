@@ -7,7 +7,17 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="venatorvictor"
-description="""Seasons for Venator's Modpack: four seasons (early, mid, late) with seasonal colors, snow, crops and textures, all in one mod with no library dependencies."""
+description='''A seasons mod where the whole world follows the year, in one mod with no library dependencies.
+
+- Four seasons, each with an early, mid and late part; the year length is up to you.
+- A real climate in °C: each climate zone has its own seasons (mild coasts, cold north, tundra, deserts, tropical wet and dry seasons), warmer days and colder nights, random warm and cold spells, and the warmest weeks coming after midsummer as in real life.
+- Neighbouring biomes blend their climates, and winter fades out near jungles and deserts.
+- Day length changes with the season: long summer days, short winter days.
+- Snow falls and builds up while it's cold and melts in a thaw; it settles in grass, flowers and plants and on fences, and slides in and out instead of popping. Lakes and rivers freeze.
+- Crops grow by temperature: fast in their ideal range, slowly when it's cool or warm, dormant in the cold, and killed by frost or heat. Campfires, torches and other heat sources protect them; ice cools them. On hot days farmland needs water closer by.
+- Grass and leaves change color through the year, birches turn yellow and orange in autumn, and flowers bud, bloom and go to seed.
+- Distant Horizons: far terrain follows the colors and the snow.
+- A temperature API for other mods, and a config screen with tabs, descriptions and the performance cost of each setting.'''
 
 [[mixins]]
     config="${mod_id}.mixins.json"

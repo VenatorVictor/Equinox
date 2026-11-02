@@ -99,7 +99,7 @@ public final class DeadCropTextures implements SpriteSource {
                 else output.add(id, loader -> make(resources, texture, id, kind, fruit));
             }
         }
-        SeasonsRework.LOGGER.info("Seasons Rework: dead crop textures for {} crop textures", textures.size());
+        SeasonsRework.LOGGER.info("Equinox: dead crop textures for {} crop textures", textures.size());
     }
 
     /** The textures named in the block models of the blocks given, crops or fruits (blockstates → models → parents). */
@@ -169,7 +169,7 @@ public final class DeadCropTextures implements SpriteSource {
             if (kind == Kind.FROST_SNOW) snow(image);
             return new SpriteContents(id, new FrameSize(width, height), image, ResourceMetadata.EMPTY);
         } catch (Exception e) {
-            SeasonsRework.LOGGER.warn("Seasons Rework: couldn't make dead crop texture {}: {}", id, e.toString());
+            SeasonsRework.LOGGER.warn("Equinox: couldn't make dead crop texture {}: {}", id, e.toString());
             return null;
         }
     }
