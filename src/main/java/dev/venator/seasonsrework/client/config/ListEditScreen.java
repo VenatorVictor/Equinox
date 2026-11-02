@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -25,7 +26,7 @@ final class ListEditScreen extends Screen {
     private boolean dirty;
 
     ListEditScreen(SettingsScreen parent, Setting setting, List<String> current, boolean editable) {
-        super(Component.literal(setting.name));
+        super(Component.literal(setting.name()));
         this.parent = parent;
         this.setting = setting;
         this.lines = new ArrayList<>(current);
@@ -55,7 +56,7 @@ final class ListEditScreen extends Screen {
         for (int i = scroll; i < Math.min(rowsWithAdd, scroll + visible); i++) {
             int y = top + (i - scroll) * ROW;
             if (i == lines.size()) {
-                addRenderableWidget(Button.builder(Component.literal("+ Add entry"), b -> {
+                addRenderableWidget(Button.builder(Component.literal(SettingsScreen.t("list.add")), b -> {
                     Object fresh = setting.value.getSpec() instanceof ModConfigSpec.ListValueSpec spec ? spec.getNewElementSupplier().get() : "";
                     lines.add(String.valueOf(fresh));
                     scroll = lines.size() + 1;
@@ -64,7 +65,7 @@ final class ListEditScreen extends Screen {
                 continue;
             }
             int index = i;
-            EditBox box = new EditBox(font, listX + 1, y + 1, listWidth - 26, 18, Component.literal("Entry"));
+            EditBox box = new EditBox(font, listX + 1, y + 1, listWidth - 26, 18, Component.literal(setting.name()));
             box.setMaxLength(256);
             box.setValue(lines.get(i));
             box.setTextColor(valid(lines.get(i)) ? 0xFFE0E0E0 : 0xFFFF5555);
@@ -84,7 +85,7 @@ final class ListEditScreen extends Screen {
         }
 
         int w = 100, y = height - 26;
-        Button reset = Button.builder(Component.literal("Defaults"), b -> {
+        Button reset = Button.builder(Component.literal(SettingsScreen.t("list.defaults")), b -> {
             lines.clear();
             for (Object line : (List<?>) setting.value.getDefault()) lines.add(String.valueOf(line));
             scroll = 0;
@@ -92,8 +93,8 @@ final class ListEditScreen extends Screen {
         }).bounds(width / 2 - w * 3 / 2 - 4, y, w, 20).build();
         reset.active = editable;
         addRenderableWidget(reset);
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> minecraft.setScreen(parent)).bounds(width / 2 - w / 2, y, w, 20).build());
-        done = Button.builder(Component.literal("Done"), b -> finish()).bounds(width / 2 + w / 2 + 4, y, w, 20).build();
+        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> minecraft.setScreen(parent)).bounds(width / 2 - w / 2, y, w, 20).build());
+        done = Button.builder(CommonComponents.GUI_DONE, b -> finish()).bounds(width / 2 + w / 2 + 4, y, w, 20).build();
         done.active = editable && allValid();
         addRenderableWidget(done);
     }
@@ -123,11 +124,11 @@ final class ListEditScreen extends Screen {
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTick) {
         super.render(gfx, mouseX, mouseY, partialTick);
         gfx.drawCenteredString(font, title, width / 2, 8, 0xFFFFFFFF);
-        List<FormattedCharSequence> format = font.split(Component.literal(setting.format).withStyle(ChatFormatting.GRAY), listWidth);
+        List<FormattedCharSequence> format = font.split(Component.literal(setting.format()).withStyle(ChatFormatting.GRAY), listWidth);
         for (int i = 0; i < Math.min(2, format.size()); i++) gfx.drawCenteredString(font, format.get(i), width / 2, 22 + i * 10, 0xFFA0A0A0);
-        String count = lines.size() + " entries" + (editable ? "" : " (can't change here)");
+        String count = SettingsScreen.t("entries", lines.size()) + (editable ? "" : " " + SettingsScreen.t("list.locked"));
         gfx.drawString(font, count, listX + listWidth - font.width(count), 8, 0xFFA0A0A0);
-        if (!allValid()) gfx.drawString(font, "Red lines don't fit the format.", listX, 8, 0xFFFF5555);
+        if (!allValid()) gfx.drawString(font, SettingsScreen.t("list.invalid"), listX, 8, 0xFFFF5555);
     }
 
     @Override
