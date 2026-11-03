@@ -47,6 +47,17 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
 
     private final SeasonalTextures.Rule[] rules;
 
+    /** Every seasonal model by its model location, filled while models bake (to ask about a block outside meshing). */
+    static final java.util.Map<net.minecraft.client.resources.model.ModelResourceLocation, SeasonalModel> BY_LOCATION = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Whether the block at pos shows one of its seasonal textures right now instead of its own (client). */
+    public static boolean changed(ClientLevel level, BlockPos pos, BlockState state) {
+        SeasonalModel model = BY_LOCATION.get(net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(state));
+        if (model == null) return false;
+        Pick pick = model.pick(level, pos, state, false);
+        return pick != null && pick.variant != null;
+    }
+
     SeasonalModel(BakedModel original, SeasonalTextures.Rule[] rules) {
         super(original);
         this.rules = rules;

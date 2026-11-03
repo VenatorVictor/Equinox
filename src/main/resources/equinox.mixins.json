@@ -29,7 +29,8 @@
   ],
   "client": [
     "client.BiomeColorMixin",
-    "client.ClientLevelSnowMixin"
+    "client.ClientLevelSnowMixin",
+    "client.CherryPetalsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

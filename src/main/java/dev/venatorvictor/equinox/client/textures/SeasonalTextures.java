@@ -67,6 +67,7 @@ public final class SeasonalTextures {
     public static volatile boolean anySnow = false;
 
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        SeasonalModel.BY_LOCATION.clear();
         List<Rule> rules = new ArrayList<>();
         Function<Material, TextureAtlasSprite> sprites = event.getTextureGetter();
         for (Map.Entry<ResourceLocation, Resource> file : Minecraft.getInstance().getResourceManager()
@@ -99,7 +100,9 @@ public final class SeasonalTextures {
                 }
             }
             if (modelRules.isEmpty()) continue;
-            entry.setValue(new SeasonalModel(entry.getValue(), modelRules.toArray(Rule[]::new)));
+            SeasonalModel seasonal = new SeasonalModel(entry.getValue(), modelRules.toArray(Rule[]::new));
+            entry.setValue(seasonal);
+            SeasonalModel.BY_LOCATION.put(entry.getKey(), seasonal);
             wrapped++;
         }
         Equinox.LOGGER.info("Equinox: {} seasonal texture files, {} block models", rules.size(), wrapped);
