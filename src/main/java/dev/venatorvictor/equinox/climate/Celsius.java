@@ -62,7 +62,7 @@ public final class Celsius {
         float night = entry != null ? entry.night() : fallback(holder.value()) - 4, day = entry != null ? entry.day() : night + 8;
         float water = entry != null && entry.water().isPresent() ? entry.water().get() : defaultWater((night + day) / 2);
         SeasonState state = Seasons.get(level);
-        float[] changes = Config.celsiusChanges(zone);
+        float[] changes = ((ClimateBiome) (Object) holder.value()).equinox$celsiusChanges();
         if (state != null && changes != null) {
             Climate.Phase phase = zone.sea()
                     ? Climate.Phase.of(state.lagged(Config.temperatureLag() + SEA_EXTRA_LAG), Climate.phase().season(), 0)
@@ -90,7 +90,7 @@ public final class Celsius {
             day = mean + 4;
         }
         Zone zone = Climate.zoneOf(holder.value());
-        float[] changes = Config.celsiusChanges(zone);
+        float[] changes = ((ClimateBiome) (Object) holder.value()).equinox$celsiusChanges();
         boolean seasons = Seasons.get(level) != null;
         Climate.Phase phase = Climate.phase();
         float atNight = seasons && changes != null ? change(changes, phase, 0) : 0;

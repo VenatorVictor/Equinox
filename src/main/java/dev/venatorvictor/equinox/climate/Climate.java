@@ -212,18 +212,21 @@ public final class Climate {
         Float configured = holder.unwrapKey().map(key -> Config.biomeTemperature(key.location())).orElse(null);
         float temperature = configured != null ? configured : own;
         Zone zone = zoneOf(holder, temperature);
+        // The °C year: the biome's own (a real place's seasons) or its zone's change.
+        BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
+        float[] ownYear = entry != null ? entry.changes() : null;
+        float[] celsius = ownYear != null ? ownYear : Config.celsiusChanges(zone);
+        ((ClimateBiome) (Object) holder.value()).equinox$setCelsiusChanges(celsius);
         float[] changes = null;
         if (zone.seasonal()) {
             // The °C climate decides: the biome's daily mean (data map, else from its Minecraft temperature) and the
-            // zone's daily mean change at each season middle, turned into Minecraft's scale (fromCelsius).
-            BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
+            // daily mean change at each season middle, turned into Minecraft's scale (fromCelsius).
             float mean = entry != null ? (entry.night() + entry.day()) / 2 : toCelsius(temperature);
-            float[] celsius = Config.celsiusChanges(zone);
             changes = new float[Season.COUNT];
             for (int i = 0; i < Season.COUNT; i++) {
                 float change = celsius == null ? 0 : (celsius[i * 2] + celsius[i * 2 + 1]) / 2;
-                // Tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
-                if (zone.thaws && i == Season.SUMMER.ordinal()) change = Math.max(change, Zone.THAW - mean);
+                // Zone fallback for tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
+                if (ownYear == null && zone.thaws && i == Season.SUMMER.ordinal()) change = Math.max(change, Zone.THAW - mean);
                 changes[i] = change / Celsius.PER_UNIT;
             }
             temperature = fromCelsius(mean);

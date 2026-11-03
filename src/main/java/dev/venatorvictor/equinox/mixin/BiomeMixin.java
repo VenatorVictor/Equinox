@@ -33,6 +33,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Unique
     private byte equinox$blendKind = ClimateBiome.BLEND_NONE;
     @Unique
+    private float[] equinox$celsiusChanges;
+    @Unique
     private boolean equinox$clientSide;
     @Unique
     private byte equinox$snowLock = ClimateBiome.SNOW_FREE;
@@ -86,6 +88,16 @@ public abstract class BiomeMixin implements ClimateBiome {
         equinox$shift = shift;
         equinox$lockShift = lockShift;
         equinox$changes = changes;
+    }
+
+    @Override
+    public float[] equinox$celsiusChanges() {
+        return equinox$celsiusChanges;
+    }
+
+    @Override
+    public void equinox$setCelsiusChanges(float[] changes) {
+        equinox$celsiusChanges = changes;
     }
 
     @Override
