@@ -1,0 +1,71 @@
+{
+  "target": [
+    "minecraft:block/birch_leaves"
+  ],
+  "biomes": "#equinox:seasonal_zones",
+  "clock": "trees",
+  "slices": [
+    {
+      "start": "cold_dew",
+      "end": "cold_dew",
+      "textures": {
+        "all": "equinox:leaf_fall/birch/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "first_frost",
+      "end": "first_frost",
+      "textures": {
+        "all": "equinox:leaf_fall/birch/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "beginning_of_winter",
+      "end": "beginning_of_winter",
+      "textures": {
+        "all": "equinox:leaf_fall/birch/stage_3"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "light_snow",
+      "end": "rain_water",
+      "textures": {
+        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "insects_awakening",
+      "end": "insects_awakening",
+      "textures": {
+        "all": "equinox:leaf_fall/birch/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    }
+  ]
+}
