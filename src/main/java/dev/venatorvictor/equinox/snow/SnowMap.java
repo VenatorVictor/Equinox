@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Snow in blocks that keep it outside their block state: fences (0..8 layers). Each chunk keeps a small map of
+ * Snow in blocks that keep it outside their block state: fences (0..7 layers, SnowyPlants.MAX_LAYERS). Each chunk keeps a small map of
  * position -> layers in its own saved data (an attachment), sent to the clients with the chunk and on every change.
  * The fence stays the same block with the same states: no extra states, no block entity, removing the mod just
  * drops the snow. Shapes, collision, sound, breaking and melting read the map by position (SnowStateMixin,
@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 public final class SnowMap {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Equinox.MOD_ID);
 
-    /** A chunk's snow: packed local position -> layers (1..8). Saved as a list of ints (position << 4 | layers). */
+    /** A chunk's snow: packed local position -> layers (1..7). Saved as a list of ints (position << 4 | layers). */
     public static final class Data {
         final Int2ByteOpenHashMap layers = new Int2ByteOpenHashMap();
 
@@ -59,7 +59,7 @@ public final class SnowMap {
 
         static Data of(int[] entries) {
             Data data = new Data();
-            for (int entry : entries) if ((entry & 15) > 0) data.layers.put(entry >>> 4, (byte) Math.min(entry & 15, 8));
+            for (int entry : entries) if ((entry & 15) > 0) data.layers.put(entry >>> 4, (byte) Math.min(entry & 15, SnowyPlants.MAX_LAYERS));
             return data;
         }
     }
@@ -113,7 +113,7 @@ public final class SnowMap {
     public static boolean set(ServerLevel level, BlockPos pos, int layers) {
         LevelChunk chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         if (chunk == null) return false;
-        layers = Math.max(0, Math.min(layers, 8));
+        layers = Math.max(0, Math.min(layers, SnowyPlants.MAX_LAYERS));
         Data data = layers == 0 ? chunk.getExistingDataOrNull(TYPE) : chunk.getData(TYPE);
         if (data == null) return false;
         int key = key(pos);

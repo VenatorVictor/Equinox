@@ -59,7 +59,7 @@ public class SnowyBlock extends Block implements EntityBlock {
     /** Puts snow on the block at pos (inner), moving it inside. */
     static boolean place(Level level, BlockPos pos, BlockState inner, int layers) {
         boolean thin = SnowyPlants.maxLayers(inner) == 1;
-        BlockState snowy = SnowBlocks.SNOWY.get().defaultBlockState().setValue(THIN, thin).setValue(LAYERS, Mth.clamp(layers, 1, thin ? 1 : 8));
+        BlockState snowy = SnowBlocks.SNOWY.get().defaultBlockState().setValue(THIN, thin).setValue(LAYERS, Mth.clamp(layers, 1, thin ? 1 : SnowyPlants.MAX_LAYERS));
         SnowyBlockEntity.PENDING.set(inner);
         try {
             return level.setBlock(pos, snowy, Block.UPDATE_ALL);
