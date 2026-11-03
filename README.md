@@ -32,6 +32,8 @@ No library mods are needed.
 ### Colors
 - Grass and leaves change color through the year; birches turn yellow and orange in autumn.
 - Flowers bud, bloom and go to seed.
+- Trees lose their leaves one by one in autumn and stand on bare twigs in winter; cherries bloom on the twigs in
+  spring and flowering azaleas open their flowers in May.
 
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.
