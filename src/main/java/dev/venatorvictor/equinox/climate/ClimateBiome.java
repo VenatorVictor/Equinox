@@ -13,16 +13,19 @@ public interface ClimateBiome {
 
     Zone equinox$zone();
 
-    /** Added to the biome's temperature: the config's climate temperature minus the biome's own one. */
+    /**
+     * Added to the biome's temperature: seasonal zones, the °C climate's daily mean on Minecraft's scale minus the
+     * biome's own temperature (Climate.fromCelsius); others, the config's climate temperature minus the biome's own.
+     */
     float equinox$shift();
 
     /** The biome's change at mid spring, summer, autumn, winter, or null without seasons (Climate.change). */
     float[] equinox$changes();
 
-    /** Added to the temperature (not to shift, so °C fallbacks don't see it): tunes the biome's snow days (BiomeSnow). */
-    float equinox$snowShift();
+    /** Added to the temperature (not to shift, so °C fallbacks don't see it): snow locks (Climate.lockShift). */
+    float equinox$lockShift();
 
-    void equinox$setClimate(Zone zone, float shift, float snowShift, float[] changes);
+    void equinox$setClimate(Zone zone, float shift, float lockShift, float[] changes);
 
     /** How the biome takes part in climate blending (BLEND_*). */
     byte equinox$blendKind();
