@@ -1,0 +1,84 @@
+{
+  "target": [
+    "minecraft:block/oak_leaves"
+  ],
+  "biomes": "#equinox:seasonal_zones",
+  "clock": "trees",
+  "slices": [
+    {
+      "start": "beginning_of_winter",
+      "end": "beginning_of_winter",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "light_snow",
+      "end": "light_snow",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "heavy_snow",
+      "end": "heavy_snow",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_3"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "winter_solstice",
+      "end": "insects_awakening",
+      "textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "spring_equinox",
+      "end": "spring_equinox",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    }
+  ]
+}

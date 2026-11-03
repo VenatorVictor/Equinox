@@ -2,6 +2,9 @@
   "sources": [
     {
       "type": "equinox:dead_crops"
+    },
+    {
+      "type": "equinox:leaf_fall"
     }
   ]
 }

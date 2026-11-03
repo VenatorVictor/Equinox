@@ -87,9 +87,9 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
     private @Nullable Pick pick(BlockAndTintGetter region, BlockPos pos, @Nullable BlockState state, boolean inSnow) {
         ClientLevel level = Minecraft.getInstance().level;
         if (!ColorClock.active || level == null || !ClientConfig.SEASONAL_TEXTURES.get()) return null;
-        int term = ColorClock.step;
         Holder<Biome> biome = null;
         for (SeasonalTextures.Rule rule : rules) {
+            int term = rule.trees() ? ColorClock.treeStep : ColorClock.step;
             SeasonalTextures.Variant[] variants = rule.byTerm()[term];
             SeasonalTextures.Variant[] snowVariants = rule.snowByTerm()[term];
             boolean hasNormal = variants != null && variants.length > 0, hasSnow = snowVariants != null && snowVariants.length > 0;
@@ -185,6 +185,12 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (renderType == RenderType.solid()) overlay = null;
         List<BakedQuad> swapped = new ArrayList<>(overlay == null ? quads.size() : quads.size() * 2);
         for (BakedQuad quad : quads) swapped.add(variant == null ? quad : variant.swap(quad));
+        if (variant != null && variant.under != null) {
+            for (BakedQuad quad : quads) {
+                BakedQuad behind = variant.behind(quad);
+                if (behind != null) swapped.add(behind);
+            }
+        }
         if (overlay != null) {
             for (BakedQuad quad : quads) {
                 BakedQuad snow = overlay.quad(quad);

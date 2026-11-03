@@ -55,7 +55,9 @@ import java.util.function.Predicate;
  * under trees or roofs stay snow-free; "snow_only_in_snow_layer": true = snow textures only on plants a snow mod
  * draws inside its snow layers (and there always, as the snow is right there; the top half of a two-block plant counts
  * when its bottom half is in the snow); "snow_needs_snow_above": true = snow textures only under a snow layer (leaves
- * with snow lying on them). Not supported: climate, transition_textures.
+ * with snow lying on them); "under_textures"/"under_tint" in a slice: a second texture set drawn a hair behind the
+ * first (twigs behind falling leaves, untinted with -1); "clock": "trees" = the slices follow the trees' clock (the
+ * lagged one in spring, the calendar from mid summer, ColorClock.treeStep). Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
     private static final String DIRECTORY = "season_textures";
@@ -144,6 +146,8 @@ public final class SeasonalTextures {
             if (range == null) continue;
             Variant[] variants = variants(slice.get("textures"), slice.get("tint"), models, sprites, used);
             Variant[] snowVariants = variants(slice.get("snow_textures"), slice.get("snow_tint"), models, sprites, used);
+            Variant[] under = variants(slice.get("under_textures"), slice.get("under_tint"), models, sprites, new HashSet<>());
+            if (under.length > 0) for (int i = 0; i < variants.length; i++) variants[i].under = under[i % under.length];
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % ColorTables.STEPS) {
                 byTerm[term] = variants;
@@ -155,7 +159,8 @@ public final class SeasonalTextures {
         SnowMode snowMode = GsonHelper.getAsBoolean(json, "snow_only_in_snow_layer", false) ? SnowMode.SNOW_LAYER
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode);
+        boolean trees = GsonHelper.getAsString(json, "clock", "").equals("trees");
+        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, trees);
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -259,9 +264,9 @@ public final class SeasonalTextures {
 
     /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean hasSnow) {
-        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
+                SnowMode snowMode, boolean trees, boolean hasSnow) {
+        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode, boolean trees) {
+            this(biomes, byTerm, snowByTerm, sprites, snowMode, trees, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
         }
     }
 
@@ -283,6 +288,16 @@ public final class SeasonalTextures {
         }
 
         private final Overlay[] overlays = new Overlay[3];
+        /** Drawn a hair behind this set (under_textures), or null. */
+        @Nullable Variant under;
+        private final Map<BakedQuad, Optional<BakedQuad>> behind = new ConcurrentHashMap<>();
+
+        /** The under set's quad for this (original, not yet swapped) quad, a hair behind it, or null. */
+        @Nullable BakedQuad behind(BakedQuad quad) {
+            if (under == null) return null;
+            return behind.computeIfAbsent(quad, q -> under.remap.containsKey(q.getSprite())
+                    ? Optional.ofNullable(Overlay.lift(under.swap(q), -Overlay.LIFT)) : Optional.empty()).orElse(null);
+        }
 
         /** This (snowy) set drawn over the normal one for look step 1..3. */
         Overlay overlay(int step) {
@@ -321,7 +336,7 @@ public final class SeasonalTextures {
      */
     static final class Overlay {
         /** Distance in front of the face (blocks). */
-        private static final float LIFT = 0.0015F;
+        static final float LIFT = 0.0015F;
         private final Variant snow;
         private final int step;
         private final Map<BakedQuad, Optional<BakedQuad>> quads = new ConcurrentHashMap<>();
@@ -377,12 +392,33 @@ public final class SeasonalTextures {
                     }
                 }
             }
-            for (int i = 0; i < 4; i++) {
-                v[i * stride] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride]) + nx * LIFT);
-                v[i * stride + 1] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 1]) + ny * LIFT);
-                v[i * stride + 2] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 2]) + nz * LIFT);
-            }
+            move(v, stride, nx * LIFT, ny * LIFT, nz * LIFT);
             return new BakedQuad(v, swapped.getTintIndex(), swapped.getDirection(), swapped.getSprite(), swapped.isShade(), swapped.hasAmbientOcclusion());
+        }
+
+        private static void move(int[] v, int stride, float dx, float dy, float dz) {
+            for (int i = 0; i < 4; i++) {
+                v[i * stride] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride]) + dx);
+                v[i * stride + 1] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 1]) + dy);
+                v[i * stride + 2] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 2]) + dz);
+            }
+        }
+
+        /** The quad moved along its normal (negative: behind the face), or null if it has no area. */
+        static @Nullable BakedQuad lift(BakedQuad quad, float distance) {
+            int[] v = quad.getVertices().clone();
+            int stride = v.length / 4;
+            float ax = Float.intBitsToFloat(v[stride]) - Float.intBitsToFloat(v[0]);
+            float ay = Float.intBitsToFloat(v[stride + 1]) - Float.intBitsToFloat(v[1]);
+            float az = Float.intBitsToFloat(v[stride + 2]) - Float.intBitsToFloat(v[2]);
+            float bx = Float.intBitsToFloat(v[2 * stride]) - Float.intBitsToFloat(v[0]);
+            float by = Float.intBitsToFloat(v[2 * stride + 1]) - Float.intBitsToFloat(v[1]);
+            float bz = Float.intBitsToFloat(v[2 * stride + 2]) - Float.intBitsToFloat(v[2]);
+            float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+            float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (length < 1e-6F) return null;
+            move(v, stride, nx / length * distance, ny / length * distance, nz / length * distance);
+            return new BakedQuad(v, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade(), quad.hasAmbientOcclusion());
         }
     }
 

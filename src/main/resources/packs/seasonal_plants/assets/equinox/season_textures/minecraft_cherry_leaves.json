@@ -3,12 +3,71 @@
     "minecraft:block/cherry_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
+  "clock": "trees",
   "slices": [
     {
       "start": "beginning_of_summer",
       "end": "beginning_of_spring",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_green"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "cold_dew",
+      "end": "cold_dew",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "first_frost",
+      "end": "first_frost",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "beginning_of_winter",
+      "end": "beginning_of_winter",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_3"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "light_snow",
+      "end": "beginning_of_spring",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
       },
       "tint": {
         "all": -1
