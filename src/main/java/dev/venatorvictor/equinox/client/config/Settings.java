@@ -163,7 +163,10 @@ final class Settings {
                 .cost(Cost.LOW).applies("redraw"));
         all.add(client(ClientConfig.SMOOTH, "smooth").tab(LOOKS, null)
                 .cost(Cost.MEDIUM));
-        all.add(client(ClientConfig.SPRUCE, "spruce").tab(LOOKS, "tree_colors").cost(Cost.NONE).applies("redraw"));
+        all.add(client(ClientConfig.TREE_COLORS, "tree_colors").tab(LOOKS, "tree_colors")
+                .choice(ClientConfig.TreeColors.REPLACE, "replace").choice(ClientConfig.TreeColors.FILTER, "filter")
+                .choice(ClientConfig.TreeColors.OFF, "off").cost(Cost.NONE).applies("redraw"));
+        all.add(client(ClientConfig.SPRUCE, "spruce").tab(LOOKS, null).cost(Cost.NONE).applies("redraw"));
         all.add(client(ClientConfig.BIRCH, "birch").tab(LOOKS, null).cost(Cost.NONE).applies("redraw"));
         all.add(client(ClientConfig.BIRCH_PATCHES, "birch_patches").tab(LOOKS, null)
                 .cost(Cost.NONE).applies("redraw"));

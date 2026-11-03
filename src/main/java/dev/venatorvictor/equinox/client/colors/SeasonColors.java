@@ -34,12 +34,22 @@ public final class SeasonColors {
     }
 
     public static void registerLeaves(RegisterColorHandlersEvent.Block event) {
-        event.register((state, level, pos, tint) -> leaves(FoliageColor.getEvergreenColor(), ColorTables.SPRUCE, false, pos,
-                ClientConfig.SPRUCE.get()), Blocks.SPRUCE_LEAVES);
-        event.register((state, level, pos, tint) -> leaves(FoliageColor.getBirchColor(), ColorTables.BIRCH, ClientConfig.BIRCH_PATCHES.get(), pos,
-                ClientConfig.BIRCH.get()), Blocks.BIRCH_LEAVES);
+        event.register((state, level, pos, tint) -> fixedTree(FoliageColor.getEvergreenColor(), ColorTables.SPRUCE,
+                TreeColors.SPRUCE, false, pos, ClientConfig.SPRUCE.get()), Blocks.SPRUCE_LEAVES);
+        event.register((state, level, pos, tint) -> fixedTree(FoliageColor.getBirchColor(), ColorTables.BIRCH,
+                TreeColors.BIRCH, ClientConfig.BIRCH_PATCHES.get(), pos, ClientConfig.BIRCH.get()), Blocks.BIRCH_LEAVES);
         event.register((state, level, pos, tint) -> leaves(FoliageColor.getMangroveColor(), ColorTables.MANGROVE, false, pos,
                 ClientConfig.MANGROVE.get()), Blocks.MANGROVE_LEAVES);
+        event.register((state, level, pos, tint) -> TreeColors.biomeTree(TreeColors.OAK, level, pos), Blocks.OAK_LEAVES);
+        event.register((state, level, pos, tint) -> TreeColors.biomeTree(TreeColors.DARK_OAK, level, pos), Blocks.DARK_OAK_LEAVES);
+        event.register((state, level, pos, tint) -> TreeColors.autumnBiomeLeaves(level, pos), Blocks.ACACIA_LEAVES, Blocks.JUNGLE_LEAVES);
+    }
+
+    /** Birch and spruce: per-tree colors, or the earlier tables with tree_colors = OFF. */
+    private static int fixedTree(int base, float[][] oldTable, TreeColors.Tree tree, boolean patches, BlockPos pos, boolean enabled) {
+        if (ClientConfig.TREE_COLORS.get() == ClientConfig.TreeColors.OFF) return leaves(base, oldTable, patches, pos, enabled);
+        if (!enabled || pos == null || !ColorClock.active) return base;
+        return TreeColors.fixedTree(tree, base, pos, patches);
     }
 
     /**
@@ -91,7 +101,7 @@ public final class SeasonColors {
     }
 
     // Autumn birch: hue drifts between orange and yellow with position.
-    private static int autumnPatch(BlockPos pos) {
+    static int autumnPatch(BlockPos pos) {
         float x = (float) ((Math.sin(pos.getX() / 16F) + 1) / 2);
         float y = (float) ((Math.sin(pos.getY() / 128F) + 1) / 2);
         float z = (float) ((Math.sin(pos.getZ() / 32F) + 1) / 2);

@@ -14,6 +14,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue BIRCH;
     public static final ModConfigSpec.BooleanValue BIRCH_PATCHES;
     public static final ModConfigSpec.BooleanValue MANGROVE;
+    public static final ModConfigSpec.EnumValue<TreeColors> TREE_COLORS;
     public static final ModConfigSpec.BooleanValue SEASONAL_TEXTURES;
     public static final ModConfigSpec.EnumValue<SnowModels> SNOW_MODELS;
     public static final ModConfigSpec.BooleanValue DH_REFRESH;
@@ -25,6 +26,12 @@ public final class ClientConfig {
     public static final ModConfigSpec.IntValue SNOW_ANIMATION_DISTANCE;
     public static final ModConfigSpec.EnumValue<SnowLook> SNOW_LOOK;
     public static final ModConfigSpec.IntValue REDRAW_SECONDS;
+
+    /**
+     * Tree colors: REPLACE = each tree's own colors and timing, mixed over the original; FILTER = the same, keeping
+     * the original's brightness; OFF = the earlier colors (biome tables).
+     */
+    public enum TreeColors { REPLACE, FILTER, OFF }
 
     /** Snowy leaves: NEW = a thin snow layer on top, VANILLA = snow drawn on their own faces. */
     public enum SnowModels { NEW, VANILLA }
@@ -50,6 +57,11 @@ public final class ClientConfig {
                         "Each update re-colors visible chunks (and Distant Horizons LODs), so higher = smoother but more rebuilds.")
                 .defineInRange("updates_per_step", 7, 1, 48);
         BUILDER.pop().push("leaves");
+        TREE_COLORS = BUILDER.comment("Tree colors through the year. Each tree has its own timing and autumn color (oak brown-gold, dark oak",
+                        "copper, birch yellow); biomes whose own foliage color is an autumn one use it in autumn and are green before.",
+                        "REPLACE: mixed over the original color. FILTER: the same colors, keeping the original's brightness.",
+                        "OFF: the earlier colors (oak and other biome-colored leaves follow the biome tables).")
+                .defineEnum("tree_colors", TreeColors.REPLACE);
         SPRUCE = BUILDER.comment("Seasonal spruce leaf colors.").define("spruce", true);
         BIRCH = BUILDER.comment("Seasonal birch leaf colors.").define("birch", true);
         BIRCH_PATCHES = BUILDER.comment("Autumn birches vary from yellow to orange depending on position.").define("birch_autumn_patches", true);
