@@ -1,0 +1,58 @@
+{
+  "target": [
+    "minecraft:block/cherry_leaves"
+  ],
+  "biomes": "#equinox:seasonal_zones",
+  "slices": [
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_spring",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_green"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "rain_water",
+      "end": "rain_water",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_1"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "insects_awakening",
+      "end": "insects_awakening",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_2"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "spring_equinox",
+      "end": "spring_equinox",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_3"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "fresh_green",
+      "end": "fresh_green",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_4"
+      },
+      "tint": {
+        "all": -1
+      }
+    }
+  ]
+}
