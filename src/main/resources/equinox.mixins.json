@@ -21,7 +21,6 @@
     "BlockStateSnowBreakMixin",
     "SnowyDirtMixin",
     "SpreadingSnowyDirtMixin",
-    "WallSnowShapeMixin",
     "SnowyNeighbourMixin",
     "SnowyDoublePlantMixin",
     "WorldgenClimateMixin",

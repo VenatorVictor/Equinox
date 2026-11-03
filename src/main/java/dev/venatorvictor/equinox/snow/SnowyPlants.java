@@ -50,19 +50,17 @@ import java.util.Map;
  * Snow inside plants and on fences: a "snow" block state (layers) added to the blocks themselves (BlockSnowyMixin),
  * like the snowy crops. No extra blocks and no block entity: the plant stays itself (other mods, drops and block info tooltips see
  * the real plant), and removing the mod just drops the state (the plants stay, the snow goes). Plants (every
- * BushBlock: grass, flowers, ferns, saplings, mushrooms, berry bushes, modded plants) hold 0..7 layers (never a full block), a tall plant
- * in its lower half; fence gates and walls hold 0..1 (not while waterlogged); fences keep theirs by position (SnowMap, 0..7). Not: farmland crops
+ * BushBlock: grass, flowers, ferns, saplings, mushrooms, berry bushes, modded plants) hold 0..6 layers (as much as natural snow gets), a tall plant
+ * in its lower half; fences, fence gates and walls keep theirs by position (SnowMap, 0..6, not while waterlogged). Not: farmland crops
  * (SnowyCrops), water plants.
  * The rest lives in mixins: shape and collision, sound, melting on random ticks, breaking the snow first
  * (SnowStateMixin, BlockStateSnowBreakMixin), grass under snow (SnowyDirtMixin, SpreadingSnowyDirtMixin); the look in SnowyPlantModel.
  * Off while a snow mod that does this itself is installed.
  */
 public final class SnowyPlants {
-    /** Most snow layers inside a plant or fence: 7, so the block always shows on top (vanilla snow layers still go to 8). */
-    public static final int MAX_LAYERS = 7;
+    /** Most snow layers inside a plant, fence, gate or wall: 6, the most natural snow gets (snow layers on their own still go to 8). */
+    public static final int MAX_LAYERS = 6;
     public static final IntegerProperty SNOW = IntegerProperty.create("snow", 0, MAX_LAYERS);
-    /** Fences, gates and walls: one layer for now. */
-    public static final IntegerProperty SNOW_THIN = IntegerProperty.create("snow", 0, 1);
     /** Blocks that never get snow, though they have the state (a data pack can add plants that look wrong). */
     public static final TagKey<Block> NO_SNOW = TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(Equinox.MOD_ID, "no_snow"));
 
@@ -88,8 +86,7 @@ public final class SnowyPlants {
     /** BlockSnowyMixin, while the block is built: the snow state it gets, or null. Only vanilla classes here. */
     public static IntegerProperty propertyFor(Block block, Map<String, Property<?>> properties) {
         if (properties.containsKey(SNOW.getName())) return null;
-        if (block instanceof FenceBlock) return null; // its snow is kept by position (SnowMap)
-        if (block instanceof FenceGateBlock || block instanceof WallBlock) return SNOW_THIN;
+        if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock) return null; // kept by position (SnowMap)
         if (properties.containsKey(BlockStateProperties.WATERLOGGED.getName()) || !(block instanceof BushBlock) || block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock
                 || block instanceof WaterlilyBlock || block instanceof SeagrassBlock || block instanceof TallSeagrassBlock) return null;
         return SNOW;
@@ -107,8 +104,7 @@ public final class SnowyPlants {
 
     /** Snow layers in the block's own snow state (not SnowyBlock). */
     public static int stateLayers(BlockState state) {
-        if (state.hasProperty(SNOW)) return state.getValue(SNOW);
-        return state.hasProperty(SNOW_THIN) ? state.getValue(SNOW_THIN) : 0;
+        return state.hasProperty(SNOW) ? state.getValue(SNOW) : 0;
     }
 
     /** Most layers the block holds (0: none). */
@@ -120,14 +116,13 @@ public final class SnowyPlants {
 
     /** Most layers the block's own snow state holds (0: it has none). */
     public static int stateMaxLayers(BlockState state) {
-        return state.hasProperty(SNOW) ? MAX_LAYERS : state.hasProperty(SNOW_THIN) ? 1 : 0;
+        return state.hasProperty(SNOW) ? MAX_LAYERS : 0;
     }
 
     /** The state with that many layers; a SnowyBlock can't go to 0 this way (setLayers puts its block back). */
     public static BlockState withLayers(BlockState state, int layers) {
         if (state.getBlock() instanceof SnowyBlock) return layers <= 0 ? state : state.setValue(SnowyBlock.LAYERS, Math.min(layers, maxLayers(state)));
-        if (state.hasProperty(SNOW)) return state.setValue(SNOW, Mth.clamp(layers, 0, MAX_LAYERS));
-        return state.hasProperty(SNOW_THIN) ? state.setValue(SNOW_THIN, Mth.clamp(layers, 0, 1)) : state;
+        return state.hasProperty(SNOW) ? state.setValue(SNOW, Mth.clamp(layers, 0, MAX_LAYERS)) : state;
     }
 
     /**
@@ -135,7 +130,7 @@ public final class SnowyPlants {
      * block comes back). New snow on a bare block follows the storage option. False if nothing changed.
      */
     public static boolean setLayers(Level level, BlockPos pos, BlockState state, int layers, int flags) {
-        // Fences: kept by position, changed on the server only (the clients get it from there).
+        // Fences, gates, walls: kept by position, changed on the server only (the clients get it from there).
         if (SnowMap.uses(state)) return level instanceof ServerLevel server && SnowMap.set(server, pos, layers);
         if (state.getBlock() instanceof SnowyBlock) {
             if (layers <= 0) {

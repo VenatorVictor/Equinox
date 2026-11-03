@@ -17,7 +17,10 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.PathNavigationRegion;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.SnowyDirtBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -37,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Snow in blocks that keep it outside their block state: fences (0..7 layers, SnowyPlants.MAX_LAYERS). Each chunk keeps a small map of
+ * Snow in blocks that keep it outside their block state: fences, fence gates and walls (0..6 layers, SnowyPlants.MAX_LAYERS). Each chunk keeps a small map of
  * position -> layers in its own saved data (an attachment), sent to the clients with the chunk and on every change.
  * The fence stays the same block with the same states: no extra states, no block entity, removing the mod just
  * drops the snow. Shapes, collision, sound, breaking and melting read the map by position (SnowStateMixin,
@@ -46,7 +49,7 @@ import java.util.function.Supplier;
 public final class SnowMap {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Equinox.MOD_ID);
 
-    /** A chunk's snow: packed local position -> layers (1..7). Saved as a list of ints (position << 4 | layers). */
+    /** A chunk's snow: packed local position -> layers (1..6). Saved as a list of ints (position << 4 | layers). */
     public static final class Data {
         final Int2ByteOpenHashMap layers = new Int2ByteOpenHashMap();
 
@@ -82,13 +85,14 @@ public final class SnowMap {
 
     /** Blocks whose snow lives here: fences, not while waterlogged. */
     public static boolean holds(BlockState state) {
-        return state.getBlock() instanceof FenceBlock
+        return uses(state)
                 && !(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED));
     }
 
     /** Whether the block keeps its snow here (any state of it, waterlogged or not). */
     public static boolean uses(BlockState state) {
-        return state.getBlock() instanceof FenceBlock;
+        Block block = state.getBlock();
+        return block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock;
     }
 
     /** Layers at pos (0: none). Works from the level, path finding regions, and the client's chunk drawing. */
