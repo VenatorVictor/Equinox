@@ -373,7 +373,10 @@ public final class SeasonalTextures {
             nz /= length;
             if (ny < -0.7F) return null; // bottom faces: no snow until fully snowy
             if (ny < 0.7F) {
-                // A side face: keep its top part. Each lower corner moves up its edge to the cut.
+                // A side face: as tall as the face, with the cut texture (shaders that wave plants move both alike).
+                BakedQuad full = fullHeight(swapped, v, stride, y, nx, ny, nz);
+                if (full != null) return full;
+                // Otherwise keep its top part. Each lower corner moves up its edge to the cut.
                 float top = Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3]));
                 float bottom = Math.min(Math.min(y[0], y[1]), Math.min(y[2], y[3]));
                 if (top - bottom < 1e-4F) return null;
@@ -394,6 +397,37 @@ public final class SeasonalTextures {
             }
             move(v, stride, nx * LIFT, ny * LIFT, nz * LIFT);
             return new BakedQuad(v, swapped.getTintIndex(), swapped.getDirection(), swapped.getSprite(), swapped.isShade(), swapped.hasAmbientOcclusion());
+        }
+
+        /**
+         * The whole face, a hair in front, with the cut snow texture of this step (SnowStepTextures), or null when there
+         * is none or the face doesn't show the whole texture upright (top of the face = top of the texture).
+         */
+        private @Nullable BakedQuad fullHeight(BakedQuad swapped, int[] v, int stride, float[] y, float nx, float ny, float nz) {
+            TextureAtlasSprite from = swapped.getSprite();
+            float top = Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3]));
+            float bottom = Math.min(Math.min(y[0], y[1]), Math.min(y[2], y[3]));
+            float height = from.getV1() - from.getV0();
+            if (top - bottom < 1e-4F || height <= 0) return null;
+            for (int i = 0; i < 4; i++) {
+                float rel = (Float.intBitsToFloat(v[i * stride + 5]) - from.getV0()) / height;
+                float expected = (top - y[i]) / (top - bottom); // 0 at the top, 1 at the bottom
+                if (Math.abs(rel - expected) > 0.02F) return null;
+            }
+            net.minecraft.resources.ResourceLocation id = SnowStepTextures.id(from.contents().name(), step);
+            TextureAtlasSprite to = net.minecraft.client.Minecraft.getInstance().getModelManager()
+                    .getAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS).getSprite(id);
+            if (!to.contents().name().equals(id)) return null;
+            int[] out = v.clone();
+            for (int i = 0; i < 4; i++) {
+                int uv = i * stride + 4;
+                float u = (Float.intBitsToFloat(out[uv]) - from.getU0()) / (from.getU1() - from.getU0());
+                float w = (Float.intBitsToFloat(out[uv + 1]) - from.getV0()) / height;
+                out[uv] = Float.floatToRawIntBits(to.getU0() + u * (to.getU1() - to.getU0()));
+                out[uv + 1] = Float.floatToRawIntBits(to.getV0() + w * (to.getV1() - to.getV0()));
+            }
+            move(out, stride, nx * LIFT, ny * LIFT, nz * LIFT);
+            return new BakedQuad(out, swapped.getTintIndex(), swapped.getDirection(), to, swapped.isShade(), swapped.hasAmbientOcclusion());
         }
 
         private static void move(int[] v, int stride, float dx, float dy, float dz) {

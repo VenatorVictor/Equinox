@@ -54,6 +54,7 @@ public final class EquinoxClient {
         modBus.addListener(RegisterColorHandlersEvent.Block.class, SnowyBlockModel::colors);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, DeadCropTextures::register);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, dev.venatorvictor.equinox.client.textures.LeafFallTextures::register);
+        modBus.addListener(RegisterSpriteSourceTypesEvent.class, dev.venatorvictor.equinox.client.textures.SnowStepTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         RenderBench.init();
         SnowAnimBench.init();
