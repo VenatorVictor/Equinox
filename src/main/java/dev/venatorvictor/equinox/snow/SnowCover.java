@@ -184,10 +184,13 @@ public final class SnowCover {
                 int lx = random.nextInt(16), lz = random.nextInt(16);
                 top.set(chunk.getPos().getMinBlockX() + lx, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz) + 1, chunk.getPos().getMinBlockZ() + lz);
                 Holder<Biome> biome = level.getBiome(top);
-                boolean snowing = level.isRaining() && biome.value().hasPrecipitation() && SnowRules.cold(biome, top);
-                column(level, chunk, biome, top, warmest, true, snowing);
+                boolean cold = SnowRules.cold(biome, top);
+                boolean snowing = level.isRaining() && biome.value().hasPrecipitation() && cold;
+                // Snow and ice only go in warm rain (the world's rain: also where none shows, like a dry desert).
+                boolean melting = level.isRaining() && !cold;
+                column(level, chunk, biome, top, warmest, true, snowing, melting);
                 int yNoLeaves = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz) + 1;
-                if (yNoLeaves != top.getY()) column(level, chunk, biome, top.setY(yNoLeaves), warmest, true, snowing);
+                if (yNoLeaves != top.getY()) column(level, chunk, biome, top.setY(yNoLeaves), warmest, true, snowing, melting);
             }
         }
     }
@@ -218,9 +221,11 @@ public final class SnowCover {
                 && source.getChunkNow(x, z + 1) != null && source.getChunkNow(x, z - 1) != null;
     }
 
-    /** A chunk that loaded: every column at once; snow is only added in biomes where it snowed since stamp. */
+    /** A chunk that loaded: every column at once; snow is only added in biomes where it snowed since stamp, and only melts if it rained since. */
     private static void catchUp(ServerLevel level, LevelChunk chunk, long stamp) {
         Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
+        // Melting only if the world had rain since the chunk was saved (snow and ice only go in warm rain).
+        boolean rainedSince = Snowpack.lastRain() > stamp;
         BlockPos.MutableBlockPos top = new BlockPos.MutableBlockPos();
         int minX = chunk.getPos().getMinBlockX(), minZ = chunk.getPos().getMinBlockZ();
         // Biomes come from vanilla's fuzzy lookup (irregular edges); with a cell size above 1, one lookup per cell.
@@ -236,20 +241,21 @@ public final class SnowCover {
                 Holder<Biome> biome = biomes[index];
                 if (biome == null) biome = biomes[index] = level.getBiome(top);
                 boolean snowedSince = Snowpack.lastSnowfall(biome) > stamp;
-                column(level, chunk, biome, top, warmest, false, snowedSince);
+                column(level, chunk, biome, top, warmest, false, snowedSince, rainedSince);
                 // Also the ground under trees.
-                if (yNoLeaves != y) column(level, chunk, biome, top.setY(yNoLeaves), warmest, false, snowedSince);
+                if (yNoLeaves != y) column(level, chunk, biome, top.setY(yNoLeaves), warmest, false, snowedSince, rainedSince);
             }
         }
     }
 
     /**
      * One column. top: the first non-blocking position above it (air, a plant or a snow layer). gradual: one layer at a
-     * time (near players), else straight to the target (catching up). add: snow may be added (snowing now, or snowed
-     * since the chunk was saved); melting and thinning always happen.
+     * time (near players), else straight to the target (catching up). add: snow may be added and water may freeze
+     * (snowing now, or snowed since the chunk was saved). melt: snow may melt or thin and ice may thaw (warm rain now,
+     * or rain since the chunk was saved); without it snow and ice stay, whatever the temperature.
      */
     private static void column(ServerLevel level, LevelChunk chunk, Holder<Biome> biome, BlockPos.MutableBlockPos top,
-                               Map<ResourceKey<Biome>, Float> warmest, boolean gradual, boolean add) {
+                               Map<ResourceKey<Biome>, Float> warmest, boolean gradual, boolean add, boolean melt) {
         if (level.isOutsideBuildHeight(top) || top.getY() <= level.getMinBuildHeight()) return;
         BlockPos below = top.below();
         BlockState topState = chunk.getBlockState(top);
@@ -258,7 +264,7 @@ public final class SnowCover {
         if (SnowyCrops.holds(topState)) {
             if (SnowRules.lies(biome, top, warmest)) {
                 if (add) SnowyCrops.cover(level, top.immutable(), topState);
-            } else {
+            } else if (melt) {
                 SnowyCrops.melt(level, top.immutable(), topState);
             }
             return;
@@ -276,18 +282,20 @@ public final class SnowCover {
             int target = now;
             if (now < depth && add) target = gradual ? now + 1 : depth;
             // Deeper than the climate gives now: thins toward it (deeper piles are a player's, left alone).
-            else if (now > depth && SnowConfig.SNOW_DEPTH.get() && now <= SnowRules.maxLayers(biome)) target = gradual ? now - 1 : depth;
+            else if (now > depth && melt && SnowConfig.SNOW_DEPTH.get() && now <= SnowRules.maxLayers(biome)) target = gradual ? now - 1 : depth;
             if (target != now && setSnow(level, top, topState, below, belowState, inFence, now, target)) return;
-            if (!freeze(level, below, belowState) && add && SNOW_REAL_MAGIC) SnowModCompat.cover(level, top.immutable(), topState, below, belowState);
+            // Water freezes with the snow, only while it snows.
+            if (add && !freeze(level, below, belowState) && SNOW_REAL_MAGIC) SnowModCompat.cover(level, top.immutable(), topState, below, belowState);
             return;
         }
 
-        // No snow lies here: it thawed, rained, or hasn't snowed since it got cold.
+        // No snow lies here: it thawed, rained, or hasn't snowed since it got cold. Snow and ice stay until warm rain.
         if (now > 0) {
-            setSnow(level, top, topState, below, belowState, inFence, now, gradual ? now - 1 : 0);
+            if (melt) setSnow(level, top, topState, below, belowState, inFence, now, gradual ? now - 1 : 0);
         } else if (here < Climate.SNOW_LINE) {
-            // Water freezes without snowfall.
-            freeze(level, below, belowState);
+            if (add) freeze(level, below, belowState);
+        } else if (!melt) {
+            // dry: snow and ice stay
         } else if (belowState.is(Blocks.ICE)) {
             level.setBlock(below, IceBlock.meltsInto(), Block.UPDATE_ALL);
             level.neighborChanged(below, IceBlock.meltsInto().getBlock(), below);

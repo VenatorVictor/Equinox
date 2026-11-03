@@ -8,6 +8,7 @@ public final class SnowConfig {
 
     public static final ModConfigSpec.BooleanValue SNOW_LOCKS;
     public static final ModConfigSpec.BooleanValue FORCE_SNOWFALL;
+    public static final ModConfigSpec.BooleanValue FORCE_THAW_RAIN;
     public static final ModConfigSpec.IntValue SNOWFALL_TICKS;
     public static final ModConfigSpec.BooleanValue SNOW_COVER;
     public static final ModConfigSpec.DoubleValue COLUMNS_PER_TICK;
@@ -35,13 +36,17 @@ public final class SnowConfig {
         FORCE_SNOWFALL = BUILDER.comment("Where a player is, it's cold enough to snow and no snow lies, a snowfall comes within a day",
                         "(at most one a day; weather is global, so it rains where it's warm).")
                 .define("force_snowfall", true);
-        SNOWFALL_TICKS = BUILDER.comment("How long that snowfall lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
+        FORCE_THAW_RAIN = BUILDER.comment("Where a player is, it's warm and snow or ice is still on the ground, rain comes within a day (snow and",
+                        "ice only melt in warm rain; at most one snowfall or rain a day; weather is global, so it snows where it's cold).")
+                .define("force_thaw_rain", true);
+        SNOWFALL_TICKS = BUILDER.comment("How long that snowfall or rain lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
                 .defineInRange("snowfall_ticks", 6000, 20, 1_000_000);
         BUILDER.pop().comment(
                 "Snow cover: puts snow and ice on the ground following the snowfall rule above, and melts them, including",
-                "a snow mod's snowy plants. Near players it changes bit by bit: snow builds while it snows and melts",
-                "a layer at a time after; snow you break stays gone until the next snowfall. A chunk that loads catches up",
-                "at once (covered only if it snowed there since the chunk was last saved).")
+                "a snow mod's snowy plants. Near players it changes bit by bit: snow builds and water freezes while it snows,",
+                "snow and ice melt a layer at a time only in warm rain (dry warm days leave them); snow you break stays gone",
+                "until the next snowfall. A chunk that loads catches up at once (covered only if it snowed there since the",
+                "chunk was last saved, melted only if it rained since).")
                 .push("snow_cover");
         SNOW_COVER = BUILDER.comment("Turn the snow cover on.").define("enabled", true);
         COLUMNS_PER_TICK = BUILDER.comment("Near players: random columns per chunk each tick that snow builds on (while snowing) or melts on",

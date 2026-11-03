@@ -126,6 +126,8 @@ final class Settings {
         // ---- Snow
         all.add(common(SnowConfig.FORCE_SNOWFALL, "force_snowfall").tab(SNOW, "snowfall")
                 .cost(Cost.NONE));
+        all.add(common(SnowConfig.FORCE_THAW_RAIN, "force_thaw_rain").tab(SNOW, null)
+                .cost(Cost.NONE));
         all.add(common(SnowConfig.SNOWFALL_TICKS, "snowfall_ticks").tab(SNOW, null)
                 .cost(Cost.NONE).scale(0.001).range(0.25, 24, 0.25)
                 .label((h, x) -> u("game_hours", Setting.trim(h), Setting.trim(Math.round(h * 50 / 6) / 10.0))));
