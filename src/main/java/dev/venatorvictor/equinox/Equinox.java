@@ -99,6 +99,10 @@ public final class Equinox {
         CropBlocks.register(modBus);
         dev.venatorvictor.equinox.snow.SnowBlocks.register(modBus);
         NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
+        // Biome data maps (°C year, snow days) can arrive after the tags, on the client too: sort the biomes again then.
+        NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, event -> {
+            if (event.getRegistryKey() == net.minecraft.core.registries.Registries.BIOME) Climate.recategorize();
+        });
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, Crops::onChunkUnload);
 
         if (FMLEnvironment.dist == Dist.CLIENT) EquinoxClient.init(container, modBus);
