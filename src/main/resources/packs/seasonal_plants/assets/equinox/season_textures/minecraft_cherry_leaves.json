@@ -77,9 +77,15 @@
       "start": "rain_water",
       "end": "rain_water",
       "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_1"
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_1"
       },
       "tint": {
+        "all": -1
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
         "all": -1
       }
     },
@@ -87,9 +93,15 @@
       "start": "insects_awakening",
       "end": "insects_awakening",
       "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_2"
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_2"
       },
       "tint": {
+        "all": -1
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
         "all": -1
       }
     },
@@ -97,9 +109,15 @@
       "start": "spring_equinox",
       "end": "spring_equinox",
       "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_3"
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_3"
       },
       "tint": {
+        "all": -1
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
         "all": -1
       }
     },
@@ -107,9 +125,15 @@
       "start": "fresh_green",
       "end": "fresh_green",
       "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_4"
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
       },
       "tint": {
+        "all": -1
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
         "all": -1
       }
     }
