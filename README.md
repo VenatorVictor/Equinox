@@ -2,8 +2,8 @@
 
 The whole world follows the year: **Spring**, **Summer**, **Autumn** and **Winter**.
 
-Equinox is a seasons mod for **NeoForge 1.21.1**. Every biome gets its own climate in °C, snow builds up and
-melts with the weather, crops grow by temperature, and grass, leaves and flowers change through the year.
+Equinox is a seasons mod for **NeoForge 1.21.1**. Every biome has its own temperatures, snow falls in winter
+and melts in the rain, crops grow by temperature, and grass, leaves and flowers change through the year.
 No library mods are needed.
 
 ## Features
@@ -14,14 +14,13 @@ No library mods are needed.
 - Long summer days, short winter days.
 
 ### Climate
-- Each biome has its own year in °C: mild coasts, a cold north, deserts, rainy and dry tropics. Vanilla biomes
-  follow real places' 1991-2020 climate normals.
+- Each biome has its own temperatures: mild coasts, a cold north, deserts, rainy and dry tropics.
 - Neighbouring biomes blend, and winter fades out near jungles and deserts.
 - Other mods can read the air and water temperature through the API.
 
 ### Snow
-- Snow builds up while it's cold and melts in warm rain.
-- It settles in grass, flowers and plants and on fences, and slides in and out instead of popping.
+- Snow appears during snowfall and melts in the rain.
+- It settles in grass, flowers and plants and on fences, with an animation as it appears and melts.
 - Lakes and rivers freeze while it snows.
 
 ### Crops
