@@ -69,6 +69,8 @@
   "equinox.settings.force_snowfall.name": "Nevar quando frio",
   "equinox.settings.heading.snowfall": "Nevasca",
   "equinox.settings.force_snowfall.desc": "Onde há um jogador, está frio o bastante para nevar e não há neve no chão, vem uma nevasca em até um dia (no máximo uma por dia). O tempo é global, então chove onde está quente.",
+  "equinox.settings.force_thaw_rain.name": "Chover quando quente com neve",
+  "equinox.settings.force_thaw_rain.desc": "Onde há um jogador, está quente e ainda há neve ou gelo no chão, vem uma chuva em até um dia (neve e gelo só derretem com chuva quente; no máximo uma nevasca ou chuva por dia). O tempo é global, então neva onde está frio.",
   "equinox.settings.snowfall_ticks.name": "Duração da nevasca",
   "equinox.settings.snowfall_ticks.desc": "Quanto tempo essa nevasca dura, em horas do jogo (1 hora = 50 segundos reais).",
   "equinox.settings.snow_locks.name": "Travas de neve (teste)",

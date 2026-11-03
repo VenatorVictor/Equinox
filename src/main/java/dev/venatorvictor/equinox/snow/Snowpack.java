@@ -3,6 +3,10 @@ package dev.venatorvictor.equinox.snow;
 import dev.venatorvictor.equinox.Config;
 import dev.venatorvictor.equinox.climate.Climate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -28,7 +32,8 @@ import java.util.Map;
  * rains or snows the value follows the temperature; after, it only goes up. So snow lies where it has stayed cold
  * since the last snowfall (SnowRules.lies): a thaw or rain takes it away, the next snowfall brings it back, a colder
  * snowfall covers more (patches, then everywhere, then deeper). Sent to clients for LOD snow and snowy textures.
- * Also starts a snowfall within a day where a player is and it's cold enough to snow but nothing lies. Overworld only.
+ * Also starts a snowfall within a day where a player is and it's cold enough to snow but nothing lies, and rain where
+ * it's warm but snow or ice is still on the ground (forceSnowfall). Overworld only.
  */
 public final class Snowpack {
     /** Values move in steps of this before clients are told (and the snow cover redone). */
@@ -45,7 +50,7 @@ public final class Snowpack {
             if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) tick(level);
         });
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, e -> {
-            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) publish(current = data(level), false);
+            if (e.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) { publish(current = data(level), false); lastRain = current.lastRain; }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof ServerPlayer player) PacketDistributor.sendToPlayer(player, payload());
@@ -65,6 +70,13 @@ public final class Snowpack {
         return time == null ? Long.MIN_VALUE : time;
     }
 
+    /** Game time it last rained anywhere (the world's weather). Server. Long.MIN_VALUE: not since the server started. */
+    public static long lastRain() {
+        return lastRain;
+    }
+
+    private static volatile long lastRain = Long.MIN_VALUE;
+
     /** Changes when any value moves by STEP (clients are told then). */
     public static int version() {
         return version;
@@ -75,6 +87,8 @@ public final class Snowpack {
         Data data = data(level);
         current = data;
         boolean raining = level.isRaining();
+        if (raining) data.lastRain = lastRain = level.getGameTime();
+        else if (lastRain == Long.MIN_VALUE) lastRain = data.lastRain;
         for (Holder<Biome> holder : Climate.seasonalBiomes()) {
             ResourceKey<Biome> key = holder.unwrapKey().orElse(null);
             if (key == null) continue;
@@ -109,11 +123,14 @@ public final class Snowpack {
     }
 
     /**
-     * Cold enough to snow where a player is, but no snow lies: a snowfall comes within a day (at a random time), at
-     * most one a day. Weather is global, so it rains where it's warm.
+     * Cold enough to snow where a player is, but no snow lies: a snowfall comes within a day (at a random time). The
+     * other way round, warm where a player is but snow or ice is still on the ground around them: rain comes within a
+     * day, since snow and ice only go in warm rain. At most one a day. Weather is global, so it rains where it's warm
+     * and snows where it's cold.
      */
     private static void forceSnowfall(ServerLevel level, Data data, boolean raining) {
-        if (!SnowConfig.FORCE_SNOWFALL.get()) return;
+        boolean snowfall = SnowConfig.FORCE_SNOWFALL.get(), thaw = SnowConfig.FORCE_THAW_RAIN.get();
+        if (!snowfall && !thaw) return;
         long time = level.getGameTime();
         if (raining) {
             data.pending = 0;
@@ -124,9 +141,12 @@ public final class Snowpack {
             BlockPos pos = player.blockPosition();
             Holder<Biome> biome = level.getBiome(pos);
             Float since = biome.unwrapKey().map(warmest::get).orElse(null);
-            if (since == null || !biome.value().hasPrecipitation() || !SnowRules.cold(biome, pos)) continue;
+            if (since == null) continue;
+            boolean cold = SnowRules.cold(biome, pos);
             // Nothing lies here: stayed above the snow line since the last snowfall (height counted).
-            if (since + Climate.temperature(biome.value(), pos) - Climate.surfaceTemperature(biome.value()) >= Climate.SNOW_LINE) wanted = true;
+            if (snowfall && cold && biome.value().hasPrecipitation()
+                    && since + Climate.temperature(biome.value(), pos) - Climate.surfaceTemperature(biome.value()) >= Climate.SNOW_LINE) wanted = true;
+            if (thaw && !cold && snowAround(level, pos)) wanted = true;
         }
         if (!wanted) {
             data.pending = 0;
@@ -139,6 +159,22 @@ public final class Snowpack {
         data.nextAllowed = time + DAY;
     }
 
+    /** Snow or ice on the ground at any of 9 columns 8 blocks apart around pos (the real blocks). */
+    private static boolean snowAround(ServerLevel level, BlockPos pos) {
+        for (int dx = -8; dx <= 8; dx += 8) {
+            for (int dz = -8; dz <= 8; dz += 8) {
+                BlockPos column = pos.offset(dx, 0, dz);
+                if (!level.hasChunkAt(column)) continue;
+                BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column);
+                BlockState state = level.getBlockState(top);
+                if (state.getBlock() instanceof SnowLayerBlock || SnowyPlants.layers(state) > 0) return true;
+                BlockState ground = level.getBlockState(top.below());
+                if (ground.is(Blocks.ICE) || ground.is(Blocks.SNOW_BLOCK) || ground.getBlock() instanceof SnowLayerBlock) return true;
+            }
+        }
+        return false;
+    }
+
     private static Data data(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(Data::new, Data::load, null), "equinox_snowpack");
     }
@@ -147,7 +183,7 @@ public final class Snowpack {
         final Map<ResourceKey<Biome>, Float> warmest = new HashMap<>();
         /** Game time it last rained or snowed per biome (the snow cover's catch-up adds snow only after one). */
         final Map<ResourceKey<Biome>, Long> lastFall = new java.util.concurrent.ConcurrentHashMap<>();
-        long pending, nextAllowed;
+        long pending, nextAllowed, lastRain = Long.MIN_VALUE;
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
             Data data = new Data();
@@ -163,6 +199,7 @@ public final class Snowpack {
             }
             data.pending = tag.getLong("pending");
             data.nextAllowed = tag.getLong("next_allowed");
+            if (tag.contains("last_rain")) data.lastRain = tag.getLong("last_rain");
             return data;
         }
 
@@ -176,6 +213,7 @@ public final class Snowpack {
             tag.put("last_fall", falls);
             tag.putLong("pending", pending);
             tag.putLong("next_allowed", nextAllowed);
+            tag.putLong("last_rain", lastRain);
             return tag;
         }
     }
