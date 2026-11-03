@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * The two hooks of the climate (temperature: the biome's, its season, its snow tuning and the climate blending). Vanilla decides rain or snow, freezing, snow layers, rain rendering and the rest
+ * The two hooks of the climate (temperature: the biome's, from its °C climate in seasonal zones, its season, the snow locks and the climate blending). Vanilla decides rain or snow, freezing, snow layers, rain rendering and the rest
  * from these, so all of it follows the season.
  */
 @Mixin(Biome.class)
@@ -25,7 +25,7 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Unique
     private float equinox$shift;
     @Unique
-    private float equinox$snowShift;
+    private float equinox$lockShift;
     @Unique
     private float[] equinox$changes;
     @Unique
@@ -66,8 +66,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     }
 
     @Override
-    public float equinox$snowShift() {
-        return equinox$snowShift;
+    public float equinox$lockShift() {
+        return equinox$lockShift;
     }
 
     @Override
@@ -81,10 +81,10 @@ public abstract class BiomeMixin implements ClimateBiome {
     }
 
     @Override
-    public void equinox$setClimate(Zone zone, float shift, float snowShift, float[] changes) {
+    public void equinox$setClimate(Zone zone, float shift, float lockShift, float[] changes) {
         equinox$zone = zone;
         equinox$shift = shift;
-        equinox$snowShift = snowShift;
+        equinox$lockShift = lockShift;
         equinox$changes = changes;
     }
 
@@ -123,7 +123,7 @@ public abstract class BiomeMixin implements ClimateBiome {
     private void equinox$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (Climate.WORLDGEN.get()) return; // world generation keeps vanilla's climate
         float[] changes = equinox$changes;
-        float seasonal = equinox$snowShift;
+        float seasonal = equinox$lockShift;
         if (changes != null) seasonal += Climate.change(changes, equinox$zone.factor);
         float shift = equinox$shift + ClimateBlend.adjust((Biome) (Object) this, pos, equinox$blendKind, seasonal);
         if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);

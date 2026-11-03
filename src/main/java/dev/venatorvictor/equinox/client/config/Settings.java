@@ -96,9 +96,7 @@ final class Settings {
                 .cost(Cost.NONE).range(-1, 1, 0.05).label((v, x) -> band(v)));
         all.add(server(Config.ZONE_WARM_END, "zone_warm_end").tab(CLIMATE, null)
                 .cost(Cost.NONE).range(-1, 1, 0.05).label((v, x) -> band(v)));
-        all.add(server(Config.CLIMATE_CHANGES, "climate_changes").tab(CLIMATE, "tables")
-                .cost(Cost.NONE));
-        all.add(server(Config.CELSIUS_CHANGES, "celsius_changes").tab(CLIMATE, null)
+        all.add(server(Config.CELSIUS_CHANGES, "celsius_changes").tab(CLIMATE, "tables")
                 .cost(Cost.NONE));
         all.add(server(Config.BIOME_TEMPERATURES, "biome_temperatures").tab(CLIMATE, null)
                 .cost(Cost.NONE));

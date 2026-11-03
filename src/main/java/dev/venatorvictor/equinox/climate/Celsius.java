@@ -13,8 +13,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * The climate in °C, for the temperature API (dev.venatorvictor.equinox.api.Temperatures). Pure math, no block scans:
  * the biome's spring/autumn midnight..noon value (data map equinox:celsius), plus its zone's °C change for the
- * season (config celsius_changes, blended between season middles, lagged like the Minecraft change), plus the season
- * and daily variation times the zone's factor. Underground the season fades out over 20 blocks toward 15.6 °C, then it
+ * season (config celsius_changes, blended between season middles, lagged), plus the season and daily variation
+ * times the zone's factor. In seasonal zones the same climate also sets the Minecraft temperature (snow, ice, rain),
+ * and the daily mean here is read back from it, so the two always agree. Underground the season fades out over 20 blocks toward 15.6 °C, then it
  * warms toward ~32 °C near bedrock (the Nether is below; an almost linear curve); open sky keeps the weather. Cave biomes with
  * a value (lush caves, deep dark, sulfur caves) replace both.
  */
@@ -40,9 +41,10 @@ public final class Celsius {
         if (cave != null && Climate.zoneOf(here.value()) == Zone.CAVE) return Mth.lerp(dayWeight, cave.night(), cave.day());
         int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
         int depth = surface - pos.getY();
-        if (depth <= 0 || level.canSeeSky(pos)) return outside(level, here, dayWeight);
+        if (depth <= 0 || level.canSeeSky(pos)) return outside(level, here, pos, dayWeight);
         if (depth < FADE_DEPTH) {
-            float outside = outside(level, level.getBiome(new BlockPos(pos.getX(), surface, pos.getZ())), dayWeight);
+            BlockPos top = new BlockPos(pos.getX(), surface, pos.getZ());
+            float outside = outside(level, level.getBiome(top), top, dayWeight);
             return Mth.lerp((float) depth / FADE_DEPTH, outside, CAVE);
         }
         int span = surface - FADE_DEPTH - level.getMinBuildHeight();
@@ -70,8 +72,13 @@ public final class Celsius {
         return Math.max(water, zone.sea() ? -2 : 0);
     }
 
-    /** At the surface: the biome's value, its season and the variation. */
-    private static float outside(Level level, Holder<Biome> holder, float dayWeight) {
+    /**
+     * At the surface. Seasonal zones: the daily mean is the biome's Minecraft temperature at pos turned back into °C
+     * (Climate.toCelsius), so it has everything the snow has (season, variation, climate zone, blending, vanilla's
+     * cooling with height); the table gives the day-night swing around it. Others: the biome's value, its season and
+     * the variation.
+     */
+    private static float outside(Level level, Holder<Biome> holder, BlockPos pos, float dayWeight) {
         BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
         float night, day;
         if (entry != null) {
@@ -82,14 +89,19 @@ public final class Celsius {
             night = mean - 4;
             day = mean + 4;
         }
-        float temperature = Mth.lerp(dayWeight, night, day);
         Zone zone = Climate.zoneOf(holder.value());
         float[] changes = Config.celsiusChanges(zone);
-        if (Seasons.get(level) != null && changes != null) {
-            Climate.Phase phase = Climate.phase();
-            temperature += Mth.lerp(dayWeight, change(changes, phase, 0), change(changes, phase, 1))
-                    + (phase.season() + phase.daily()) * zone.factor * PER_UNIT;
+        boolean seasons = Seasons.get(level) != null;
+        Climate.Phase phase = Climate.phase();
+        float atNight = seasons && changes != null ? change(changes, phase, 0) : 0;
+        float atNoon = seasons && changes != null ? change(changes, phase, 1) : 0;
+        if (zone.seasonal()) {
+            float mean = Climate.toCelsius(Climate.temperature(holder.value(), pos));
+            float swing = (day - night + atNoon - atNight) / 2;
+            return mean + Mth.lerp(dayWeight, -swing, swing);
         }
+        float temperature = Mth.lerp(dayWeight, night + atNight, day + atNoon);
+        if (seasons && changes != null) temperature += (phase.season() + phase.daily()) * zone.factor * PER_UNIT;
         return temperature;
     }
 

@@ -66,18 +66,6 @@ public final class Climate {
     // The server's biomes with seasons (Snowpack).
     private static volatile List<Holder<Biome>> seasonal = List.of();
 
-    /** The temperate zone's change now, variation included (the reference for the snowy season and /season). */
-    public static float offset() {
-        return change(Zone.TEMPERATE.changes, Zone.TEMPERATE.factor);
-    }
-
-    /** The temperate zone's change without the day's variation (the snowy season: a warm day doesn't end it). */
-    public static float seasonalOffset() {
-        Phase p = phase;
-        float[] changes = Zone.TEMPERATE.changes;
-        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + p.season * Zone.TEMPERATE.factor;
-    }
-
     /** This season warmer (above 0) or colder than usual, before the zone's factor. */
     public static float seasonVariation() {
         return phase.season;
@@ -203,7 +191,6 @@ public final class Climate {
 
     /** The config changed (climate temperatures). */
     public static void recategorize() {
-        for (Zone zone : Zone.values()) if (zone.seasonal()) zone.changes = Config.climateChanges(zone);
         serverBiomes.forEach(Climate::categorize);
         clientBiomes.forEach(Climate::categorize);
         seasonal = seasonalOf(serverBiomes);
@@ -227,19 +214,30 @@ public final class Climate {
         Zone zone = zoneOf(holder, temperature);
         float[] changes = null;
         if (zone.seasonal()) {
-            changes = zone.changes.clone();
-            // Tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
-            if (zone.thaws) changes[Season.SUMMER.ordinal()] = Math.max(changes[Season.SUMMER.ordinal()], Zone.THAW - temperature);
+            // The °C climate decides: the biome's daily mean (data map, else from its Minecraft temperature) and the
+            // zone's daily mean change at each season middle, turned into Minecraft's scale (fromCelsius).
+            BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
+            float mean = entry != null ? (entry.night() + entry.day()) / 2 : toCelsius(temperature);
+            float[] celsius = Config.celsiusChanges(zone);
+            changes = new float[Season.COUNT];
+            for (int i = 0; i < Season.COUNT; i++) {
+                float change = celsius == null ? 0 : (celsius[i * 2] + celsius[i * 2 + 1]) / 2;
+                // Tundra and polar seas: summer at least THAW, so the snow and the sea ice melt.
+                if (zone.thaws && i == Season.SUMMER.ordinal()) change = Math.max(change, Zone.THAW - mean);
+                changes[i] = change / Celsius.PER_UNIT;
+            }
+            temperature = fromCelsius(mean);
         }
-        BiomeSnow snow = snowDays(holder);
-        float snowShift = snowShift(temperature, changes, snow, zone.factor);
-        ClimateBiome climate = (ClimateBiome) (Object) holder.value();
-        climate.equinox$setClimate(zone, temperature - own, snowShift, changes);
         // Locked (snow_locks): snowy biomes have snow all year, no-snow ones (0 days, or warm without seasons: deserts,
         // jungles, savannas) never; blending leaves both alone (ClimateBlend), only the biomes in between change.
         boolean locks = SnowConfig.SNOW_LOCKS.get();
+        BiomeSnow snow = holder.getData(BiomeSnow.TYPE);
         boolean always = locks && holder.is(ALWAYS_SNOW);
         boolean never = locks && !always && (snow != null ? snow.days() <= 0 : changes == null && temperature >= SNOW_LINE);
+        float lockShift = always ? lockShift(temperature, changes, true, zone.factor)
+                : never ? lockShift(temperature, changes, false, zone.factor) : 0;
+        ClimateBiome climate = (ClimateBiome) (Object) holder.value();
+        climate.equinox$setClimate(zone, temperature - own, lockShift, changes);
         climate.equinox$setSnowLock(always ? ClimateBiome.SNOW_ALWAYS : never ? ClimateBiome.SNOW_NEVER : ClimateBiome.SNOW_FREE);
         climate.equinox$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
                 : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
@@ -252,34 +250,39 @@ public final class Climate {
 
     /** Vanilla snows and freezes below this temperature. */
     public static final float SNOW_LINE = 0.15F;
+    /** The same in °C, on the daily mean: snow falls and water freezes below it. */
+    public static final float SNOW_CELSIUS = 0.5F;
+
+    /** A daily mean in °C on Minecraft's temperature scale: SNOW_CELSIUS is the snow line, Celsius.PER_UNIT °C per unit. */
+    public static float fromCelsius(float celsius) {
+        return SNOW_LINE + (celsius - SNOW_CELSIUS) / Celsius.PER_UNIT;
+    }
+
+    /** Back: a Minecraft temperature as a daily mean in °C. */
+    public static float toCelsius(float temperature) {
+        return SNOW_CELSIUS + (temperature - SNOW_LINE) * Celsius.PER_UNIT;
+    }
 
     /** True on a thread while it generates a chunk (WorldgenClimateMixin): biomes then give vanilla's temperature and rain. */
     public static final ThreadLocal<Boolean> WORLDGEN = ThreadLocal.withInitial(() -> Boolean.FALSE);
-    private static final int SAMPLES = 336;
 
     /**
-     * Moves a seasonal curve up or down so it's below the snow line for the biome's share of snowy days (BiomeSnow),
-     * in an average year at sea level. Never: the coldest day stays above it even in the coldest variation; all year:
-     * the warmest day stays below it. 0 without a value or without seasons.
+     * Snow locks: moves a biome's year below the snow line (always) or above it (never), even in the coldest or
+     * warmest variation. 0 if it's there already.
      */
-    static float snowShift(float temperature, float[] changes, BiomeSnow snow, float factor) {
-        if (snow == null || changes == null) return 0;
-        float[] curve = new float[SAMPLES];
-        for (int i = 0; i < SAMPLES; i++) {
-            double position = (i + 0.5) / SAMPLES * Season.COUNT;
-            int index = (int) position;
-            float blend = (float) (position - index);
-            curve[i] = temperature + changes[index] + (changes[(index + 1) % Season.COUNT] - changes[index]) * blend;
+    static float lockShift(float temperature, float[] changes, boolean always, float factor) {
+        float coldest = temperature, warmest = temperature;
+        if (changes != null) {
+            for (float change : changes) {
+                coldest = Math.min(coldest, temperature + change);
+                warmest = Math.max(warmest, temperature + change);
+            }
         }
-        java.util.Arrays.sort(curve);
         float spread = (Config.seasonVariation() + Config.dailyVariation()) * factor + 0.02F;
-        int cold = Math.round(snow.days() / 365F * SAMPLES);
-        if (cold <= 0) return Math.max(0, SNOW_LINE + spread - curve[0]);
-        if (cold >= SAMPLES) return Math.min(0, SNOW_LINE - spread - curve[SAMPLES - 1]);
-        return SNOW_LINE - (curve[cold - 1] + curve[cold]) / 2;
+        return always ? Math.min(0, SNOW_LINE - spread - warmest) : Math.max(0, SNOW_LINE + spread - coldest);
     }
 
-    /** The temperature now at sea level (no height), season and snow tuning included. */
+    /** The temperature now at sea level (no height), season and snow lock included. */
     public static float surfaceTemperature(Biome biome) {
         return surfaceTemperature(biome, Float.NaN);
     }
@@ -287,7 +290,7 @@ public final class Climate {
     /** The same in a climate zone: cooling (0..1, NaN = unknown = 1) scales the cold part of the season (ClimateBlend). */
     public static float surfaceTemperature(Biome biome, float cooling) {
         ClimateBiome climate = (ClimateBiome) (Object) biome;
-        return biome.getBaseTemperature() + climate.equinox$shift() + zoned(biome, climate.equinox$snowShift() + change(biome), cooling);
+        return biome.getBaseTemperature() + climate.equinox$shift() + zoned(biome, climate.equinox$lockShift() + change(biome), cooling);
     }
 
     /**
