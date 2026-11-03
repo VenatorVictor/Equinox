@@ -61,7 +61,7 @@ public final class ClientConfig {
                         "copper, birch yellow); biomes whose own foliage color is an autumn one use it in autumn and are green before.",
                         "REPLACE: mixed over the original color. FILTER: the same colors, keeping the original's brightness.",
                         "OFF: the earlier colors (oak and other biome-colored leaves follow the biome tables).")
-                .defineEnum("tree_colors", TreeColors.REPLACE);
+                .defineEnum("tree_colors", TreeColors.FILTER);
         SPRUCE = BUILDER.comment("Seasonal spruce leaf colors.").define("spruce", true);
         BIRCH = BUILDER.comment("Seasonal birch leaf colors.").define("birch", true);
         BIRCH_PATCHES = BUILDER.comment("Autumn birches vary from yellow to orange depending on position.").define("birch_autumn_patches", true);
