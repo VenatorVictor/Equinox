@@ -74,6 +74,9 @@ final class Settings {
                 .cost(Cost.NONE).range(0, 60, 1)
                 .label((v, x) -> v == 0 ? u("off_vanilla") : u("latitude", (int) v,
                         String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.375)), String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.875)))));
+        all.add(server(Config.DAY_MINUTES, "day_minutes").tab(SEASONS, null)
+                .cost(Cost.NONE).range(0, 120, 1)
+                .label((v, x) -> v == 0 ? u("world_speed") : v == 20 ? u("minutes_vanilla", (int) v) : u("minutes", (int) v)));
         all.add(server(Config.SEASON_VARIATION, "season_variation").tab(SEASONS, "random_weather")
                 .cost(Cost.NONE).scale(CELSIUS).range(0, 15, 0.5).label((v, x) -> celsius(v)));
         all.add(server(Config.DAILY_VARIATION, "daily_variation").tab(SEASONS, null)
@@ -130,7 +133,7 @@ final class Settings {
                 .cost(Cost.NONE));
         all.add(common(SnowConfig.SNOWFALL_TICKS, "snowfall_ticks").tab(SNOW, null)
                 .cost(Cost.NONE).scale(0.001).range(0.25, 24, 0.25)
-                .label((h, x) -> u("game_hours", Setting.trim(h), Setting.trim(Math.round(h * 50 / 6) / 10.0))));
+                .label((h, x) -> u("game_hours", Setting.trim(h), Setting.trim(Math.round(h * (Config.dayMinutes() > 0 ? Config.dayMinutes() : 20) / 2.4) / 10.0))));
         all.add(common(SnowConfig.SNOW_LOCKS, "snow_locks").tab(SNOW, null)
                 .cost(Cost.NONE));
         all.add(common(SnowConfig.SNOW_COVER, "snow_cover").tab(SNOW, "snow_cover")

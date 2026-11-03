@@ -59,6 +59,7 @@ public final class Equinox {
             if (event.getConfig().getSpec() != Config.SPEC) return;
             Config.refresh();
             ConfigSync.sendToAll();
+            dev.venatorvictor.equinox.daylength.DaySpeed.reapply();
         });
         modBus.addListener(RegisterPayloadHandlersEvent.class, ConfigSync::register);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class, ConfigSync::onLogin);
@@ -70,6 +71,7 @@ public final class Equinox {
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, SeasonClock::onServerStopped);
         NeoForge.EVENT_BUS.addListener(ServerAboutToStartEvent.class, Config::onServerAboutToStart);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.server.ServerStartedEvent.class, dev.venatorvictor.equinox.daylength.DaySpeed::onServerStarted);
         NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Climate::categorize);
         NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, Crops::onTagsUpdated);
         NeoForge.EVENT_BUS.addListener(CropGrowEvent.Pre.class, Crops::onCropGrow);

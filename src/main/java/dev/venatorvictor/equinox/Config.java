@@ -165,10 +165,18 @@ public final class Config {
                     "10.7 at mid winter (60: 17.8 and 8.2) (vanilla 13.6). 0: vanilla days all year. Mobs, beds, daylight sensors follow.")
             .defineInRange("latitude", 40.0, 0.0, 60.0);
 
+    public static final ModConfigSpec.IntValue DAY_MINUTES = BUILDER
+            .comment("Real minutes in one Minecraft day (day and night together). 20 = vanilla; 30 makes days 1.5x longer.",
+                    "The seasonal split between day and night (latitude) stays the same; a season still has days_per_season days,",
+                    "so longer days make the year longer in real time. 0: Equinox leaves the world's day speed alone",
+                    "(for example one set with /neoforge day length).")
+            .defineInRange("day_minutes", 20, 0, 1440);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     // Copies for hot paths and for before the config loads: set when it (re)loads.
     private static volatile int daysPerSeason = 42;
+    private static volatile int dayMinutes = 20;
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
     private static volatile double temperatureLag = 1 / 3.0;
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
@@ -201,6 +209,7 @@ public final class Config {
         idealBonus = val(IDEAL_BONUS).floatValue();
         farmlandHeat = val(FARMLAND_HEAT).floatValue();
         latitude = val(LATITUDE);
+        dayMinutes = val(DAY_MINUTES);
         blendRadius = val(BLEND_RADIUS);
         blendRadiusLarge = val(BLEND_RADIUS_LARGE);
         blendStrength = val(BLEND_STRENGTH).floatValue();
@@ -223,7 +232,7 @@ public final class Config {
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, CELSIUS_CHANGES,
             TEMPERATURE_LAG, SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, SLOW_GROWTH,
-            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE);
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
     private static volatile Map<String, Object> remote = Map.of();
     private static volatile long worldSeed = 1;
@@ -367,6 +376,11 @@ public final class Config {
 
     public static int daysPerSeason() {
         return daysPerSeason;
+    }
+
+    /** Real minutes per Minecraft day (0: Equinox doesn't set the day speed). */
+    public static int dayMinutes() {
+        return dayMinutes;
     }
 
     /** A zone's °C change: midnight and noon at mid spring, summer, autumn, winter (8 values), or null for none. */
