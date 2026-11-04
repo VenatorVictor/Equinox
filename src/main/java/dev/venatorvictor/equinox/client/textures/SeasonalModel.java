@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
@@ -171,8 +172,41 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         return state.getBlock() instanceof SnowLayerBlock || BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace().equals("snowrealmagic");
     }
 
+    /** The see-through layer flowers and fruit go into when the block itself is solid (leaves on Fast graphics). */
+    private static final RenderType FRONT_LAYER = RenderType.cutoutMipped();
+
+    /** Whether the block draws solid only (no see-through layer of its own), so its flowers and fruit need FRONT_LAYER. */
+    private boolean solidOnly(@Nullable BlockState state, RandomSource rand, ModelData data) {
+        if (state == null) return false;
+        ChunkRenderTypeSet own = super.getRenderTypes(state, rand, data);
+        return own.contains(RenderType.solid()) && !own.contains(FRONT_LAYER);
+    }
+
+    private List<BakedQuad> frontOnly(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData data) {
+        SeasonalTextures.Variant variant = data.get(VARIANT);
+        if (variant == null) return List.of();
+        SeasonalTextures.Variant front = Boolean.TRUE.equals(data.get(FRUIT)) && variant.fruit != null ? variant.fruit : variant.over;
+        if (front == null) return List.of();
+        List<BakedQuad> out = new ArrayList<>();
+        for (BakedQuad quad : super.getQuads(state, side, rand, data, RenderType.solid())) {
+            BakedQuad lifted = front.inFront(quad);
+            if (lifted != null) out.add(lifted);
+        }
+        return out;
+    }
+
+    @Override
+    public @NotNull ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
+        ChunkRenderTypeSet own = super.getRenderTypes(state, rand, data);
+        SeasonalTextures.Variant variant = data.get(VARIANT);
+        if (variant == null || (variant.over == null && variant.fruit == null) || !solidOnly(state, rand, data)) return own;
+        return ChunkRenderTypeSet.union(own, ChunkRenderTypeSet.of(FRONT_LAYER));
+    }
+
     @Override
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
+        // Leaves on Fast graphics: the block is drawn solid; its flowers and fruit go alone into the see-through layer.
+        if (renderType == FRONT_LAYER && solidOnly(state, rand, data)) return frontOnly(state, side, rand, data);
         List<BakedQuad> quads = super.getQuads(state, side, rand, data, renderType);
         if (quads.isEmpty()) return quads;
         SeasonalTextures.Variant variant = data.get(VARIANT);
