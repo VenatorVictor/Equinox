@@ -52,6 +52,8 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     private final Map<TextureAtlasSprite, TextureAtlasSprite>[] sprites = new Map[DeadCropTextures.Kind.values().length];
     @SuppressWarnings("unchecked")
     private final Map<BakedQuad, BakedQuad>[] quads = new Map[DeadCropTextures.Kind.values().length];
+    /** Healthy sugar cane's quads without the tint. */
+    private final Map<BakedQuad, BakedQuad> untinted = new ConcurrentHashMap<>();
 
     private CropLookModel(BakedModel original) {
         super(original);
@@ -99,13 +101,16 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
         List<BakedQuad> original = super.getQuads(state, side, rand, data, renderType);
         DeadCropTextures.Kind kind = data.get(KIND);
-        if (kind == null || original.isEmpty()) return original;
+        // Sugar cane is drawn without the grass tint, healthy or not (the tint would cover its looks).
+        boolean keepTint = !(state != null && state.getBlock() instanceof SugarCaneBlock);
+        if (original.isEmpty() || kind == null && keepTint) return original;
         List<BakedQuad> swapped = new ArrayList<>(original.size());
+        if (kind == null) {
+            for (BakedQuad quad : original) swapped.add(untinted.computeIfAbsent(quad, q -> new BakedQuad(q.getVertices(), -1, q.getDirection(), q.getSprite(), q.isShade(), q.hasAmbientOcclusion())));
+            return swapped;
+        }
         Map<BakedQuad, BakedQuad> cache = quads[kind.ordinal()];
         Map<TextureAtlasSprite, TextureAtlasSprite> spriteCache = sprites[kind.ordinal()];
-        // Sugar cane's texture is pale and gets its green from the grass tint, which would cover its looks: untinted.
-        // (One model per block state, so the cache only ever holds one of the two.)
-        boolean keepTint = !(state != null && state.getBlock() instanceof SugarCaneBlock);
         for (BakedQuad quad : original)
             swapped.add(cache.computeIfAbsent(quad, q -> DeadCropModel.retexture(q, DeadCropModel.sprite(spriteCache, q.getSprite(), kind), keepTint)));
         return swapped;
