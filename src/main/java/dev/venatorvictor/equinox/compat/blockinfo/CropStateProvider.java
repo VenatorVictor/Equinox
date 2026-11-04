@@ -39,7 +39,7 @@ final class CropStateProvider implements IBlockComponentProvider {
         if (line != null) tooltip.add(line);
     }
 
-    /** "Dormant: too cold (3/4)": how far past the limit, 4 = at the one where it starts over. */
+    /** "Dormant: too cold (3/4)": how far past the limit, 4 = at the killing one. */
     private static Component stopped(String key, int look, ChatFormatting color) {
         return Component.translatable(key, Math.min(4, Math.abs(look))).withStyle(color);
     }

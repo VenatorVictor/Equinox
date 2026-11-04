@@ -132,7 +132,7 @@ public final class Config {
             .comment("Crops follow the temperature in °C: each has a range (data map equinox:crop_climate; crops only",
                     "in the season tags equinox:<season>_crops or the sereneseasons crop tags get one from their seasons).",
                     "Ideal: grows faster. Cool or warm: slow. Near the limits: stops. Past them (tonight's low, today's",
-                    "high): crops go back to their first stage. Heaters and coolers nearby (crop_heaters, crop_coolers below)",
+                    "high): farmland crops die. Heaters and coolers nearby (crop_heaters, crop_coolers below)",
                     "change the temperature. Unlisted plants, and plants outside the overworld, grow as in vanilla.")
             .define("seasonal_crops", true);
     public static final ModConfigSpec.IntValue SLOW_GROWTH = BUILDER

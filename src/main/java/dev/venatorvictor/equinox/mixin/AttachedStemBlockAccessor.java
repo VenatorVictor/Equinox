@@ -11,7 +11,4 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface AttachedStemBlockAccessor {
     @Accessor("fruit")
     ResourceKey<Block> equinox$fruit();
-
-    @Accessor("stem")
-    ResourceKey<Block> equinox$stem();
 }

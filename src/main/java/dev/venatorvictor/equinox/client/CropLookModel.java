@@ -8,8 +8,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -18,7 +16,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SugarCaneBlock;
@@ -105,7 +102,7 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         Map<BakedQuad, BakedQuad> cache = quads[kind.ordinal()];
         Map<TextureAtlasSprite, TextureAtlasSprite> spriteCache = sprites[kind.ordinal()];
         for (BakedQuad quad : original)
-            swapped.add(cache.computeIfAbsent(quad, q -> retexture(q, sprite(spriteCache, q.getSprite(), kind), true)));
+            swapped.add(cache.computeIfAbsent(quad, q -> DeadCropModel.retexture(q, DeadCropModel.sprite(spriteCache, q.getSprite(), kind), true)));
         return swapped;
     }
 
@@ -156,30 +153,5 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
             SHOWN.clear();
         }
         lastRefresh = Long.MIN_VALUE;
-    }
-
-    /** The kind's sprite for a crop sprite (cached in cache), or the same sprite if there is none. */
-    static TextureAtlasSprite sprite(Map<TextureAtlasSprite, TextureAtlasSprite> cache, TextureAtlasSprite sprite, DeadCropTextures.Kind kind) {
-        return cache.computeIfAbsent(sprite, s -> {
-            TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(InventoryMenu.BLOCK_ATLAS);
-            TextureAtlasSprite dead = atlas.getSprite(kind.sprite(s.contents().name()));
-            return dead.contents().name().equals(MissingTextureAtlasSprite.getLocation()) ? s : dead;
-        });
-    }
-
-    /** Same quad, its UVs moved to the new sprite's place in the atlas; tinted only if keepTint. */
-    static BakedQuad retexture(BakedQuad quad, TextureAtlasSprite to, boolean keepTint) {
-        TextureAtlasSprite from = quad.getSprite();
-        if (to == from) return quad;
-        int[] vertices = quad.getVertices().clone();
-        int stride = vertices.length / 4;
-        for (int i = 0; i < 4; i++) {
-            int uv = i * stride + 4; // block vertex format: position (3), color (1), then UV
-            float u = (Float.intBitsToFloat(vertices[uv]) - from.getU0()) / (from.getU1() - from.getU0());
-            float v = (Float.intBitsToFloat(vertices[uv + 1]) - from.getV0()) / (from.getV1() - from.getV0());
-            vertices[uv] = Float.floatToRawIntBits(to.getU0() + u * (to.getU1() - to.getU0()));
-            vertices[uv + 1] = Float.floatToRawIntBits(to.getV0() + v * (to.getV1() - to.getV0()));
-        }
-        return new BakedQuad(vertices, keepTint ? quad.getTintIndex() : -1, quad.getDirection(), to, quad.isShade(), quad.hasAmbientOcclusion());
     }
 }

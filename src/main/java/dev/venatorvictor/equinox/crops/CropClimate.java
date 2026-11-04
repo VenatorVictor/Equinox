@@ -9,9 +9,9 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 
 /**
- * A crop's temperature range in °C: starts over (first stage) below min (tonight's low) or above max (today's high); on the day's average
+ * A crop's temperature range in °C: dies below min (tonight's low) or above max (today's high); on the day's average
  * it's dormant below grows_from (alive, not growing, like winter wheat under snow), grows slowly up to ideal_min,
- * faster between ideal_min and ideal_max, slowly again up to grows_to, and stops above it (heat; starts over there on dry
+ * faster between ideal_min and ideal_max, slowly again up to grows_to, and stops above it (heat; dies there on dry
  * farmland). From the data map data/<namespace>/data_maps/block/crop_climate.json.
  */
 public record CropClimate(float min, float growsFrom, float idealMin, float idealMax, float growsTo, float max) {

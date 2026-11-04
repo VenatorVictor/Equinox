@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 /**
- * Snow on crops, like snow on grass: farmland crops get a snowy block state (added by
+ * Snow on crops, like snow on grass: farmland crops (and frozen dead crops) get a snowy block state (added by
  * BlockSnowyMixin) that the snowy textures follow. It comes with the snowfall, the same snowfall that lays snow on
  * the ground: the snow cover's columns (SnowCover) and vanilla's own snowfall (SnowyPlants.onSnowfall) put it on the
  * crop at the top of a column instead of failing on it. So a glass roof keeps it off (the snowfall stops on the roof)
@@ -34,8 +34,9 @@ public final class SnowyCrops {
         return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock;
     }
 
-    /** Whether this block takes snow as a crop: a farmland crop. */
+    /** Whether this block takes snow as a crop: a living farmland crop or a frost-killed dead crop. */
     public static boolean holds(BlockState state) {
+        if (state.getBlock() instanceof DeadCropBlock) return state.getValue(DeadCropBlock.CAUSE) == DeadCropBlock.Cause.FROST;
         return is(state.getBlock()) && state.hasProperty(SNOWY);
     }
 
