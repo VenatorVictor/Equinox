@@ -233,5 +233,6 @@
   "equinox.settings.tree_colors.desc": "Cada árvore segue o seu próprio ano: as folhas brotam na primavera, ganham a sua cor de outono (carvalho marrom-dourado, carvalho escuro cobre, bétula amarelo) na época real e secam no inverno.\nBiomas cuja folhagem já tem cor de outono a usam no outono e ficam verdes antes.\nSubstituir: misturada sobre a cor original.\nFiltro: as mesmas cores, mantendo o brilho original.\nDesligado: as cores anteriores.",
   "equinox.settings.choice.replace": "Substituir",
   "equinox.settings.choice.filter": "Filtro",
-  "equinox.settings.choice.off": "Desligado"
+  "equinox.settings.choice.off": "Desligado",
+  "item.equinox.acorn": "Bolota"
 }

@@ -44,6 +44,8 @@ import java.util.List;
 public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
     static final ModelProperty<SeasonalTextures.Variant> VARIANT = new ModelProperty<>();
     static final ModelProperty<SeasonalTextures.Overlay> OVERLAY = new ModelProperty<>();
+    /** Set on bearing leaf blocks that weren't picked this year: their fruit_textures are drawn in front. */
+    static final ModelProperty<Boolean> FRUIT = new ModelProperty<>();
 
     private final SeasonalTextures.Rule[] rules;
 
@@ -73,15 +75,16 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         modelData = super.getModelData(region, pos, state, modelData);
         Pick pick = pick(region, pos, state, false);
         if (pick == null) return modelData;
-        if (pick.overlay == null && modelData == ModelData.EMPTY) return pick.variant.data;
+        if (pick.overlay == null && modelData == ModelData.EMPTY) return pick.fruit ? pick.variant.fruitData : pick.variant.data;
         ModelData.Builder builder = modelData.derive();
         if (pick.variant != null) builder.with(VARIANT, pick.variant);
         if (pick.overlay != null) builder.with(OVERLAY, pick.overlay);
+        if (pick.fruit) builder.with(FRUIT, true);
         return builder.build();
     }
 
-    /** What a position shows: a texture set (null: the original), and snow drawn over it for the steps between. */
-    private record Pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay) {}
+    /** What a position shows: a texture set (null: the original), snow drawn over it for the steps between, and whether its fruit shows. */
+    private record Pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay, boolean fruit) {}
 
     /** The texture set for a position, or null to keep the original. inSnow: drawn inside a snow layer. */
     private @Nullable Pick pick(BlockAndTintGetter region, BlockPos pos, @Nullable BlockState state, boolean inSnow) {
@@ -99,25 +102,27 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             if (!rule.biomes().test(biome)) continue;
             int step = hasSnow ? snowStep(rule, region, level, biome, pos, state, inSnow) : 0;
             SeasonalTextures.Variant normal = hasNormal ? choose(variants, pos) : null;
-            if (step >= 4) return pick(choose(snowVariants, pos), null);
+            boolean fruit = normal != null && normal.fruit != null && state != null
+                    && dev.venatorvictor.equinox.trees.TreeFruit.showsFruit(level, state, pos);
+            if (step >= 4) return pick(choose(snowVariants, pos), null, false);
             if (step > 0) {
                 SeasonalTextures.Variant snow = choose(snowVariants, pos);
-                return pick(normal, snow == null ? null : snow.overlay(step));
+                return pick(normal, snow == null ? null : snow.overlay(step), fruit);
             }
             if (!hasNormal) continue;
-            return pick(normal, null);
+            return pick(normal, null, fruit);
         }
         return null;
     }
 
-    private static @Nullable Pick pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay) {
-        if (variant != null && variant.remap.isEmpty()) variant = null;
-        return variant == null && overlay == null ? null : new Pick(variant, overlay);
+    private static @Nullable Pick pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay, boolean fruit) {
+        if (variant != null && variant.empty()) variant = null;
+        return variant == null && overlay == null ? null : new Pick(variant, overlay, fruit && variant != null);
     }
 
     private static @Nullable SeasonalTextures.Variant choose(SeasonalTextures.Variant[] variants, BlockPos pos) {
         SeasonalTextures.Variant variant = variants.length == 1 ? variants[0] : variants[Math.floorMod(Mth.getSeed(pos), variants.length)];
-        return variant.remap.isEmpty() ? null : variant;
+        return variant.empty() ? null : variant;
     }
 
     /** How snowy the position looks, 0 (not) .. 4 (the snowy texture), per the client's texture_mode. */
@@ -172,12 +177,14 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (quads.isEmpty()) return quads;
         SeasonalTextures.Variant variant = data.get(VARIANT);
         SeasonalTextures.Overlay overlay = data.get(OVERLAY);
+        boolean fruit = Boolean.TRUE.equals(data.get(FRUIT));
         InSnow inSnow = IN_SNOW.get();
         if (variant == null && overlay == null && inSnow != null) {
             Pick pick = pick(inSnow.region(), inSnow.pos(), state, true);
             if (pick != null) {
                 variant = pick.variant;
                 overlay = pick.overlay;
+                fruit = pick.fruit;
             }
         }
         if (variant == null && overlay == null) return quads;
@@ -189,6 +196,15 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             for (BakedQuad quad : quads) {
                 BakedQuad behind = variant.behind(quad);
                 if (behind != null) swapped.add(behind);
+            }
+        }
+        // Flowers and fruit in front: need see-through pixels too.
+        SeasonalTextures.Variant front = variant == null || renderType == RenderType.solid() ? null
+                : fruit && variant.fruit != null ? variant.fruit : variant.over;
+        if (front != null) {
+            for (BakedQuad quad : quads) {
+                BakedQuad lifted = front.inFront(quad);
+                if (lifted != null) swapped.add(lifted);
             }
         }
         if (overlay != null) {

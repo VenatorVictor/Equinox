@@ -35,5 +35,6 @@ public abstract class LevelChunkMixin {
         CropWarmth.onBlockChanged(level, pos, old, state);
         dev.venatorvictor.equinox.snow.SnowMap.onBlockChanged(level, pos, old, state);
         dev.venatorvictor.equinox.crops.PlantedCrops.onBlockChanged(level, pos, old, state);
+        dev.venatorvictor.equinox.trees.TreeFruit.onBlockChanged(level, pos, old, state);
     }
 }

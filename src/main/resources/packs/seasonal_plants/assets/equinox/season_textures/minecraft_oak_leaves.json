@@ -78,6 +78,94 @@
       },
       "under_tint": {
         "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/oak_catkins_bud"
+      },
+      "over_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "grain_rain",
+      "end": "grain_rain",
+      "over_textures": {
+        "all": "equinox:block/trees/oak_catkins_opening"
+      },
+      "over_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "beginning_of_summer",
+      "end": "beginning_of_summer",
+      "over_textures": {
+        "all": "equinox:block/trees/oak_catkins_full"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_fruit_flower"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "lesser_fullness",
+      "end": "lesser_fullness",
+      "over_textures": {
+        "all": "equinox:block/trees/oak_catkins_fading"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_fruit_tiny"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "grain_in_ear",
+      "end": "summer_solstice",
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_acorns_small"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "lesser_heat",
+      "end": "greater_heat",
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_acorns_green"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "beginning_of_autumn",
+      "end": "end_of_heat",
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_acorns_yellowing"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "white_dew",
+      "end": "cold_dew",
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_acorns_ripe"
+      },
+      "fruit_tint": {
+        "all": -1
       }
     }
   ]

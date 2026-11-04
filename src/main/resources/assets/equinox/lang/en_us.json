@@ -352,5 +352,6 @@
   "equinox.settings.tree_colors.desc": "Each tree follows its own year: leaves come out in spring, turn its own autumn color (oak brown-gold, dark oak copper, birch yellow) at the real time, and dry in winter.\nBiomes whose foliage is already an autumn color use it in autumn and are green before.\nReplace: mixed over the original color.\nFilter: the same colors, keeping the original's brightness.\nOff: the earlier colors.",
   "equinox.settings.choice.replace": "Replace",
   "equinox.settings.choice.filter": "Filter",
-  "equinox.settings.choice.off": "Off"
+  "equinox.settings.choice.off": "Off",
+  "item.equinox.acorn": "Acorn"
 }

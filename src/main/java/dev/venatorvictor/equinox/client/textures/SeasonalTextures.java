@@ -56,7 +56,10 @@ import java.util.function.Predicate;
  * draws inside its snow layers (and there always, as the snow is right there; the top half of a two-block plant counts
  * when its bottom half is in the snow); "snow_needs_snow_above": true = snow textures only under a snow layer (leaves
  * with snow lying on them); "under_textures"/"under_tint" in a slice: a second texture set drawn a hair behind the
- * first (twigs behind falling leaves, untinted with -1); "clock": "trees" = the slices follow the trees' clock (the
+ * first (twigs behind falling leaves, untinted with -1); "over_textures"/"over_tint" in a slice: a texture set drawn a
+ * hair in front (flowers on leaves; may stand alone in a slice, the block's own texture under it); "fruit_textures"/
+ * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit);
+ * "clock": "trees" = the slices follow the trees' clock (the
  * lagged one in spring, the calendar from mid summer, ColorClock.treeStep). Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
@@ -152,7 +155,15 @@ public final class SeasonalTextures {
             Variant[] variants = variants(slice.get("textures"), slice.get("tint"), models, sprites, used);
             Variant[] snowVariants = variants(slice.get("snow_textures"), slice.get("snow_tint"), models, sprites, used);
             Variant[] under = variants(slice.get("under_textures"), slice.get("under_tint"), models, sprites, new HashSet<>());
-            if (under.length > 0) for (int i = 0; i < variants.length; i++) variants[i].under = under[i % under.length];
+            Variant[] over = variants(slice.get("over_textures"), slice.get("over_tint"), models, sprites, used);
+            Variant[] fruit = variants(slice.get("fruit_textures"), slice.get("fruit_tint"), models, sprites, used);
+            // Only drawn in front: the block keeps its own texture under it.
+            if (variants.length == 0 && (over.length > 0 || fruit.length > 0)) variants = new Variant[]{new Variant(Map.of())};
+            for (int i = 0; i < variants.length; i++) {
+                if (under.length > 0) variants[i].under = under[i % under.length];
+                if (over.length > 0) variants[i].over = over[i % over.length];
+                if (fruit.length > 0) variants[i].fruit = fruit[i % fruit.length];
+            }
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % ColorTables.STEPS) {
                 byTerm[term] = variants;
@@ -287,9 +298,28 @@ public final class SeasonalTextures {
         // Filled from chunk-meshing threads.
         private final Map<BakedQuad, BakedQuad> quads = new ConcurrentHashMap<>();
 
+        /** The same, for a bearing leaf block (its fruit drawn in front). */
+        final ModelData fruitData;
+
         Variant(Map<TextureAtlasSprite, Swap> remap) {
             this.remap = remap.isEmpty() ? Map.of() : new HashMap<>(remap);
             this.data = ModelData.builder().with(SeasonalModel.VARIANT, this).build();
+            this.fruitData = ModelData.builder().with(SeasonalModel.VARIANT, this).with(SeasonalModel.FRUIT, true).build();
+        }
+
+        /** Drawn a hair in front of this set (over_textures), and instead of it on bearing leaves (fruit_textures), or null. */
+        @Nullable Variant over, fruit;
+        private final Map<BakedQuad, Optional<BakedQuad>> lifted = new ConcurrentHashMap<>();
+
+        /** Changes nothing: no swaps, nothing behind or in front. */
+        boolean empty() {
+            return remap.isEmpty() && under == null && over == null && fruit == null;
+        }
+
+        /** This (front) set's quad for an original, not yet swapped quad, a hair in front of it, or null. */
+        @Nullable BakedQuad inFront(BakedQuad quad) {
+            return lifted.computeIfAbsent(quad, q -> remap.containsKey(q.getSprite())
+                    ? Optional.ofNullable(Overlay.lift(swap(q), Overlay.LIFT)) : Optional.empty()).orElse(null);
         }
 
         private final Overlay[] overlays = new Overlay[3];

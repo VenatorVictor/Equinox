@@ -34,6 +34,9 @@ No library mods are needed.
 - Flowers bud, bloom and go to seed.
 - Trees lose their leaves one by one in autumn and stand on bare twigs in winter; cherries bloom on the twigs in
   spring and flowering azaleas open their flowers in May.
+- Oaks hang catkins in late spring. About a third of oak leaf blocks also get tiny red flowers that grow into
+  acorns over the summer; pick the ripe acorns in mid autumn with a right click (they come back the next year).
+  Planting an acorn grows an oak sapling.
 
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.

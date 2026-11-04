@@ -64,6 +64,7 @@ public final class EquinoxClient {
             dev.venatorvictor.equinox.Config.receive(null); // back to this computer's seasons file
             dev.venatorvictor.equinox.climate.ClimateBlend.clearClient();
             dev.venatorvictor.equinox.snow.SnowMap.clearClient();
+            dev.venatorvictor.equinox.trees.TreeFruit.clearClient();
         });
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
             ColorClock.reset();
