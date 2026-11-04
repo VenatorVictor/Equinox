@@ -13,10 +13,11 @@ import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
  * reads everything from that sun position (sky darkness, mob spawning, beds, undead burning, daylight sensors, sky
  * and sunrise colors, stars, the clock item), on both sides, so all of it follows.
  *
- * How long the sun is up comes from the latitude and the date, as on Earth (longest day at mid summer, equinoxes at
- * mid spring and mid autumn): the hour angle where a real sun sets, through vanilla's sun curve, so an equinox day is
- * vanilla's. Sky mods with the same latitude (north positive here), tilt 23.44, a year of 4 seasons and the year
- * starting 1/8 before the spring equinox (315 degrees after it) draw the sun setting at the same time. Latitude 0: vanilla days all year.
+ * How long the sun is up comes from the latitude and the date, as on Earth (the year starts at the spring equinox:
+ * longest day on the first day of summer, the autumn equinox on the first day of autumn, shortest day on the first
+ * day of winter): the hour angle where a real sun sets, through vanilla's sun curve, so an equinox day is vanilla's.
+ * Sky mods with the same latitude (north positive here), tilt 23.44, a year of 4 seasons and the year starting at
+ * the spring equinox draw the sun setting at the same time. Latitude 0: vanilla days all year.
  */
 public final class DayLength {
     /** Vanilla's sun is up for 2 * SUN_UP of the day (about 13.6 hours): where its curve crosses the horizon. */
@@ -64,7 +65,7 @@ public final class DayLength {
         return half;
     }
 
-    /** Hours of daylight at a latitude and point of the year (0.375 = mid summer, 0.875 = mid winter), for the config screen. */
+    /** Hours of daylight at a latitude and point of the year (0.25 = longest day, 0.75 = shortest), for the config screen. */
     public static double daylightHours(double degrees, double yearProgress) {
         return solveHalfDay(degrees, yearProgress) * 2 * 24;
     }
@@ -76,7 +77,7 @@ public final class DayLength {
     private static double solveHalfDay(double degrees, double year) {
         double latitude = Math.toRadians(degrees);
         if (latitude == 0) return SUN_UP;
-        double declination = TILT * Math.sin(2 * Math.PI * (year - 0.125)); // highest at mid summer (0.375)
+        double declination = TILT * Math.sin(2 * Math.PI * year); // 0 at the spring equinox, highest at the start of summer (0.25)
         double cosHour = Mth.clamp(-Math.tan(latitude) * Math.tan(declination), -1, 1);
         double earthDay = Math.acos(cosHour) / Math.PI; // 0.5 at the equinoxes
         // The sun reaches the horizon at earthDay / 2 of a turn from noon; vanilla's curve turns that into time (the

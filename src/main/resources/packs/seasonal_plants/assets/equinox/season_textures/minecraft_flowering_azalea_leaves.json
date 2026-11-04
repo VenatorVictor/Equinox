@@ -3,57 +3,10 @@
     "minecraft:block/flowering_azalea_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
-  "clock": "trees",
   "slices": [
     {
-      "start": "grain_in_ear",
-      "end": "first_frost",
-      "textures": {
-        "all": "minecraft:block/azalea_leaves"
-      }
-    },
-    {
-      "start": "beginning_of_winter",
-      "end": "beginning_of_winter",
-      "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_1"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
-      },
-      "under_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "light_snow",
-      "end": "light_snow",
-      "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_2"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
-      },
-      "under_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "heavy_snow",
-      "end": "heavy_snow",
-      "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_3"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
-      },
-      "under_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "winter_solstice",
-      "end": "insects_awakening",
+      "start": "early_winter_start",
+      "end": "early_spring_end",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
       },
@@ -62,8 +15,8 @@
       }
     },
     {
-      "start": "spring_equinox",
-      "end": "spring_equinox",
+      "start": "mid_spring_start",
+      "end": "mid_spring_start",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_bud/stage_2"
       },
@@ -75,10 +28,56 @@
       }
     },
     {
-      "start": "fresh_green",
-      "end": "fresh_green",
+      "start": "mid_spring_end",
+      "end": "mid_spring_end",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_half_open/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "early_summer_end",
+      "end": "mid_autumn_start",
+      "textures": {
+        "all": "minecraft:block/azalea_leaves"
+      }
+    },
+    {
+      "start": "mid_autumn_end",
+      "end": "mid_autumn_end",
+      "textures": {
+        "all": "equinox:leaf_fall/azalea/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_autumn_start",
+      "end": "late_autumn_start",
+      "textures": {
+        "all": "equinox:leaf_fall/azalea/stage_2"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
+      },
+      "under_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_autumn_end",
+      "end": "late_autumn_end",
+      "textures": {
+        "all": "equinox:leaf_fall/azalea/stage_3"
       },
       "under_textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"

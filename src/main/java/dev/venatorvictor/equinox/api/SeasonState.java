@@ -1,7 +1,8 @@
 package dev.venatorvictor.equinox.api;
 
 /**
- * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring.
+ * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring,
+ * the spring equinox; the seasons start at the equinoxes and solstices.
  * Each season has three parts, early, mid and late; progress values allow finer steps where needed (colors).
  */
 public record SeasonState(long dayTime, int daysPerSeason) {
@@ -47,8 +48,8 @@ public record SeasonState(long dayTime, int daysPerSeason) {
     }
 
     /**
-     * The state a share of a season earlier (1/3: a third of a season): the temperature, crops and colors run behind
-     * the calendar (Config temperature_lag). A share, not days, so it scales with the season length.
+     * The state a share of a season earlier (1/3: a third of a season), e.g. the sea, which warms and cools later than
+     * the land. A share, not days, so it scales with the season length.
      */
     public SeasonState lagged(double seasons) {
         return seasons == 0 ? this : new SeasonState(dayTime - Math.round(seasons * seasonTicks()), daysPerSeason);

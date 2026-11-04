@@ -5,7 +5,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import dev.venatorvictor.equinox.Equinox;
 import dev.venatorvictor.equinox.client.colors.ColorClock;
-import dev.venatorvictor.equinox.client.colors.ColorTables;
 import dev.venatorvictor.equinox.client.colors.SeasonColors;
 import dev.venatorvictor.equinox.client.dh.DhRefresher;
 import dev.venatorvictor.equinox.client.textures.SeasonalTextures;
@@ -102,7 +101,7 @@ public final class EquinoxClient {
         ChunkRefresher.tick();
 
         boolean changed = ColorClock.tick(level);
-        int step = ColorClock.active ? ColorClock.step * ColorTables.STEPS + ColorClock.treeStep : -1; // both clocks
+        int step = ColorClock.active ? ColorClock.step : -1;
         // Textures change once per color step and can be anywhere (also after joining, when the first chunks
         // were meshed before the season was known); snowy textures follow the daily temperature, so with those
         // every color update redraws everything; colors only need the surface.

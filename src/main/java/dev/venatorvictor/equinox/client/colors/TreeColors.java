@@ -15,7 +15,7 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 /**
  * Trees through the year: each tree has its own timing (real leaf-out, autumn color and leaf fall dates, mapped on
  * our calendar) and its own autumn color. Spring = the tree's original color, summer = a bit greener, autumn = the
- * tree's autumn color, winter = its dry leaves. Deciduous trees run on {@link ColorClock#treeStep}.
+ * tree's autumn color, winter = its dry leaves. All on the calendar (step 0 = the spring equinox).
  * <p>
  * Biomes whose own foliage color is clearly an autumn one (gold, orange, red) use it as their autumn color and are
  * green in spring and summer.
@@ -26,44 +26,44 @@ public final class TreeColors {
 
     private static final int SUMMER_GREEN = 0x3F8A1C;
 
-    /** A tree: its autumn, winter and extra color, 24 steps of {kind, mix}, and whether it follows the tree clock. */
-    public record Tree(int autumn, int winter, int extra, float[][] table, boolean calendar) {}
+    /** A tree: its autumn, winter and extra color, and 24 steps of {kind, mix}. */
+    public record Tree(int autumn, int winter, int extra, float[][] table) {}
 
-    // Leaf-out steps are on the lagged clock (warmth): real date minus the default lag (2 steps).
-    // Steps 7-9 and 21-23 stay flat, where the tree clock hands over between the lagged clock and the calendar.
+    // Moved unchanged from the old calendar (spring centred on the equinox, leaf-out on a clock 2 steps late):
+    // each step shows at the same time of year as before. Retune with the new calendar in mind.
     public static final Tree OAK = new Tree(0xB8862B, 0x7C5A32, 0, new float[][]{
-            {W, .7F}, {W, .7F}, {W, .55F}, {W, .3F}, {O, 0F}, {G, .15F},
-            {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F},
-            {G, .25F}, {G, .25F}, {G, .2F}, {G, .1F}, {A, .4F}, {A, .75F},
-            {H, .85F}, {W, .75F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}}, true);
+            {W, .7F}, {W, .55F}, {W, .3F}, {O, 0F}, {G, .15F}, {G, .25F},
+            {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .2F},
+            {G, .1F}, {A, .4F}, {A, .75F}, {H, .85F}, {W, .75F}, {W, .7F},
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}});
 
     /** Like a beech: copper in late October, keeps its dry leaves in winter. */
     public static final Tree DARK_OAK = new Tree(0xC0642A, 0x8B5A33, 0, new float[][]{
-            {W, .65F}, {W, .65F}, {W, .6F}, {W, .35F}, {O, 0F}, {G, .1F},
+            {W, .65F}, {W, .6F}, {W, .35F}, {O, 0F}, {G, .1F}, {G, .2F},
             {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .15F}, {A, .35F}, {A, .8F},
-            {A, .85F}, {H, .75F}, {W, .65F}, {W, .65F}, {W, .65F}, {W, .65F}}, true);
+            {G, .15F}, {A, .35F}, {A, .8F}, {A, .85F}, {H, .75F}, {W, .65F},
+            {W, .65F}, {W, .65F}, {W, .65F}, {W, .65F}, {W, .65F}, {W, .65F}});
 
     /** One of the first to turn: yellow from late September, gone in October. */
     public static final Tree BIRCH = new Tree(0xF2C230, 0xAD9F5F, 0, new float[][]{
-            {W, .6F}, {W, .55F}, {W, .3F}, {O, 0F}, {G, .1F}, {G, .2F},
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},
-            {G, .2F}, {G, .2F}, {A, .25F}, {A, .6F}, {A, .9F}, {A, .9F},
-            {H, .8F}, {W, .7F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}}, true);
+            {W, .55F}, {W, .3F}, {O, 0F}, {G, .1F}, {G, .2F}, {G, .2F},
+            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {A, .25F},
+            {A, .6F}, {A, .9F}, {A, .9F}, {H, .8F}, {W, .7F}, {W, .6F},
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}});
 
     /** Evergreen: bright new tips in May-June, duller and darker in winter. */
     public static final Tree SPRUCE = new Tree(0, 0x4A6A4A, 0x7FB24A, new float[][]{
-            {W, .3F}, {W, .25F}, {W, .2F}, {W, .1F}, {T, .2F}, {T, .3F},
-            {T, .2F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},
-            {O, 0F}, {O, 0F}, {O, 0F}, {W, .1F}, {W, .15F}, {W, .2F},
-            {W, .25F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}}, false);
+            {W, .25F}, {W, .2F}, {W, .1F}, {T, .2F}, {T, .3F}, {T, .2F},
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},
+            {O, 0F}, {O, 0F}, {W, .1F}, {W, .15F}, {W, .2F}, {W, .25F},
+            {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}});
 
     /** Acacia and jungle leaves in autumn-colored biomes (aspen-like: gold in September, bare in early October). */
     public static final Tree AUTUMN_BIOME = new Tree(0, 0x8F7A55, 0, new float[][]{
-            {W, .6F}, {W, .6F}, {W, .5F}, {W, .25F}, {O, 0F}, {G, .15F},
-            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F},
-            {G, .15F}, {G, .15F}, {A, .6F}, {A, .9F}, {H, .8F}, {W, .7F},
-            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}}, true);
+            {W, .6F}, {W, .5F}, {W, .25F}, {O, 0F}, {G, .15F}, {G, .15F},
+            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {A, .6F},
+            {A, .9F}, {H, .8F}, {W, .7F}, {W, .6F}, {W, .6F}, {W, .6F},
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}});
 
     // ---- The biome's own foliage color, without the season (blended like vanilla's)
 
@@ -133,10 +133,10 @@ public final class TreeColors {
     }
 
     private static int color(Tree tree, int base, int autumn, BlockPos pos, boolean patches) {
-        int step = tree.calendar ? ColorClock.treeStep : ColorClock.step;
+        int step = ColorClock.step;
         int now = at(tree, base, autumn, step, pos, patches);
         if (ClientConfig.SMOOTH.get()) {
-            float p = tree.calendar ? ColorClock.treeProgress : ColorClock.progress;
+            float p = ColorClock.progress;
             int previous = ColorClock.previous(step);
             if (p < 1F && !java.util.Arrays.equals(tree.table[step], tree.table[previous]))
                 now = ColorTables.mix(now, p, at(tree, base, autumn, previous, pos, patches), 1F - p);

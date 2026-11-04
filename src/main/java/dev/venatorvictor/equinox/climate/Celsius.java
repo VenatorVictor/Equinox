@@ -1,6 +1,5 @@
 package dev.venatorvictor.equinox.climate;
 
-import dev.venatorvictor.equinox.Config;
 import dev.venatorvictor.equinox.api.SeasonState;
 import dev.venatorvictor.equinox.api.Seasons;
 import net.minecraft.core.BlockPos;
@@ -13,7 +12,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * The climate in °C, for the temperature API (dev.venatorvictor.equinox.api.Temperatures). Pure math, no block scans:
  * the biome's spring/autumn midnight..noon value (data map equinox:celsius), plus its zone's °C change for the
- * season (config celsius_changes, blended between season middles, lagged), plus the season and daily variation
+ * season (config celsius_changes, blended between season middles), plus the season and daily variation
  * times the zone's factor. In seasonal zones the same climate also sets the Minecraft temperature (snow, ice, rain),
  * and the daily mean here is read back from it, so the two always agree. Underground the season fades out over 20 blocks toward 15.6 °C, then it
  * warms toward ~32 °C near bedrock (the Nether is below; an almost linear curve); open sky keeps the weather. Cave biomes with
@@ -25,8 +24,8 @@ public final class Celsius {
     /** Where the season is gone underground, and the temperature there. */
     private static final int FADE_DEPTH = 20;
     private static final float CAVE = 15.6F, BEDROCK = 32.2F; // 60 °F and 90 °F
-    /** The sea warms and cools later than rivers and lakes: this much more of a season (7 days of 42; 1.5 months against 1). */
-    private static final double SEA_EXTRA_LAG = 1 / 6.0;
+    /** The sea warms and cools later than the land, rivers and lakes: this share of a season (7 days of 42, about two weeks). */
+    private static final double SEA_LAG = 1 / 6.0;
 
     /** 0 at midnight, 1 at noon, smooth in between. */
     public static float dayWeight(Level level) {
@@ -65,7 +64,7 @@ public final class Celsius {
         float[] changes = ((ClimateBiome) (Object) holder.value()).equinox$celsiusChanges();
         if (state != null && changes != null) {
             Climate.Phase phase = zone.sea()
-                    ? Climate.Phase.of(state.lagged(Config.temperatureLag() + SEA_EXTRA_LAG), Climate.phase().season(), 0)
+                    ? Climate.Phase.of(state.lagged(SEA_LAG), Climate.phase().season(), 0)
                     : Climate.phase();
             water += (change(changes, phase, 0) + change(changes, phase, 1)) / 2 + phase.season() * zone.factor * PER_UNIT;
         }

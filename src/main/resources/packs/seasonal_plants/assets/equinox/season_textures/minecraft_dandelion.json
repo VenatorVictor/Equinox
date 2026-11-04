@@ -6,18 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "light_snow",
-      "end": "beginning_of_spring",
-      "textures": {
-        "flower": "equinox:block/plants/minecraft_dandelion_leaves_petals"
-      },
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_dandelion_leaves_petals_snow"
-      }
-    },
-    {
-      "start": "rain_water",
-      "end": "rain_water",
+      "start": "early_spring_start",
+      "end": "early_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_dandelion_bud_green_stem"
@@ -28,8 +18,8 @@
       }
     },
     {
-      "start": "insects_awakening",
-      "end": "insects_awakening",
+      "start": "early_spring_end",
+      "end": "early_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bud_color_petals"
       },
@@ -38,8 +28,8 @@
       }
     },
     {
-      "start": "spring_equinox",
-      "end": "spring_equinox",
+      "start": "mid_spring_start",
+      "end": "mid_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_opening_petals"
       },
@@ -48,20 +38,30 @@
       }
     },
     {
-      "start": "fresh_green",
-      "end": "cold_dew",
+      "start": "mid_spring_end",
+      "end": "mid_autumn_end",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bloom_petals_snow"
       }
     },
     {
-      "start": "first_frost",
-      "end": "beginning_of_winter",
+      "start": "late_autumn_start",
+      "end": "late_autumn_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_seed_petals"
       },
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_seed_petals_snow"
+      }
+    },
+    {
+      "start": "early_winter_start",
+      "end": "late_winter_end",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_dandelion_leaves_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_dandelion_leaves_petals_snow"
       }
     }
   ]

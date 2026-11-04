@@ -66,14 +66,10 @@ final class Settings {
         all.add(server(Config.DAYS_PER_SEASON, "days_per_season").tab(SEASONS, "calendar")
                 .cost(Cost.NONE).range(3, 120, 1)
                 .label((v, x) -> u("season_days", days(v), (int) v * 4)));
-        all.add(server(Config.TEMPERATURE_LAG, "temperature_lag").tab(SEASONS, null)
-                .cost(Cost.NONE)
-                .convert((share, x) -> share * x.daysPerSeason(), (d, x) -> d / x.daysPerSeason())
-                .range(0, 42, 1).max(Values::daysPerSeason).label((d, x) -> off(d, days(d))));
         all.add(server(Config.LATITUDE, "latitude").tab(SEASONS, "day_length")
                 .cost(Cost.NONE).range(0, 60, 1)
                 .label((v, x) -> v == 0 ? u("off_vanilla") : u("latitude", (int) v,
-                        String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.375)), String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.875)))));
+                        String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.25)), String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.75)))));
         all.add(server(Config.DAY_MINUTES, "day_minutes").tab(SEASONS, null)
                 .cost(Cost.NONE).range(0, 120, 1)
                 .label((v, x) -> v == 0 ? u("world_speed") : v == 20 ? u("minutes_vanilla", (int) v) : u("minutes", (int) v)));

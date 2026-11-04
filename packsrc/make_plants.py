@@ -26,11 +26,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-TERMS = ["beginning_of_spring", "rain_water", "insects_awakening", "spring_equinox", "fresh_green", "grain_rain",
-         "beginning_of_summer", "lesser_fullness", "grain_in_ear", "summer_solstice", "lesser_heat", "greater_heat",
-         "beginning_of_autumn", "end_of_heat", "white_dew", "autumnal_equinox", "cold_dew", "first_frost",
-         "beginning_of_winter", "light_snow", "heavy_snow", "winter_solstice", "lesser_cold", "greater_cold"]
-# Term = 1/24 of the year; 2 per season part (0-1 early spring ... 22-23 late winter).
+PARTS, SEASONS = ["early", "mid", "late"], ["spring", "summer", "autumn", "winter"]
+# The 24 year steps, 2 per season part: 0 = early_spring_start (the spring equinox) ... 23 = late_winter_end.
+TERMS = [f"{PARTS[i // 2 % 3]}_{SEASONS[i // 6]}_{'start' if i % 2 == 0 else 'end'}" for i in range(24)]
 BIOMES = "#equinox:seasonal_zones"
 
 SNOW = (240, 250, 252)
@@ -41,29 +39,30 @@ PUFF = [(176, 176, 168), (214, 214, 206), (244, 244, 238)]  # dandelion clock
 
 # (first term, last term) of the bloom, inclusive; may wrap past the end of the year.
 # Models listed together share the window (tall plants: both halves).
-# Real-world bloom seasons of a temperate climate (term 0 starts Feb 4, ~15 days each, term 3 = March equinox):
-# the window is the season a patch of them is in flower, not one flower's life. Made-up and tropical plants keep
-# rough windows.
+# Year steps (see TERMS; ~15 real days each, step 0 = the March equinox). The window is the season a patch of them
+# is in flower, not one flower's life. Moved unchanged from the old calendar, so they show when they did; they were
+# written as real-world bloom seasons but showed about a month late (the color lag): to be retuned. Made-up and
+# tropical plants keep rough windows.
 BLOOM = {
     # vanilla
-    "minecraft:block/dandelion": (3, 16),
-    "minecraft:block/pink_petals_1 2 3 4": (3, 5),
-    "minecraft:block/red_tulip": (3, 6), "minecraft:block/orange_tulip": (3, 6),
-    "minecraft:block/white_tulip": (3, 6), "minecraft:block/pink_tulip": (3, 6),
-    "minecraft:block/lily_of_the_valley": (5, 7),
-    "minecraft:block/lilac_top lilac_bottom": (5, 7),
-    "minecraft:block/azure_bluet": (4, 9),
-    "minecraft:block/allium": (6, 8),
-    "minecraft:block/peony_top peony_bottom": (6, 8),
-    "minecraft:block/poppy": (6, 12),
-    "minecraft:block/oxeye_daisy": (6, 14),
-    "minecraft:block/cornflower": (7, 14),
-    "minecraft:block/rose_bush_top rose_bush_bottom": (7, 14),
-    "minecraft:block/blue_orchid": (7, 12),
-    "minecraft:block/torchflower": (8, 13),
-    "minecraft:block/sunflower_top sunflower_bottom": (10, 15),
+    "minecraft:block/dandelion": (2, 15),
+    "minecraft:block/pink_petals_1 2 3 4": (2, 4),
+    "minecraft:block/red_tulip": (2, 5), "minecraft:block/orange_tulip": (2, 5),
+    "minecraft:block/white_tulip": (2, 5), "minecraft:block/pink_tulip": (2, 5),
+    "minecraft:block/lily_of_the_valley": (4, 6),
+    "minecraft:block/lilac_top lilac_bottom": (4, 6),
+    "minecraft:block/azure_bluet": (3, 8),
+    "minecraft:block/allium": (5, 7),
+    "minecraft:block/peony_top peony_bottom": (5, 7),
+    "minecraft:block/poppy": (5, 11),
+    "minecraft:block/oxeye_daisy": (5, 13),
+    "minecraft:block/cornflower": (6, 13),
+    "minecraft:block/rose_bush_top rose_bush_bottom": (6, 13),
+    "minecraft:block/blue_orchid": (6, 11),
+    "minecraft:block/torchflower": (7, 12),
+    "minecraft:block/sunflower_top sunflower_bottom": (9, 14),
     # Backported plants
-    "minecraft:block/wildflowers_1 2 3 4": (4, 12),
+    "minecraft:block/wildflowers_1 2 3 4": (3, 11),
 }
 
 GRASS = [

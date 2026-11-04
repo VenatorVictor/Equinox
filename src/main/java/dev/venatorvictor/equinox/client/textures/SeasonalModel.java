@@ -93,7 +93,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (!ColorClock.active || level == null || !ClientConfig.SEASONAL_TEXTURES.get()) return null;
         Holder<Biome> biome = null;
         for (SeasonalTextures.Rule rule : rules) {
-            int term = rule.trees() ? ColorClock.treeStep : ColorClock.step;
+            int term = ColorClock.step;
             SeasonalTextures.Variant[] variants = rule.byTerm()[term];
             SeasonalTextures.Variant[] snowVariants = rule.snowByTerm()[term];
             boolean hasNormal = variants != null && variants.length > 0, hasSnow = snowVariants != null && snowVariants.length > 0;

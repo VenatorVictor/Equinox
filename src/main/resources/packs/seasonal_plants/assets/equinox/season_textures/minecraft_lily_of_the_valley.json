@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "lesser_heat",
-      "end": "insects_awakening",
+      "start": "mid_summer_end",
+      "end": "early_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "spring_equinox",
-      "end": "spring_equinox",
+      "start": "mid_spring_start",
+      "end": "mid_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_lily_of_the_valley_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "fresh_green",
-      "end": "fresh_green",
+      "start": "mid_spring_end",
+      "end": "mid_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_lily_of_the_valley_bud_color_stem"
@@ -40,8 +40,8 @@
       }
     },
     {
-      "start": "grain_rain",
-      "end": "grain_rain",
+      "start": "late_spring_start",
+      "end": "late_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_opening_petals"
       },
@@ -50,15 +50,15 @@
       }
     },
     {
-      "start": "beginning_of_summer",
-      "end": "lesser_fullness",
+      "start": "late_spring_end",
+      "end": "early_summer_start",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_bloom_petals_snow"
       }
     },
     {
-      "start": "grain_in_ear",
-      "end": "summer_solstice",
+      "start": "early_summer_end",
+      "end": "mid_summer_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_seed_petals"
       },

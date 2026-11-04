@@ -197,12 +197,12 @@ def main():
             branches(palette, True, mask).save(textures / f"{wood}_branches_{variant}_snowy.png")
             plain.append({"all": f"equinox:block/{wood}_branches_{variant}"})
             snowy.append({"all": f"equinox:block/{wood}_branches_{variant}_snowy"})
-        # Bare from Beginning of Winter (early winter) to Rain Water (end of early spring),
+        # Bare from the end of late autumn to the start of early spring (year steps, step 0 = the spring equinox),
         # in seasonal biomes only (jungles, savannas, deserts... keep their leaves). Snowy only under a snow layer
         # (the leaf blocks snow lies on), the ones below stay bare branches.
         rule = season_file(f"minecraft:block/{wood}_leaves", [{
-            "start": "beginning_of_winter",
-            "end": "rain_water",
+            "start": "late_autumn_end",
+            "end": "early_spring_start",
             "textures": plain,
             "tint": {"all": -1},
             "snow_textures": snowy,

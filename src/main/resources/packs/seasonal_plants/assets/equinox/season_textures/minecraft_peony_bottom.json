@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "greater_heat",
-      "end": "spring_equinox",
+      "start": "late_summer_start",
+      "end": "mid_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "fresh_green",
-      "end": "fresh_green",
+      "start": "mid_spring_end",
+      "end": "mid_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_peony_bottom_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "grain_rain",
-      "end": "grain_rain",
+      "start": "late_spring_start",
+      "end": "late_spring_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bud_color_petals"
       },
@@ -38,8 +38,8 @@
       }
     },
     {
-      "start": "beginning_of_summer",
-      "end": "beginning_of_summer",
+      "start": "late_spring_end",
+      "end": "late_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_opening_petals"
       },
@@ -48,15 +48,15 @@
       }
     },
     {
-      "start": "lesser_fullness",
-      "end": "grain_in_ear",
+      "start": "early_summer_start",
+      "end": "early_summer_end",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bloom_petals_snow"
       }
     },
     {
-      "start": "summer_solstice",
-      "end": "lesser_heat",
+      "start": "mid_summer_start",
+      "end": "mid_summer_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_seed_petals"
       },

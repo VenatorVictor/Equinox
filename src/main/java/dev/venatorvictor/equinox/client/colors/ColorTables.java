@@ -3,8 +3,9 @@ package dev.venatorvictor.equinox.client.colors;
 import net.minecraft.world.level.FoliageColor;
 
 /**
- * Seasonal color tables, indexed by year step (24 a year, 2 per season part: 0 = start of early spring,
- * 23 = end of late winter; the solar terms).
+ * Seasonal color tables, indexed by year step (24 a year, 2 per season part: 0 = start of early spring, the spring
+ * equinox; 23 = end of late winter), on the calendar. Moved unchanged from the old calendar (spring centred on the
+ * equinox, colors 2 steps late): each step shows at the same time of year as before.
  * Grass entries: {grass color, mix, leaf color}; the leaf color is pre-blended with the default foliage
  * color exactly like the seasonal texture format expects. Leaf tables: {color, mix}.
  */
@@ -20,7 +21,6 @@ public final class ColorTables {
     public record Term(int grass, float mix, int leaf) {}
 
     public static final Term[] TEMPERATE = {
-            t(WINTER, .32F, WINTER, .32F),
             t(WINTER, .16F, WINTER, .16F),
             t(0, 0F),
             t(0, 0F),
@@ -43,10 +43,10 @@ public final class ColorTables {
             t(WINTER, .8F, mix(GOLD, .2F, WINTER, .8F), 1F),
             t(WINTER, .8F, WINTER, .8F),
             t(WINTER, .64F, WINTER, .64F),
-            t(WINTER, .48F, WINTER, .48F)};
+            t(WINTER, .48F, WINTER, .48F),
+            t(WINTER, .32F, WINTER, .32F)};
 
     public static final Term[] MONSOONAL = {
-            t(0, 0F),
             t(0, 0F),
             t(0, 0F),
             t(0, 0F),
@@ -69,10 +69,10 @@ public final class ColorTables {
             t(0, 0F),
             t(0, 0F),
             t(0, 0F),
+            t(0, 0F),
             t(0, 0F)};
 
     public static final Term[] COLD = {
-            t(WINTER, .2F, WINTER, .2F),
             t(WINTER, .15F, WINTER, .15F),
             t(0, 0F),
             t(0, 0F),
@@ -95,10 +95,10 @@ public final class ColorTables {
             t(WINTER, .35F, WINTER, .35F),
             t(WINTER, .32F, WINTER, .32F),
             t(WINTER, .3F, WINTER, .3F),
-            t(WINTER, .25F, WINTER, .25F)};
+            t(WINTER, .25F, WINTER, .25F),
+            t(WINTER, .2F, WINTER, .2F)};
 
     public static final Term[] HOT = {
-            t(WINTER, .1F, WINTER, .1F),
             t(0, 0F),
             t(GREEN, .08F),
             t(GREEN, .16F),
@@ -121,7 +121,8 @@ public final class ColorTables {
             t(mix(DRY, .3F, WINTER, .7F), .35F, mix(GOLD, .2F, WINTER, .8F), .35F),
             t(WINTER, .35F, WINTER, .35F),
             t(WINTER, .35F, WINTER, .3F),
-            t(WINTER, .2F, WINTER, .2F)};
+            t(WINTER, .2F, WINTER, .2F),
+            t(WINTER, .1F, WINTER, .1F)};
 
     /** "slightly": temperate colors at a fixed 10 % strength. */
     public static final Term[] SLIGHTLY = withMix(TEMPERATE, .1F);
@@ -129,24 +130,24 @@ public final class ColorTables {
     public static final Term[] STABLE = withMix(TEMPERATE, 0F);
 
     public static final float[][] SPRUCE = scale(new float[][]{
-            {9880142, .02F}, {9880142, .08F}, {9880142, .15F}, {9880142, .18F}, {9880142, .12F}, {9880142, .1F},
-            {6008355, .1F}, {6008355, .06F}, {0, 0F}, {6008355, .1F}, {6008355, .05F}, {0, 0F},
-            {12503350, .05F}, {12503350, .1F}, {12503350, .12F}, {12503350, .15F}, {12503350, .18F}, {12503350, .12F},
-            {2440484, .18F}, {2440484, .2F}, {2440484, .25F}, {2440484, .15F}, {2440484, .08F}, {2440484, .05F}}, 1.2F);
+            {9880142, .08F}, {9880142, .15F}, {9880142, .18F}, {9880142, .12F}, {9880142, .1F}, {6008355, .1F},
+            {6008355, .06F}, {0, 0F}, {6008355, .1F}, {6008355, .05F}, {0, 0F}, {12503350, .05F},
+            {12503350, .1F}, {12503350, .12F}, {12503350, .15F}, {12503350, .18F}, {12503350, .12F}, {2440484, .18F},
+            {2440484, .2F}, {2440484, .25F}, {2440484, .15F}, {2440484, .08F}, {2440484, .05F}, {9880142, .02F}}, 1.2F);
 
     public static final float[][] BIRCH = {
-            {4436548, 0F}, {4436548, .1F}, {4436548, .2F}, {4436548, .25F}, {4436548, .3F}, {4436548, .4F},
-            {13818234, .4F}, {13818234, .5F}, {13818234, .6F}, {13818234, .65F}, {13818234, .55F}, {13818234, .4F},
-            {16491540, .42F}, {16491540, .7F}, {16491540, .9F}, {16491540, .95F},
-            {mix(15887135, .5F, 16491540, .5F), .8F}, {15887135, .9F},
-            {mix(15887135, .7F, 11378271, .3F), .7F}, {mix(15887135, .5F, 11378271, .5F), .4F},
-            {11378271, .8F}, {11378271, .7F}, {11378271, .6F}, {11378271, .3F}};
+            {4436548, .1F}, {4436548, .2F}, {4436548, .25F}, {4436548, .3F},
+            {4436548, .4F}, {13818234, .4F}, {13818234, .5F}, {13818234, .6F},
+            {13818234, .65F}, {13818234, .55F}, {13818234, .4F}, {16491540, .42F},
+            {16491540, .7F}, {16491540, .9F}, {16491540, .95F}, {mix(15887135, .5F, 16491540, .5F), .8F},
+            {15887135, .9F}, {mix(15887135, .7F, 11378271, .3F), .7F}, {mix(15887135, .5F, 11378271, .5F), .4F}, {11378271, .8F},
+            {11378271, .7F}, {11378271, .6F}, {11378271, .3F}, {4436548, 0F}};
 
     public static final float[][] MANGROVE = {
-            {6143626, .02F}, {6143626, .08F}, {6143626, .15F}, {6143626, .2F}, {6143626, .12F}, {6143626, .1F},
-            {2129740, .1F}, {2129740, .06F}, {0, 0F}, {6008355, .1F}, {0, 0F}, {0, 0F},
-            {3618868, .05F}, {3618868, .1F}, {3618868, .02F}, {3618868, .05F}, {3618868, .08F}, {3618868, .12F},
-            {5982483, .18F}, {5982483, .2F}, {5982483, .25F}, {5982483, .15F}, {5982483, .08F}, {5982483, .05F}};
+            {6143626, .08F}, {6143626, .15F}, {6143626, .2F}, {6143626, .12F}, {6143626, .1F}, {2129740, .1F},
+            {2129740, .06F}, {0, 0F}, {6008355, .1F}, {0, 0F}, {0, 0F}, {3618868, .05F},
+            {3618868, .1F}, {3618868, .02F}, {3618868, .05F}, {3618868, .08F}, {3618868, .12F}, {5982483, .18F},
+            {5982483, .2F}, {5982483, .25F}, {5982483, .15F}, {5982483, .08F}, {5982483, .05F}, {6143626, .02F}};
 
     /** Simple color mix: per-channel weighted sum (alpha included). */
     public static int mix(int c1, float a1, int c2, float a2) {

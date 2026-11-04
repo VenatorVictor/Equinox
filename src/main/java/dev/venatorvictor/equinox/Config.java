@@ -55,7 +55,8 @@ public final class Config {
 
     public static final ModConfigSpec.IntValue DAYS_PER_SEASON = BUILDER
             .comment("Days in one season (a year is 4 seasons; 42 days: 168-day year). Each season has an early, mid",
-                    "and late part. The season comes from the day count, so changing this moves the season.")
+                    "and late part. Day 1 is the spring equinox; the seasons start at the equinoxes and solstices, as",
+                    "on Earth. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 42, 3, 1000);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
             .comment("The climate: °C change of each climate zone at the middle of spring, summer, autumn and winter, added",
@@ -65,12 +66,6 @@ public final class Config {
             .defineListAllowEmpty("celsius_changes", DEFAULT_CELSIUS_CHANGES, () -> "temperate=0,0,0,0",
                     value -> value instanceof String s && parseCelsiusChange(s) != null);
 
-    public static final ModConfigSpec.DoubleValue TEMPERATURE_LAG = BUILDER
-            .comment("The temperature, snow, crop seasons and the grass, leaf and texture colors run this share of a season",
-                    "behind the calendar, as in real life the warmest time comes about a month after the longest day",
-                    "(0.333: a third of a season, 14 days of a 42-day season). A share, so it scales with days_per_season.",
-                    "Day length, tropical wet and dry seasons and the season shown stay on the calendar.")
-            .defineInRange("temperature_lag", 1 / 3.0, 0.0, 4.0);
     public static final ModConfigSpec.DoubleValue SEASON_VARIATION = BUILDER
             .comment("Each season is warmer or colder than usual by a random amount up to this, so no two years are the",
                     "same (0.067: about 2 °C). Small changes are more likely than big ones. Blended from one season to",
@@ -81,7 +76,7 @@ public final class Config {
             .comment("Each day is warmer or colder than usual by a random amount up to this, on top of the season's",
                     "(0.133: about 4 °C; in real life days swing more than seasons). Blended from one day's noon to the",
                     "next, so warm and cold spells last a few days. Same shape and climate factor as season_variation;",
-                    "not lagged. Grass and leaf colors don't follow it. 0: off.")
+                    "Grass and leaf colors don't follow it. 0: off.")
             .defineInRange("daily_variation", 0.133, 0.0, 1.0);
     public static final ModConfigSpec.LongValue VARIATION_SEED = BUILDER
             .comment("Seed for the season and daily variation. 0 (default): each world uses its own world seed.",
@@ -169,8 +164,9 @@ public final class Config {
 
     public static final ModConfigSpec.DoubleValue LATITUDE = BUILDER
             .comment("Latitude for the seasonal day length: the sun is up longer in summer and shorter in winter, as at",
-                    "this latitude on Earth (equinox days stay vanilla's). 40: about 16.4 hours of sun at mid summer,",
-                    "10.7 at mid winter (60: 17.8 and 8.2) (vanilla 13.6). 0: vanilla days all year. Mobs, beds, daylight sensors follow.")
+                    "this latitude on Earth (equinox days stay vanilla's). 40: about 16.4 hours of sun on the longest day (the",
+                    "first day of summer), 10.7 on the shortest (the first day of winter) (60: 17.8 and 8.2) (vanilla 13.6).",
+                    "0: vanilla days all year. Mobs, beds, daylight sensors follow.")
             .defineInRange("latitude", 40.0, 0.0, 60.0);
 
     public static final ModConfigSpec.IntValue DAY_MINUTES = BUILDER
@@ -186,7 +182,6 @@ public final class Config {
     private static volatile int daysPerSeason = 42;
     private static volatile int dayMinutes = 20;
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
-    private static volatile double temperatureLag = 1 / 3.0;
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
     private static volatile long variationSeed;
     private static volatile Map<ResourceLocation, Float> biomeTemperatures = toMap(DEFAULT_BIOME_TEMPERATURES);
@@ -205,7 +200,6 @@ public final class Config {
     public static void refresh() {
         daysPerSeason = val(DAYS_PER_SEASON);
         celsiusChanges = toCelsiusMap(val(CELSIUS_CHANGES));
-        temperatureLag = val(TEMPERATURE_LAG);
         seasonVariation = val(SEASON_VARIATION).floatValue();
         dailyVariation = val(DAILY_VARIATION).floatValue();
         variationSeed = val(VARIATION_SEED) != 0 ? val(VARIATION_SEED) : worldSeed;
@@ -240,7 +234,7 @@ public final class Config {
     // ---- Sync: the file is global (config/), so NeoForge doesn't send it; a server sends its values to players.
 
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, CELSIUS_CHANGES,
-            TEMPERATURE_LAG, SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
+            SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
             IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
@@ -434,9 +428,6 @@ public final class Config {
     }
 
     /** Share of a season the temperature and colors run behind the calendar. */
-    public static double temperatureLag() {
-        return temperatureLag;
-    }
 
     /** Up to this much warmer or colder per season. */
     public static float seasonVariation() {

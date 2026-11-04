@@ -61,8 +61,9 @@ public final class TreeFruit {
     /** One kind of tree: its leaves, the share of them that bear, the ripe year steps (first..last), what a pick gives. */
     private record Kind(Block leaves, int percent, int ripeFrom, int ripeTo, Supplier<Item> item, int min, int max) {}
 
-    // Ripe: white dew .. cold dew (our mid autumn), as in season_textures/minecraft_oak_leaves.json.
-    private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 14, 16, ACORN, 1, 3)};
+    // Ripe: end of late summer .. end of early autumn (mid September to late October), as in
+    // season_textures/minecraft_oak_leaves.json.
+    private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3)};
 
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Equinox.MOD_ID);
     /** A chunk's picked leaves: packed local position -> year picked. Saved as pairs of ints. */
@@ -122,7 +123,7 @@ public final class TreeFruit {
         if (kind == null || !bears(kind, pos)) return false;
         SeasonState season = Seasons.get(level);
         if (season == null) return false;
-        int step = Math.min((int) (season.yearProgress() * 24), 23); // the calendar: the trees follow it in autumn
+        int step = Math.min((int) (season.yearProgress() * 24), 23); // year step, 0 = the spring equinox
         if (step < kind.ripeFrom || step > kind.ripeTo) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
         if (((ClimateBiome) (Object) biome.value()).equinox$climate() != ClimateBiome.SEASONAL) return false;

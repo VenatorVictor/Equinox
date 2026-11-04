@@ -20,8 +20,8 @@ import java.util.List;
 
 /** Seasonal grass/foliage/leaf formulas, fed by {@link ColorClock}. */
 public final class SeasonColors {
-    private static final int END_OF_HEAT = 13;
-    private static final int LIGHT_SNOW = 19;
+    /** Birch autumn patches (tree_colors = OFF tables): from the start of early autumn to the start of early winter. */
+    private static final int PATCHES_FROM = 12, PATCHES_TO = 18;
     private static final ColorTables.Term[][] TABLES = new ColorTables.Term[ColorProfile.VALUES.length][];
 
     static {
@@ -96,7 +96,7 @@ public final class SeasonColors {
     private static int leafColor(int base, float[][] table, int step, boolean patches, BlockPos pos) {
         int color = (int) table[step][0];
         float mix = table[step][1];
-        if (patches && step >= END_OF_HEAT && step <= LIGHT_SNOW) color = autumnPatch(pos);
+        if (patches && step >= PATCHES_FROM && step <= PATCHES_TO) color = autumnPatch(pos);
         return ColorTables.mix(color, mix, base, 1F - mix);
     }
 

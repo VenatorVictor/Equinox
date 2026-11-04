@@ -48,7 +48,9 @@ import java.util.function.Predicate;
 /**
  * Reads seasonal texture files (assets/<ns>/season_textures/*.json), so
  * resource packs in that format work here. Each file swaps texture variables of block models per year step
- * (solar terms: 24 a year, 2 per season part), in the biomes it names. Supported: target, biomes, slices with start/end, solar_term, season,
+ * (24 a year, 2 per season part, on the calendar: step 0 = the spring equinox), in the biomes it names. Steps are
+ * named <part>_<season>_<start|end> (early_spring_start .. late_winter_end); the format's own 24 names are read
+ * by position (its first name = early_spring_start). Supported: target, biomes, slices with start/end, solar_term, season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants
@@ -58,9 +60,8 @@ import java.util.function.Predicate;
  * with snow lying on them); "under_textures"/"under_tint" in a slice: a second texture set drawn a hair behind the
  * first (twigs behind falling leaves, untinted with -1); "over_textures"/"over_tint" in a slice: a texture set drawn a
  * hair in front (flowers on leaves; may stand alone in a slice, the block's own texture under it); "fruit_textures"/
- * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit);
- * "clock": "trees" = the slices follow the trees' clock (the
- * lagged one in spring, the calendar from mid summer, ColorClock.treeStep). Not supported: climate, transition_textures.
+ * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit).
+ * Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
     private static final String DIRECTORY = "season_textures";
@@ -175,8 +176,7 @@ public final class SeasonalTextures {
         SnowMode snowMode = GsonHelper.getAsBoolean(json, "snow_only_in_snow_layer", false) ? SnowMode.SNOW_LAYER
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
-        boolean trees = GsonHelper.getAsString(json, "clock", "").equals("trees");
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, trees);
+        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode);
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -280,9 +280,9 @@ public final class SeasonalTextures {
 
     /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean trees, boolean hasSnow) {
-        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode, boolean trees) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, trees, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
+                SnowMode snowMode, boolean hasSnow) {
+        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode) {
+            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
         }
     }
 

@@ -20,8 +20,9 @@ import java.util.List;
  * The seasonal climate. Each biome has a climate zone (tags equinox:climate/<zone>, Zone): seasonal zones change
  * the biome's temperature by the zone's value at the middle of each season, blended in between, so the snow line moves
  * a little every tick instead of jumping. On top, each season and each day get a random variation (warmer or colder
- * than usual, times the zone's factor), the same for a world on both sides. Both run some days behind the calendar (temperature lag); the tropical wet and
- * dry seasons don't. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
+ * than usual, times the zone's factor), the same for a world on both sides. All on the calendar: spring starts at the
+ * equinox, so the warmest time (mid summer) comes about six weeks after the longest day, as the seasons already sit
+ * behind the sun. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
  * biome another temperature for the climate only (grass colors read the biome's own value), for biome mods that change
  * temperatures to tint grass (beach 2.0, old growth pine taiga 2.0...).
  */
@@ -39,11 +40,11 @@ public final class Climate {
             Zone.ALPINE, Zone.HOT_DESERT, Zone.COLD_DESERT, Zone.RAINFOREST, Zone.MONSOON, Zone.SAVANNA,
             Zone.WARM_OCEAN, Zone.LUKEWARM_OCEAN, Zone.OCEAN, Zone.COLD_OCEAN};
 
-    /** Where the (lagged) year is between two season middles, plus the season's and the day's variation. */
+    /** Where the year is between two season middles, plus the season's and the day's variation. */
     record Phase(int from, int to, float blend, float season, float daily) {
-        /** Between two season middles of a lagged state (0 = mid spring, wrapping winter to spring). */
-        static Phase of(SeasonState lagged, float season, float daily) {
-            double position = lagged.yearProgress() * Season.COUNT - 0.5;
+        /** Between two season middles (0 = mid spring, wrapping winter to spring). */
+        static Phase of(SeasonState state, float season, float daily) {
+            double position = state.yearProgress() * Season.COUNT - 0.5;
             int index = (int) Math.floor(position);
             return new Phase(Math.floorMod(index, Season.COUNT), Math.floorMod(index + 1, Season.COUNT),
                     (float) (position - index), season, daily);
@@ -118,8 +119,7 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        SeasonState lagged = state.lagged(Config.temperatureLag());
-        phase = Phase.of(lagged, variationAt(lagged), dailyVariationAt(state));
+        phase = Phase.of(state, variationAt(state), dailyVariationAt(state));
         Season season = state.season();
         summer = season == Season.SUMMER;
         winter = season == Season.WINTER;
@@ -144,7 +144,7 @@ public final class Climate {
 
     /**
      * Each day's variation peaks at noon and blends into the next day's (smoothstep), so warm and cold spells last a
-     * few days like a real front, with no jump at midnight. On the calendar (no lag). Same seed, other salt.
+     * few days like a real front, with no jump at midnight. Same seed, other salt.
      */
     static float dailyVariationAt(SeasonState state) {
         float amount = Config.dailyVariation();
