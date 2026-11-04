@@ -65,7 +65,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     private static final ModelProperty<Integer> SNOW = new ModelProperty<>();
     private static final ChunkRenderTypeSet CUTOUT = ChunkRenderTypeSet.of(RenderType.cutout());
     private static final ResourceLocation CAP = ResourceLocation.fromNamespaceAndPath("equinox", "block/snow_cap");
-    private static final ResourceLocation CAP_HALF = ResourceLocation.fromNamespaceAndPath("equinox", "block/snow_cap_half");
     private static final ResourceLocation SNOW_TOP = ResourceLocation.withDefaultNamespace("block/snow");
     /** Distance in front of the face (blocks). */
     private static final float LIFT = 0.0015F;
@@ -75,7 +74,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     private final Kind kind;
     /** Overlay quads per (base quad, step), made once. */
     private final Map<BakedQuad, Optional<BakedQuad>[]> made = new ConcurrentHashMap<>();
-    private static TextureAtlasSprite cap, capHalf, snowTop;
+    private static TextureAtlasSprite cap, snowTop;
 
     private SnowOverlayModel(BakedModel own, Kind kind) {
         super(own);
@@ -91,7 +90,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
 
     /** Wraps those blocks' models (outermost: after the seasonal textures and the fence snow). */
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
-        cap = capHalf = snowTop = null;
+        cap = snowTop = null;
         for (Block block : BuiltInRegistries.BLOCK) {
             Kind kind = kind(block);
             if (kind == null) continue;
@@ -136,7 +135,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         if (renderType != null && renderType != RenderType.cutout()) return quads;
         if (cap == null) {
             cap = sprite(CAP);
-            capHalf = sprite(CAP_HALF);
             snowTop = sprite(SNOW_TOP);
         }
         // The snow goes over the block's faces of every render type it has.
@@ -188,7 +186,9 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         // not a bottom slab's top halfway up the block).
         if (kind == Kind.HALF && Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3])) < 0.999F) return null;
         if (top && kind == Kind.GRASS) return null; // under the snow layer anyway
-        TextureAtlasSprite to = top ? snowTop : kind == Kind.HALF ? capHalf : cap;
+        // One cap for every side face: only faces reaching the top of the block get snow, so the cap sits at the
+        // top of the texture (the half cap, with a second cap halfway down, drew a snow band across full-height faces).
+        TextureAtlasSprite to = top ? snowTop : cap;
         retexture(v, stride, quad.getSprite(), to);
         if (!top && step < 4) {
             // Keep the face's top part: each lower corner moves up its edge to the cut.
