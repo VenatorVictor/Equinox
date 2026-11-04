@@ -39,30 +39,30 @@ PUFF = [(176, 176, 168), (214, 214, 206), (244, 244, 238)]  # dandelion clock
 
 # (first term, last term) of the bloom, inclusive; may wrap past the end of the year.
 # Models listed together share the window (tall plants: both halves).
-# Year steps (see TERMS; ~15 real days each, step 0 = the March equinox). The window is the season a patch of them
-# is in flower, not one flower's life. Moved unchanged from the old calendar, so they show when they did; they were
-# written as real-world bloom seasons but showed about a month late (the color lag): to be retuned. Made-up and
-# tropical plants keep rough windows.
+# Year steps (see TERMS; ~15 real days each, step 0 = the March equinox, step c starts about 20 Mar + c * 15 days).
+# The window is when a patch of them is in flower in a temperate climate, not one flower's life. Made-up and
+# tropical plants (blue orchid, torchflower, freesia, amaryllis, desert lily, bird of paradise, bottlebrush,
+# white orchid, begonia) keep rough windows.
 BLOOM = {
     # vanilla
-    "minecraft:block/dandelion": (2, 15),
-    "minecraft:block/pink_petals_1 2 3 4": (2, 4),
-    "minecraft:block/red_tulip": (2, 5), "minecraft:block/orange_tulip": (2, 5),
-    "minecraft:block/white_tulip": (2, 5), "minecraft:block/pink_tulip": (2, 5),
-    "minecraft:block/lily_of_the_valley": (4, 6),
-    "minecraft:block/lilac_top lilac_bottom": (4, 6),
-    "minecraft:block/azure_bluet": (3, 8),
-    "minecraft:block/allium": (5, 7),
-    "minecraft:block/peony_top peony_bottom": (5, 7),
-    "minecraft:block/poppy": (5, 11),
-    "minecraft:block/oxeye_daisy": (5, 13),
-    "minecraft:block/cornflower": (6, 13),
-    "minecraft:block/rose_bush_top rose_bush_bottom": (6, 13),
+    "minecraft:block/dandelion": (1, 12),
+    "minecraft:block/pink_petals_1 2 3 4": (1, 3),
+    "minecraft:block/red_tulip": (1, 3), "minecraft:block/orange_tulip": (1, 3),
+    "minecraft:block/white_tulip": (1, 3), "minecraft:block/pink_tulip": (1, 3),
+    "minecraft:block/lily_of_the_valley": (2, 4),
+    "minecraft:block/lilac_top lilac_bottom": (2, 4),
+    "minecraft:block/azure_bluet": (1, 6),
+    "minecraft:block/allium": (3, 5),
+    "minecraft:block/peony_top peony_bottom": (3, 5),
+    "minecraft:block/poppy": (4, 8),
+    "minecraft:block/oxeye_daisy": (3, 8),
+    "minecraft:block/cornflower": (4, 9),
+    "minecraft:block/rose_bush_top rose_bush_bottom": (5, 8),
     "minecraft:block/blue_orchid": (6, 11),
     "minecraft:block/torchflower": (7, 12),
-    "minecraft:block/sunflower_top sunflower_bottom": (9, 14),
+    "minecraft:block/sunflower_top sunflower_bottom": (7, 11),
     # Backported plants
-    "minecraft:block/wildflowers_1 2 3 4": (3, 11),
+    "minecraft:block/wildflowers_1 2 3 4": (2, 8),
 }
 
 GRASS = [

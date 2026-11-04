@@ -9,18 +9,6 @@
       "start": "early_spring_start",
       "end": "early_spring_start",
       "textures": {
-        "flower": "equinox:block/plants/minecraft_pink_tulip_bud_green_petals",
-        "cross": "equinox:block/plants/minecraft_pink_tulip_bud_green_stem"
-      },
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_pink_tulip_bud_green_petals_snow",
-        "cross": "equinox:block/plants/minecraft_pink_tulip_bud_green_stem"
-      }
-    },
-    {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
-      "textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_pink_tulip_bud_color_stem"
       },
@@ -30,8 +18,8 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "early_spring_end",
+      "end": "early_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_opening_petals",
         "cross": "equinox:block/plants/minecraft_pink_tulip_opening_stem"
@@ -42,15 +30,15 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "late_spring_end",
+      "start": "mid_spring_start",
+      "end": "mid_spring_end",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_bloom_petals_snow"
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_end",
+      "start": "late_spring_start",
+      "end": "late_spring_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_seed_petals",
         "cross": "equinox:block/plants/minecraft_pink_tulip_seed_stem"
@@ -61,13 +49,25 @@
       }
     },
     {
-      "start": "mid_summer_start",
-      "end": "late_winter_end",
+      "start": "early_summer_start",
+      "end": "late_winter_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_leaves_petals"
       },
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_pink_tulip_leaves_petals_snow"
+      }
+    },
+    {
+      "start": "late_winter_end",
+      "end": "late_winter_end",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_pink_tulip_bud_green_petals",
+        "cross": "equinox:block/plants/minecraft_pink_tulip_bud_green_stem"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_pink_tulip_bud_green_petals_snow",
+        "cross": "equinox:block/plants/minecraft_pink_tulip_bud_green_stem"
       }
     }
   ]

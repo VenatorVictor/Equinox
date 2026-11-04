@@ -6,8 +6,45 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "late_summer_end",
+      "start": "early_spring_start",
       "end": "early_spring_start",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_bud_color_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_bud_color_petals_snow"
+      }
+    },
+    {
+      "start": "early_spring_end",
+      "end": "early_spring_end",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_opening_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_opening_petals_snow"
+      }
+    },
+    {
+      "start": "mid_spring_start",
+      "end": "early_summer_start",
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_bloom_petals_snow"
+      }
+    },
+    {
+      "start": "early_summer_end",
+      "end": "mid_summer_start",
+      "textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_seed_petals"
+      },
+      "snow_textures": {
+        "flower": "equinox:block/plants/minecraft_azure_bluet_seed_petals_snow"
+      }
+    },
+    {
+      "start": "mid_summer_end",
+      "end": "late_winter_start",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_leaves_petals",
         "cross": "equinox:block/plants/minecraft_azure_bluet_leaves_stem"
@@ -18,50 +55,13 @@
       }
     },
     {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
+      "start": "late_winter_end",
+      "end": "late_winter_end",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_bud_green_petals"
       },
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_bud_green_petals_snow"
-      }
-    },
-    {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
-      "textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_bud_color_petals"
-      },
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_bud_color_petals_snow"
-      }
-    },
-    {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
-      "textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_opening_petals"
-      },
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_opening_petals_snow"
-      }
-    },
-    {
-      "start": "late_spring_start",
-      "end": "mid_summer_start",
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_bloom_petals_snow"
-      }
-    },
-    {
-      "start": "mid_summer_end",
-      "end": "late_summer_start",
-      "textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_seed_petals"
-      },
-      "snow_textures": {
-        "flower": "equinox:block/plants/minecraft_azure_bluet_seed_petals_snow"
       }
     }
   ]

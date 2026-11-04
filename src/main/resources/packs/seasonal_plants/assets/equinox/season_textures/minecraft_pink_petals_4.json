@@ -9,19 +9,6 @@
       "start": "early_spring_start",
       "end": "early_spring_start",
       "textures": {
-        "flowerbed": "equinox:block/plants/minecraft_pink_petals_bud_green"
-      },
-      "snow_textures": {
-        "flowerbed": "equinox:block/plants/minecraft_pink_petals_bud_green_snow"
-      },
-      "snow_tint": {
-        "flowerbed": -1
-      }
-    },
-    {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
-      "textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_bud_color"
       },
       "snow_textures": {
@@ -32,8 +19,8 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "early_spring_end",
+      "end": "early_spring_end",
       "textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_opening"
       },
@@ -45,8 +32,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "late_spring_start",
+      "start": "mid_spring_start",
+      "end": "mid_spring_end",
       "snow_textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_bloom_snow"
       },
@@ -55,8 +42,8 @@
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "early_summer_start",
+      "start": "late_spring_start",
+      "end": "late_spring_end",
       "textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_seed"
       },
@@ -68,13 +55,26 @@
       }
     },
     {
-      "start": "early_summer_end",
-      "end": "late_winter_end",
+      "start": "early_summer_start",
+      "end": "late_winter_start",
       "textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_leaves"
       },
       "snow_textures": {
         "flowerbed": "equinox:block/plants/minecraft_pink_petals_leaves_snow"
+      },
+      "snow_tint": {
+        "flowerbed": -1
+      }
+    },
+    {
+      "start": "late_winter_end",
+      "end": "late_winter_end",
+      "textures": {
+        "flowerbed": "equinox:block/plants/minecraft_pink_petals_bud_green"
+      },
+      "snow_textures": {
+        "flowerbed": "equinox:block/plants/minecraft_pink_petals_bud_green_snow"
       },
       "snow_tint": {
         "flowerbed": -1
