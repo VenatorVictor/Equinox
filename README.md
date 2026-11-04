@@ -40,6 +40,10 @@ No library mods are needed.
 - Birches keep small dark catkins on their bare twigs all winter; they open yellow at leaf-out. About a third of
   birch leaf blocks also hang seed catkins, green all summer and brown in autumn: pick them for birch seeds, which
   grow a birch sapling.
+- Spruces stay green: red pollen cones open at the end of late spring, and about a third of spruce leaf blocks grow seed cones,
+  red in spring, green over the summer and brown in early autumn: pick the ripe cones for spruce cones, which grow a
+  spruce sapling. Old cones hang on through the winter.
+- Snow lies on leaves too, in front of whatever they show (leaves, catkins, cones), wherever a snow layer covers them.
 
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.

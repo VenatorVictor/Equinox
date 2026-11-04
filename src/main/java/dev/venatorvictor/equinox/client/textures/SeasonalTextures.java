@@ -60,7 +60,9 @@ import java.util.function.Predicate;
  * with snow lying on them); "under_textures"/"under_tint" in a slice: a second texture set drawn a hair behind the
  * first (twigs behind falling leaves, untinted with -1); "over_textures"/"over_tint" in a slice: a texture set drawn a
  * hair in front (flowers on leaves; may stand alone in a slice, the block's own texture under it); "fruit_textures"/
- * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit).
+ * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit);
+ * "snow_over_textures"/"snow_over_tint" (and "snow_fruit_textures" for bearing leaves): instead of snow_textures, snow
+ * drawn in front of the slice's own textures, which keep their look and tint (leaves that keep their leaves).
  * Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
@@ -169,6 +171,22 @@ public final class SeasonalTextures {
             for (int i = 0; i < snowVariants.length; i++) {
                 if (over.length > 0) snowVariants[i].over = over[i % over.length];
                 if (fruit.length > 0) snowVariants[i].fruit = fruit[i % fruit.length];
+            }
+            // Snow drawn in front of leaves that keep their own look (and season color) under it.
+            Variant[] snowOver = variants(slice.get("snow_over_textures"), slice.get("snow_over_tint"), models, sprites, used);
+            Variant[] snowFruit = variants(slice.get("snow_fruit_textures"), slice.get("snow_fruit_tint"), models, sprites, used);
+            if (snowVariants.length == 0 && snowOver.length > 0) {
+                Variant[] base = variants.length > 0 ? variants : new Variant[]{new Variant(Map.of())};
+                snowVariants = new Variant[base.length];
+                for (int i = 0; i < base.length; i++) {
+                    Variant snow = new Variant(base[i].remap);
+                    snow.under = base[i].under;
+                    snow.over = snowOver[i % snowOver.length];
+                    // Only one set is drawn in front: without snow_fruit_textures bearing leaves show the snow too.
+                    snow.fruit = snowFruit.length > 0 ? snowFruit[i % snowFruit.length] : null;
+                    snow.front = true;
+                    snowVariants[i] = snow;
+                }
             }
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % ColorTables.STEPS) {
@@ -319,6 +337,8 @@ public final class SeasonalTextures {
 
         /** Drawn a hair in front of this set (over_textures), and instead of it on bearing leaves (fruit_textures), or null. */
         @Nullable Variant over, fruit;
+        /** A snow set whose snow is drawn in front (snow_over_textures): shown whole at any snow step. */
+        boolean front;
         private final Map<BakedQuad, Optional<BakedQuad>> lifted = new ConcurrentHashMap<>();
 
         /** Changes nothing: no swaps, nothing behind or in front. */

@@ -1,0 +1,220 @@
+{
+  "_comment": "Spruce through the year (evergreen): pollen cones on every block in late spring and early summer, seed cones on bearing blocks (TreeFruit, ripe = pick from the end of late summer to the end of early autumn), old cones until spring; snow in front of the leaves under a snow layer. Made by dev/specs/tools/leafy_snow.py.",
+  "target": [
+    "minecraft:block/spruce_leaves"
+  ],
+  "biomes": "#equinox:seasonal_zones",
+  "snow_needs_snow_above": true,
+  "slices": [
+    {
+      "start": "early_spring_start",
+      "end": "mid_spring_start",
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow"
+      },
+      "snow_over_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "mid_spring_end",
+      "end": "mid_spring_end",
+      "over_textures": {
+        "all": "equinox:block/trees/spruce_pollen_bud"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_flower_pollen_bud"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow_pollen_bud"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_flower_pollen_bud"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_spring_start",
+      "end": "late_spring_start",
+      "over_textures": {
+        "all": "equinox:block/trees/spruce_pollen_red"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_red_pollen_red"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow_pollen_red"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_red_pollen_red"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_spring_end",
+      "end": "late_spring_end",
+      "over_textures": {
+        "all": "equinox:block/trees/spruce_pollen_open"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_green_small_pollen_open"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow_pollen_open"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_green_small_pollen_open"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "early_summer_start",
+      "end": "early_summer_start",
+      "over_textures": {
+        "all": "equinox:block/trees/spruce_pollen_done"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_green_pollen_done"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow_pollen_done"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_green_pollen_done"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "early_summer_end",
+      "end": "mid_summer_end",
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_green"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_green"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_summer_start",
+      "end": "late_summer_start",
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_turning"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_turning"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_summer_end",
+      "end": "early_autumn_end",
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_ripe"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_ripe"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "mid_autumn_start",
+      "end": "late_winter_end",
+      "fruit_textures": {
+        "all": "equinox:block/trees/spruce_cones_old"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/spruce_snow"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/spruce_snow_cones_old"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    }
+  ]
+}

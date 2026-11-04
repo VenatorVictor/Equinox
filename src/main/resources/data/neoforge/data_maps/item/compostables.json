@@ -5,6 +5,9 @@
     },
     "equinox:birch_seeds": {
       "chance": 0.3
+    },
+    "equinox:spruce_cone": {
+      "chance": 0.3
     }
   }
 }

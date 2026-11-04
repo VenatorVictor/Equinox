@@ -351,5 +351,6 @@
   "equinox.settings.choice.filter": "Filter",
   "equinox.settings.choice.off": "Off",
   "item.equinox.acorn": "Acorn",
-  "item.equinox.birch_seeds": "Birch Seeds"
+  "item.equinox.birch_seeds": "Birch Seeds",
+  "item.equinox.spruce_cone": "Spruce Cone"
 }

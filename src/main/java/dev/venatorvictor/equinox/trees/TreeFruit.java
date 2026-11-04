@@ -61,15 +61,19 @@ public final class TreeFruit {
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Equinox.MOD_ID);
     public static final DeferredItem<Item> ACORN = ITEMS.register("acorn", () -> new SeedItem(Blocks.OAK_SAPLING, new Item.Properties()));
     public static final DeferredItem<Item> BIRCH_SEEDS = ITEMS.register("birch_seeds", () -> new SeedItem(Blocks.BIRCH_SAPLING, new Item.Properties()));
+    public static final DeferredItem<Item> SPRUCE_CONE = ITEMS.register("spruce_cone", () -> new SeedItem(Blocks.SPRUCE_SAPLING, new Item.Properties()));
 
     /** One kind of tree: its leaves, the share of them that bear, the ripe year steps (first..last), what a pick gives. */
     private record Kind(Block leaves, int percent, int ripeFrom, int ripeTo, Supplier<Item> item, int min, int max) {}
 
     // Ripe, as in the season_textures files: acorns from the end of late summer to the end of early autumn (mid
     // September to late October, minecraft_oak_leaves.json); birch seed catkins brown from the start of early autumn
-    // to the start of mid autumn (late September to early November, minecraft_birch_leaves.json).
+    // to the start of mid autumn (late September to early November, minecraft_birch_leaves.json); spruce cones brown
+    // from the end of late summer to the end of early autumn (minecraft_spruce_leaves.json; old cones stay over winter,
+    // but only the ripe ones can be picked).
     private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3),
-            new Kind(Blocks.BIRCH_LEAVES, 30, 12, 14, BIRCH_SEEDS, 1, 3)};
+            new Kind(Blocks.BIRCH_LEAVES, 30, 12, 14, BIRCH_SEEDS, 1, 3),
+            new Kind(Blocks.SPRUCE_LEAVES, 30, 11, 13, SPRUCE_CONE, 1, 2)};
 
     private static final DeferredRegister<com.mojang.serialization.MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
             DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Equinox.MOD_ID);
@@ -95,6 +99,7 @@ public final class TreeFruit {
             if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
                 event.accept(ACORN.get());
                 event.accept(BIRCH_SEEDS.get());
+                event.accept(SPRUCE_CONE.get());
             }
         });
         modBus.addListener(RegisterPayloadHandlersEvent.class, event ->
