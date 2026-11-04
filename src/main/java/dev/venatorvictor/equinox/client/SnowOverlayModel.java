@@ -57,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * the block's own faces again, a hair in front, with one shared see-through texture: a snow cap on side faces (the
  * face's own texture coordinates, so it sits at the top of each face), vanilla's snow on top faces. Any block of
  * those kinds works (modded ones too) with any texture pack, as the block's textures are never replaced.
- * Like the snowy textures, the snow fades in over the look steps (side faces from the top down).
+ * Only where real snow lies: a snow layer on the block, or snow kept in a fence or wall (SnowMap).
  * Not leaves: they only show the real snow layer lying on them (and their own snowy textures under it).
  */
 public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
@@ -118,19 +118,12 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         return data.derive().with(SNOW, step).build();
     }
 
-    /** How snowy the block looks, 0..4: snow lying on it, or the same rule as the snowy textures. */
+    /** How snowy the block looks: 4 with real snow (a snow layer on it, or snow kept in a fence or wall), else 0. */
     private int step(BlockAndTintGetter region, BlockPos pos, BlockState state) {
         if (kind == Kind.GRASS) return 4; // only its snowy states are wrapped: a snow layer is on it
         BlockState above = region.getBlockState(pos.above());
         if (above.getBlock() instanceof SnowLayerBlock || SnowMap.holds(state) && SnowMap.client(pos) > 0) return 4;
-        ClientLevel level = Minecraft.getInstance().level;
-        if (!ColorClock.active || level == null || !ClientConfig.SEASONAL_TEXTURES.get()) return 0;
-        Holder<Biome> biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
-        float here = Climate.temperature(biome.value(), pos);
-        if (CropWarmth.heated(level, pos) || !Outside.outside(level, pos)) return 0;
-        if (ClientConfig.SNOW_LOOK.get() == ClientConfig.SnowLook.CALENDAR) return SnowRules.calendarStep(here);
-        if (!SnowRules.lies(biome, pos, ClientSnow.warmest(), here)) return 0;
-        return Math.max(1, SnowRules.groundStep(biome, pos, ClientSnow.warmest(), here));
+        return 0; // only real snow: nothing drawn where snow would lie but doesn't
     }
 
     @Override
@@ -191,6 +184,9 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         nz /= length;
         if (ny < -0.7F) return null;
         boolean top = ny >= 0.7F;
+        // Stairs and slabs: only the faces at the top of the block, under the snow lying on it (not the lower step,
+        // not a bottom slab's top halfway up the block).
+        if (kind == Kind.HALF && Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3])) < 0.999F) return null;
         if (top && kind == Kind.GRASS) return null; // under the snow layer anyway
         TextureAtlasSprite to = top ? snowTop : kind == Kind.HALF ? capHalf : cap;
         retexture(v, stride, quad.getSprite(), to);
