@@ -16,6 +16,7 @@ No library mods are needed.
 ### Climate
 - Each biome has its own temperatures: mild coasts, a cold north, deserts, rainy and dry tropics.
 - Neighbouring biomes blend, and winter fades out near jungles and deserts.
+- Geothermal patches (hot ground and steaming pools from world generation) stay above freezing all winter.
 - Other mods can read the air and water temperature through the API.
 
 ### Snow

@@ -4,6 +4,7 @@ import dev.venatorvictor.equinox.climate.Climate;
 import dev.venatorvictor.equinox.climate.ClimateBiome;
 import dev.venatorvictor.equinox.climate.ClimateBlend;
 import dev.venatorvictor.equinox.climate.ColorProfile;
+import dev.venatorvictor.equinox.climate.Geothermal;
 import dev.venatorvictor.equinox.climate.Zone;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
@@ -36,6 +37,8 @@ public abstract class BiomeMixin implements ClimateBiome {
     private float[] equinox$celsiusChanges;
     @Unique
     private boolean equinox$clientSide;
+    @Unique
+    private boolean equinox$geothermal;
     @Unique
     private byte equinox$snowLock = ClimateBiome.SNOW_FREE;
 
@@ -130,6 +133,16 @@ public abstract class BiomeMixin implements ClimateBiome {
         equinox$clientSide = client;
     }
 
+    @Override
+    public boolean equinox$geothermal() {
+        return equinox$geothermal;
+    }
+
+    @Override
+    public void equinox$setGeothermal(boolean geothermal) {
+        equinox$geothermal = geothermal;
+    }
+
     // At RETURN, so vanilla's per-position cache keeps the plain value and the offset is always the current one.
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void equinox$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
@@ -138,7 +151,9 @@ public abstract class BiomeMixin implements ClimateBiome {
         float seasonal = equinox$lockShift;
         if (changes != null) seasonal += Climate.change(changes, equinox$zone.factor);
         float shift = equinox$shift + ClimateBlend.adjust((Biome) (Object) this, pos, equinox$blendKind, seasonal);
-        if (shift != 0) cir.setReturnValue(cir.getReturnValueF() + shift);
+        float temperature = cir.getReturnValueF() + shift;
+        if (equinox$geothermal) temperature = Geothermal.apply(temperature, pos.getX(), pos.getZ());
+        if (shift != 0 || equinox$geothermal) cir.setReturnValue(temperature);
     }
 
     @Inject(method = "hasPrecipitation", at = @At("HEAD"), cancellable = true)

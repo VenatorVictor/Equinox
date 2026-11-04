@@ -54,6 +54,11 @@ public interface ClimateBiome {
 
     void equinox$setColorProfile(ColorProfile profile);
 
+    /** Has geothermal patches (tag equinox:geothermal): warmer where world generation puts hot ground. */
+    boolean equinox$geothermal();
+
+    void equinox$setGeothermal(boolean geothermal);
+
     /** Biome.getTemperature (private): the temperature at a position, seasons included. */
     float equinox$temperature(BlockPos pos);
 }

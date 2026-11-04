@@ -244,6 +244,7 @@ public final class Climate {
                 : never ? lockShift(temperature, changes, false, zone.factor) : 0;
         ClimateBiome climate = (ClimateBiome) (Object) holder.value();
         climate.equinox$setClimate(zone, temperature - own, lockShift, changes);
+        climate.equinox$setGeothermal(holder.is(Geothermal.TAG));
         climate.equinox$setSnowLock(always ? ClimateBiome.SNOW_ALWAYS : never ? ClimateBiome.SNOW_NEVER : ClimateBiome.SNOW_FREE);
         climate.equinox$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
                 : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
