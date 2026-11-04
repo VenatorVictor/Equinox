@@ -135,6 +135,14 @@ public final class Config {
                     "high): farmland crops die. Heaters and coolers nearby (crop_heaters, crop_coolers below)",
                     "change the temperature. Unlisted plants, and plants outside the overworld, grow as in vanilla.")
             .define("seasonal_crops", true);
+    /** Which crops die for good in frost or heat; the others come back when it's over. */
+    public enum CropDeath { PLANTED, ALL }
+
+    public static final ModConfigSpec.EnumValue<CropDeath> CROPS_THAT_DIE = BUILDER
+            .comment("Which crops die for good past their limits. PLANTED: only crops a player planted; the others",
+                    "(world generation, villagers) look frozen or spoiled until the cold or heat is over, then come",
+                    "back as they were. ALL: every crop dies for good.")
+            .defineEnum("crops_that_die", CropDeath.PLANTED);
     public static final ModConfigSpec.IntValue SLOW_GROWTH = BUILDER
             .comment("Cool or warm (outside the ideal range): a crop grows on 1 in this many growth chances (bone meal",
                     "too). 1: normal, 0: never.")
@@ -185,6 +193,7 @@ public final class Config {
     private static volatile Map<ResourceLocation, float[]> cropHeaters = Map.of(), cropCoolers = Map.of();
     private static volatile boolean seasonalCrops = true;
     private static volatile int slowGrowth = 6;
+    private static volatile CropDeath cropsThatDie = CropDeath.PLANTED;
     private static volatile float idealBonus = 0.15F, farmlandHeat = 30;
     private static volatile double latitude = 40;
     private static volatile int blendRadius = 64, blendRadiusLarge = 128;
@@ -206,6 +215,7 @@ public final class Config {
         dev.venatorvictor.equinox.crops.CropWarmth.reset();
         seasonalCrops = val(SEASONAL_CROPS);
         slowGrowth = val(SLOW_GROWTH);
+        cropsThatDie = val(CROPS_THAT_DIE);
         idealBonus = val(IDEAL_BONUS).floatValue();
         farmlandHeat = val(FARMLAND_HEAT).floatValue();
         latitude = val(LATITUDE);
@@ -231,7 +241,7 @@ public final class Config {
 
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, CELSIUS_CHANGES,
             TEMPERATURE_LAG, SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
-            BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, SLOW_GROWTH,
+            BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
             IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
     private static volatile Map<String, Object> remote = Map.of();
@@ -451,6 +461,10 @@ public final class Config {
     }
 
     /** Cool or warm: 1 in this many growth chances; 0: never. */
+    public static CropDeath cropsThatDie() {
+        return cropsThatDie;
+    }
+
     public static int slowGrowth() {
         return slowGrowth;
     }

@@ -107,6 +107,9 @@ final class Settings {
         // ---- Crops
         all.add(server(Config.SEASONAL_CROPS, "seasonal_crops").tab(CROPS, "growth")
                 .cost(Cost.LOW));
+        all.add(server(Config.CROPS_THAT_DIE, "crops_that_die").tab(CROPS, null)
+                .choice(Config.CropDeath.PLANTED, "planted_only").choice(Config.CropDeath.ALL, "all_crops")
+                .cost(Cost.NONE));
         all.add(server(Config.SLOW_GROWTH, "slow_growth").tab(CROPS, null)
                 .cost(Cost.NONE).range(0, 30, 1)
                 .label((v, x) -> v == 0 ? u("never_grows") : v == 1 ? u("normal_speed") : u("one_in", (int) v, Math.round(100 / v))));

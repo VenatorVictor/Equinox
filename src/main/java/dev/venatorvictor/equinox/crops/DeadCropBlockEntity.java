@@ -20,6 +20,8 @@ public final class DeadCropBlockEntity extends BlockEntity {
     public static final ModelProperty<BlockState> ORIGINAL = new ModelProperty<>();
 
     private @Nullable BlockState original;
+    /** A wild crop (crops_that_die PLANTED): it comes back as it was when the cold or heat is over. */
+    private boolean comesBack;
 
     public DeadCropBlockEntity(BlockPos pos, BlockState state) {
         super(CropBlocks.DEAD_CROP_ENTITY.get(), pos, state);
@@ -29,8 +31,13 @@ public final class DeadCropBlockEntity extends BlockEntity {
         return original;
     }
 
-    void setOriginal(BlockState original) {
+    public boolean comesBack() {
+        return comesBack;
+    }
+
+    void setOriginal(BlockState original, boolean comesBack) {
         this.original = original;
+        this.comesBack = comesBack;
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
     }
@@ -39,12 +46,14 @@ public final class DeadCropBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         if (original != null) tag.put("crop", NbtUtils.writeBlockState(original));
+        if (comesBack) tag.putBoolean("comes_back", true);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         original = tag.contains("crop") ? NbtUtils.readBlockState(registries.lookupOrThrow(Registries.BLOCK), tag.getCompound("crop")) : null;
+        comesBack = tag.getBoolean("comes_back");
         if (level != null && level.isClientSide) {
             requestModelDataUpdate();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);

@@ -179,8 +179,31 @@ public final class DeadCropBlock extends Block implements EntityBlock, SimpleWat
         // dies after the paddy froze would stay in open water).
         if ((state.getValue(ICED) || state.getValue(WATERLOGGED)) && base(level, pos)
                 && setIced(level, pos, state.getValue(ICED) ? !thaws(level, pos) : freezes(level, pos))) return;
+        if (!state.getValue(ICED) && comeBack(level, pos)) return;
         boolean snowy = snowy(state, level, pos);
         if (snowy != state.getValue(SNOWY)) level.setBlock(pos, state.setValue(SNOWY, snowy), Block.UPDATE_CLIENTS);
+    }
+
+    /**
+     * A wild dead plant (DeadCropBlockEntity.comesBack) whose cold or heat is over (it could grow there again) comes
+     * back as it was, every part at once from the bottom, its snow as now. False if it stays dead.
+     */
+    private static boolean comeBack(ServerLevel level, BlockPos pos) {
+        BlockPos bottom = pos;
+        while (level.getBlockState(bottom.below()).getBlock() instanceof DeadCropBlock) bottom = bottom.below();
+        if (!(level.getBlockEntity(bottom) instanceof DeadCropBlockEntity base) || !base.comesBack() || base.original() == null) return false;
+        Crops.Effect effect = Crops.effect(level, bottom, base.original());
+        if (effect != Crops.Effect.VANILLA && effect != Crops.Effect.FASTER && effect != Crops.Effect.SLOW) return false;
+        BlockPos top = bottom;
+        while (level.getBlockState(top.above()).getBlock() instanceof DeadCropBlock) top = top.above();
+        for (BlockPos p = bottom; p.getY() <= top.getY(); p = p.above()) {
+            BlockState dead = level.getBlockState(p);
+            if (!(level.getBlockEntity(p) instanceof DeadCropBlockEntity part) || part.original() == null) continue;
+            BlockState crop = part.original();
+            if (crop.hasProperty(SnowyCrops.SNOWY)) crop = crop.setValue(SnowyCrops.SNOWY, dead.getValue(SNOWY));
+            level.setBlock(p, crop, Block.UPDATE_ALL);
+        }
+        return true;
     }
 
     /** Its water freezes as vanilla water: cold, open to the sky (leaves aside), block light below 10. */

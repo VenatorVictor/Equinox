@@ -45,6 +45,8 @@ final class DeadCropProvider implements IBlockComponentProvider {
             tooltip.replace(JadeIds.CORE_OBJECT_NAME, IThemeHelper.get().title(entity.original().getBlock().getName()));
         tooltip.add(Component.translatable(heat ? "jade.equinox.killed_heat" : "jade.equinox.killed_frost")
                 .withStyle(heat ? ChatFormatting.GOLD : ChatFormatting.AQUA));
+        if (accessor.getBlockEntity() instanceof DeadCropBlockEntity entity && entity.comesBack())
+            tooltip.add(Component.translatable(heat ? "jade.equinox.back_when_cooler" : "jade.equinox.back_when_warmer").withStyle(ChatFormatting.GRAY));
     }
 
     @Override

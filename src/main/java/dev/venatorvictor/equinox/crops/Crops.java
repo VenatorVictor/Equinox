@@ -218,28 +218,30 @@ public final class Crops {
         while (bottom.getY() > level.getMinBuildHeight() && mortal(level.getBlockState(bottom.below()).getBlock())) bottom = bottom.below();
         BlockPos top = pos;
         while (top.getY() < level.getMaxBuildHeight() - 1 && mortal(level.getBlockState(top.above()).getBlock())) top = top.above();
-        for (BlockPos p = top; p.getY() >= bottom.getY(); p = p.below()) kill(level, p, level.getBlockState(p), cause);
+        // Wild crops (not planted by a player, with crops_that_die PLANTED) come back when it's over.
+        boolean comesBack = Config.cropsThatDie() == Config.CropDeath.PLANTED && !PlantedCrops.planted(level, bottom);
+        for (BlockPos p = top; p.getY() >= bottom.getY(); p = p.below()) kill(level, p, level.getBlockState(p), cause, comesBack);
         Block fruit = fruitOf(state.getBlock());
-        if (fruit != null) { // the pumpkin or melon it holds dies with it
+        if (fruit != null && !comesBack) { // the pumpkin or melon it holds dies with it
             BlockPos fruitPos = pos.relative(state.getValue(AttachedStemBlock.FACING));
             BlockState fruitState = level.getBlockState(fruitPos);
             if (fruitState.is(fruit)) {
                 level.setBlock(fruitPos, CropBlocks.DEAD_FRUIT.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause), Block.UPDATE_ALL);
-                if (level.getBlockEntity(fruitPos) instanceof DeadCropBlockEntity entity) entity.setOriginal(fruitState);
+                if (level.getBlockEntity(fruitPos) instanceof DeadCropBlockEntity entity) entity.setOriginal(fruitState, false);
             }
         }
         return true;
     }
 
     /** Turns one plant block into a dead crop that remembers it (snow and water kept). */
-    private static void kill(ServerLevel level, BlockPos pos, BlockState state, DeadCropBlock.Cause cause) {
+    private static void kill(ServerLevel level, BlockPos pos, BlockState state, DeadCropBlock.Cause cause, boolean comesBack) {
         boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
         BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause)
                 .setValue(DeadCropBlock.SNOWY, snowy).setValue(DeadCropBlock.WATERLOGGED, state.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
         // Flagged as a piston move: tomatoes on rope put their rope back when replaced (onRemove),
         // which would overwrite the dead crop.
         level.setBlock(pos, dead, Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
-        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
+        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state, comesBack);
     }
 
     /**
