@@ -59,7 +59,7 @@ public final class Config {
                     "on Earth. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 42, 3, 1000);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
-            .comment("The climate: °C change of each climate zone at the middle of spring, summer, autumn and winter, added",
+            .comment("The climate: °C change of each climate zone at the start of mid spring, summer, autumn and winter, added",
                     "to the biome's spring/autumn °C (data map equinox:celsius). One value = same at midnight and noon;",
                     "\"a..b\" = midnight..noon, so the day-night gap can change with the season. Seasonal zones also",
                     "snow and freeze by it: below a daily mean of 0.5 °C (Minecraft's 0.15). Missing zones don't change.")

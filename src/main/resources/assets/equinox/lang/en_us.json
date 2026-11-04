@@ -150,7 +150,7 @@
   "equinox.settings.zone_warm_end.desc": "Where the winter is gone (no seasonal cold above). 0.2 is where jungles and savannas start.",
   "equinox.settings.heading.tables": "Tables",
   "equinox.settings.celsius_changes.name": "Seasonal change per zone (°C)",
-  "equinox.settings.celsius_changes.desc": "The climate in °C, used by snow, ice, crops and other mods: change of each zone at the middle of spring, summer, autumn and winter, added to the biome's spring/autumn °C. Seasonal zones snow and freeze below a daily mean of 0.5 °C. One value = same day and night; \"a..b\" = midnight..noon, so the day-night gap can change with the season.",
+  "equinox.settings.celsius_changes.desc": "The climate in °C, used by snow, ice, crops and other mods: change of each zone at the start of mid spring, summer, autumn and winter, added to the biome's spring/autumn °C. Seasonal zones snow and freeze below a daily mean of 0.5 °C. One value = same day and night; \"a..b\" = midnight..noon, so the day-night gap can change with the season.",
   "equinox.settings.celsius_changes.format": "zone=spring,summer,autumn,winter   e.g. temperate=0..1,9..11,0..-1,-12..-14",
   "equinox.settings.biome_temperatures.name": "Biome temperatures",
   "equinox.settings.biome_temperatures.desc": "Temperature a biome has for the climate (snow, rain, freezing, crops). Grass and leaf colors keep the biome's own. The defaults put back vanilla's values for biome packs that change temperatures only to tint grass; without such a pack they change nothing.",

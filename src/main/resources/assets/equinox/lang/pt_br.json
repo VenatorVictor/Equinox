@@ -33,7 +33,7 @@
   "equinox.settings.zone_warm_end.desc": "Onde o inverno acaba (nenhum frio da estação acima). 0,2 é onde começam selvas e savanas.",
   "equinox.settings.heading.tables": "Tabelas",
   "equinox.settings.celsius_changes.name": "Mudança por zona (°C)",
-  "equinox.settings.celsius_changes.desc": "O clima em °C, usado pela neve, gelo, plantações e outros mods: mudança de cada zona no meio da primavera, verão, outono e inverno, somada ao °C de primavera/outono do bioma. Zonas com estações nevam e congelam abaixo de uma média diária de 0,5 °C. Um valor = igual de dia e de noite; \"a..b\" = meia-noite..meio-dia, então a diferença entre dia e noite pode mudar com a estação.",
+  "equinox.settings.celsius_changes.desc": "O clima em °C, usado pela neve, gelo, plantações e outros mods: mudança de cada zona no início do meio da primavera, do verão, do outono e do inverno, somada ao °C de primavera/outono do bioma. Zonas com estações nevam e congelam abaixo de uma média diária de 0,5 °C. Um valor = igual de dia e de noite; \"a..b\" = meia-noite..meio-dia, então a diferença entre dia e noite pode mudar com a estação.",
   "equinox.settings.celsius_changes.format": "zona=primavera,verão,outono,inverno   ex. temperate=0..1,9..11,0..-1,-12..-14",
   "equinox.settings.biome_temperatures.name": "Temperatura dos biomas",
   "equinox.settings.biome_temperatures.desc": "Temperatura que um bioma tem para o clima (neve, chuva, congelamento, plantações). As cores da grama e das folhas ficam com o valor do próprio bioma. Os padrões devolvem os valores do vanilla para pacotes de biomas que mudam temperaturas só para pintar a grama; sem um pacote assim eles não mudam nada.",

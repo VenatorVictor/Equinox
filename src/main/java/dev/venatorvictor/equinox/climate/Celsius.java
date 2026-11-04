@@ -12,7 +12,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * The climate in °C, for the temperature API (dev.venatorvictor.equinox.api.Temperatures). Pure math, no block scans:
  * the biome's spring/autumn midnight..noon value (data map equinox:celsius), plus its zone's °C change for the
- * season (config celsius_changes, blended between season middles), plus the season and daily variation
+ * season (config celsius_changes, blended between the starts of the seasons' mid parts), plus the season and daily variation
  * times the zone's factor. In seasonal zones the same climate also sets the Minecraft temperature (snow, ice, rain),
  * and the daily mean here is read back from it, so the two always agree. Underground the season fades out over 20 blocks toward 15.6 °C, then it
  * warms toward ~32 °C near bedrock (the Nether is below; an almost linear curve); open sky keeps the weather. Cave biomes with

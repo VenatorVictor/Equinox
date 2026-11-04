@@ -28,7 +28,7 @@ public record BiomeCelsius(float night, float day, Optional<Float> water, Option
             Codec.FLOAT.listOf(8, 8).optionalFieldOf("seasons").forGetter(BiomeCelsius::seasons)
     ).apply(instance, BiomeCelsius::new));
 
-    /** The biome's own change from night/day at each season middle (8 values, like celsius_changes), or null. */
+    /** The biome's own change from night/day at each season point, the start of its mid part (8 values, like celsius_changes), or null. */
     public float[] changes() {
         if (seasons.isEmpty()) return null;
         List<Float> values = seasons.get();

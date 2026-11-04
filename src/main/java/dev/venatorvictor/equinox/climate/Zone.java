@@ -8,7 +8,7 @@ import net.minecraft.world.level.biome.Biome;
 /**
  * A biome's climate, from the tag equinox:climate/<id>, each modelled on a real place (Vienna, New Orleans,
  * Helsinki, Utqiagvik, Säntis, Svalbard, Phoenix, Moab, Manaus, Kolkata, Darwin). Seasonal zones change the biome's
- * °C by their value at the middle of each season (config celsius_changes), blended in between, and their Minecraft
+ * °C by their value at the start of each season's mid part (config celsius_changes), blended in between, and their Minecraft
  * temperature follows the °C (Climate.categorize); tropical zones keep theirs and get wet and dry seasons instead.
  */
 public enum Zone {

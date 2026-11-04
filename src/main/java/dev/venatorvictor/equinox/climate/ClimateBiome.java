@@ -27,7 +27,7 @@ public interface ClimateBiome {
 
     void equinox$setClimate(Zone zone, float shift, float lockShift, float[] changes);
 
-    /** The biome's °C change at midnight and noon at each season middle (8 values): its own (BiomeCelsius.seasons) or its zone's; null for none. */
+    /** The biome's °C change at midnight and noon at each season point, the start of its mid part (8 values): its own (BiomeCelsius.seasons) or its zone's; null for none. */
     float[] equinox$celsiusChanges();
 
     void equinox$setCelsiusChanges(float[] changes);

@@ -18,11 +18,11 @@ import java.util.List;
 
 /**
  * The seasonal climate. Each biome has a climate zone (tags equinox:climate/<zone>, Zone): seasonal zones change
- * the biome's temperature by the zone's value at the middle of each season, blended in between, so the snow line moves
+ * the biome's temperature by the zone's value at the start of each season's mid part, blended in between, so the snow line moves
  * a little every tick instead of jumping. On top, each season and each day get a random variation (warmer or colder
  * than usual, times the zone's factor), the same for a world on both sides. All on the calendar: spring starts at the
- * equinox, so the warmest time (mid summer) comes about six weeks after the longest day, as the seasons already sit
- * behind the sun. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
+ * equinox, and the warmest and coldest times are the start of mid summer and mid winter, a third of a season (about
+ * a month) after the longest and shortest days, as on Earth. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
  * biome another temperature for the climate only (grass colors read the biome's own value), for biome mods that change
  * temperatures to tint grass (beach 2.0, old growth pine taiga 2.0...).
  */
@@ -40,11 +40,14 @@ public final class Climate {
             Zone.ALPINE, Zone.HOT_DESERT, Zone.COLD_DESERT, Zone.RAINFOREST, Zone.MONSOON, Zone.SAVANNA,
             Zone.WARM_OCEAN, Zone.LUKEWARM_OCEAN, Zone.OCEAN, Zone.COLD_OCEAN};
 
-    /** Where the year is between two season middles, plus the season's and the day's variation. */
+    /** Where each season's climate value is reached: this share into the season (1/3 = the start of its mid part). */
+    static final double SEASON_POINT = 1 / 3.0;
+
+    /** Where the year is between two season points, plus the season's and the day's variation. */
     record Phase(int from, int to, float blend, float season, float daily) {
-        /** Between two season middles (0 = mid spring, wrapping winter to spring). */
+        /** Between two season points (0 = mid spring, wrapping winter to spring). */
         static Phase of(SeasonState state, float season, float daily) {
-            double position = state.yearProgress() * Season.COUNT - 0.5;
+            double position = state.yearProgress() * Season.COUNT - SEASON_POINT;
             int index = (int) Math.floor(position);
             return new Phase(Math.floorMod(index, Season.COUNT), Math.floorMod(index + 1, Season.COUNT),
                     (float) (position - index), season, daily);
@@ -128,13 +131,13 @@ public final class Climate {
     }
 
     /**
-     * Each season's variation peaks at its middle and blends into the next one's (smoothstep), so it never jumps.
+     * Each season's variation peaks at its season point and blends into the next one's (smoothstep), so it never jumps.
      * Worked out from the variation seed and the season's number, so server and clients get the same without syncing.
      */
     static float variationAt(SeasonState state) {
         float amount = Config.seasonVariation();
         if (amount == 0) return 0;
-        double position = (double) state.dayTime() / state.seasonTicks() - 0.5; // 0: middle of the first spring
+        double position = (double) state.dayTime() / state.seasonTicks() - SEASON_POINT; // 0: start of the first mid spring
         long index = (long) Math.floor(position);
         float blend = (float) (position - index);
         blend = blend * blend * (3 - 2 * blend);
@@ -220,7 +223,7 @@ public final class Climate {
         float[] changes = null;
         if (zone.seasonal()) {
             // The °C climate decides: the biome's daily mean (data map, else from its Minecraft temperature) and the
-            // daily mean change at each season middle, turned into Minecraft's scale (fromCelsius).
+            // daily mean change at each season point, turned into Minecraft's scale (fromCelsius).
             float mean = entry != null ? (entry.night() + entry.day()) / 2 : toCelsius(temperature);
             changes = new float[Season.COUNT];
             for (int i = 0; i < Season.COUNT; i++) {
