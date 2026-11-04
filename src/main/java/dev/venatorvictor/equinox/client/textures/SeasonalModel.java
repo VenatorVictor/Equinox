@@ -194,6 +194,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (front == null) return List.of();
         List<BakedQuad> out = new ArrayList<>();
         for (BakedQuad quad : super.getQuads(state, side, rand, data, RenderType.solid())) {
+            if (variant.front && quad.getDirection().getAxis().isVertical()) continue; // snow: side faces only
             BakedQuad lifted = front.inFront(quad);
             if (lifted != null) out.add(lifted);
         }
@@ -242,6 +243,8 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
                 : fruit && variant.fruit != null ? variant.fruit : variant.over;
         if (front != null) {
             for (BakedQuad quad : quads) {
+                // Snow in front (snow_over_textures): only on the side faces, as the snow layer lies on the top.
+                if (variant.front && quad.getDirection().getAxis().isVertical()) continue;
                 BakedQuad lifted = front.inFront(quad);
                 if (lifted != null) swapped.add(lifted);
             }

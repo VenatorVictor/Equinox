@@ -62,7 +62,8 @@ import java.util.function.Predicate;
  * hair in front (flowers on leaves; may stand alone in a slice, the block's own texture under it); "fruit_textures"/
  * "fruit_tint": drawn in front instead on leaf blocks that bear fruit and weren't picked this year (TreeFruit);
  * "snow_over_textures"/"snow_over_tint" (and "snow_fruit_textures" for bearing leaves): instead of snow_textures, snow
- * drawn in front of the slice's own textures, which keep their look and tint (leaves that keep their leaves).
+ * drawn in front of the slice's own textures, which keep their look and tint (leaves that keep their leaves); on
+ * the side faces only (the snow layer lies on the top).
  * Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
