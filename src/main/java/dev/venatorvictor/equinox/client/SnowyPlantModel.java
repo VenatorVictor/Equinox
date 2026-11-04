@@ -126,13 +126,17 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
         return ChunkRenderTypeSet.union(super.getRenderTypes(state, rand, data), SOLID);
     }
 
-    /** Plants turn smooth lighting off; the snow keeps it, as a snow layer (its own render type, solid). */
+    /**
+     * Plants turn smooth lighting off; the snow keeps it, as a snow layer (its own render type, solid). TRUE, not
+     * DEFAULT: the chunk renderer reads DEFAULT from the plant's own model (off), which left the snow brighter than
+     * the snow around it. Smooth lighting turned off in the options still turns it off.
+     */
     @Override
     public @NotNull TriState useAmbientOcclusion(@NotNull BlockState state, @NotNull ModelData data, @NotNull RenderType renderType) {
         if (renderType != RenderType.solid()) return super.useAmbientOcclusion(state, data, renderType);
         Boolean own = ownSolid;
         if (own == null) ownSolid = own = super.getRenderTypes(state, RandomSource.create(42), data).contains(renderType);
-        return own ? super.useAmbientOcclusion(state, data, renderType) : TriState.DEFAULT;
+        return own ? super.useAmbientOcclusion(state, data, renderType) : state.getLightEmission() == 0 ? TriState.TRUE : TriState.FALSE;
     }
 
     @Override
