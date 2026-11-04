@@ -274,6 +274,15 @@ public final class Crops {
         };
     }
 
+    /**
+     * Plants that don't die but show the temperature like crops (dormant, wilted: CropLookModel): sugar cane (also dry
+     * or frozen without water), cactus and bamboo.
+     */
+    public static boolean showsLook(Block block) {
+        return block instanceof SugarCaneBlock || block instanceof net.minecraft.world.level.block.CactusBlock
+                || block instanceof net.minecraft.world.level.block.BambooStalkBlock || block instanceof net.minecraft.world.level.block.BambooSaplingBlock;
+    }
+
     /** Sugar cane's water: next to liquid water (or vanilla's frosted ice), frozen (only ice there) or dry. */
     public enum CaneWater { WET, FROZEN, DRY }
 

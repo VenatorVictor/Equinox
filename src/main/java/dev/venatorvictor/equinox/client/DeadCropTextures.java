@@ -87,7 +87,7 @@ public final class DeadCropTextures implements SpriteSource {
     public void run(ResourceManager resources, Output output) {
         Set<Block> fruits = Crops.fruits();
         Set<ResourceLocation> fruitTextures = cropTextures(resources, fruits::contains);
-        Set<ResourceLocation> textures = cropTextures(resources, block -> Crops.mortal(block) || block instanceof net.minecraft.world.level.block.SugarCaneBlock); // cane: dry or frozen without water
+        Set<ResourceLocation> textures = cropTextures(resources, block -> Crops.mortal(block) || Crops.showsLook(block)); // cane, cactus, bamboo: looks only
         textures.addAll(fruitTextures);
         for (ResourceLocation texture : textures) {
             boolean fruit = fruitTextures.contains(texture);

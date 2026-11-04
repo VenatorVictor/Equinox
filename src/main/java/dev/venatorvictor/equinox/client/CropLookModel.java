@@ -64,7 +64,7 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
         java.util.Set<Block> fruits = Crops.fruits();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!Crops.mortal(block) && !fruits.contains(block) && !(block instanceof SugarCaneBlock)) continue;
+            if (!Crops.mortal(block) && !fruits.contains(block) && !Crops.showsLook(block)) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
                 BakedModel model = event.getModels().get(location);
@@ -83,8 +83,10 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         }
         if (!ClientConfig.CROP_LOOKS.get()) return data;
         int look;
-        if (state.getBlock() instanceof SugarCaneBlock) look = Crops.caneLook(region, pos); // by its water only
-        else if (Crops.mortal(state.getBlock())) look = Crops.look(level, pos, state);
+        if (state.getBlock() instanceof SugarCaneBlock) { // without water: dry or frozen; else by temperature
+            look = Crops.caneLook(region, pos);
+            if (look == 0) look = Crops.look(level, pos, state);
+        } else if (Crops.mortal(state.getBlock()) || Crops.showsLook(state.getBlock())) look = Crops.look(level, pos, state);
         else { // a pumpkin or melon: its stem's look, if a stem holds it
             BlockPos stem = Crops.stemOf(level, pos, state.getBlock());
             look = stem == null ? 0 : Crops.look(level, stem, level.getBlockState(stem));
