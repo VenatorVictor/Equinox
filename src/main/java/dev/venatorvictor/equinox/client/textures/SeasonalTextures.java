@@ -234,8 +234,13 @@ public final class SeasonalTextures {
         if (json.isJsonPrimitive() && json.getAsString().startsWith("#")) {
             ResourceLocation id = ResourceLocation.parse(json.getAsString().substring(1));
             TagKey<Biome> tag = TagKey.create(Registries.BIOME, id);
-            Set<ColorProfile> fallback = id.getNamespace().equals("equinox") ? profilesFor(id.getPath()) : Set.of();
-            return biome -> biome.is(tag) || fallback.contains(((ClimateBiome) (Object) biome.value()).equinox$colorProfile());
+            boolean format = id.getNamespace().equals("equinox");
+            Set<ColorProfile> fallback = format ? profilesFor(id.getPath()) : Set.of();
+            // "seasonal" also takes every biome with a seasonal climate (beaches, rivers: their colors barely change,
+            // but they have winters), so a tree standing on a biome border loses its leaves as a whole.
+            boolean climate = format && (id.getPath().equals("seasonal") || id.getPath().equals("rain/seasonal"));
+            return biome -> biome.is(tag) || fallback.contains(((ClimateBiome) (Object) biome.value()).equinox$colorProfile())
+                    || climate && ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL;
         }
         Set<ResourceLocation> ids = new HashSet<>();
         for (String biome : strings(json)) ids.add(ResourceLocation.parse(biome));

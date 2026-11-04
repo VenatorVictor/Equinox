@@ -3,14 +3,21 @@
     "minecraft:block/oak_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
+  "snow_needs_snow_above": true,
   "slices": [
     {
       "start": "early_winter_start",
       "end": "early_spring_end",
       "textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "tint": {
+        "all": -1
+      },
+      "snow_textures": {
+        "all": "equinox:block/trees/oak_twigs_snowy"
+      },
+      "snow_tint": {
         "all": -1
       }
     },
@@ -21,7 +28,7 @@
         "all": "equinox:leaf_fall/oak/stage_2"
       },
       "under_textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "under_tint": {
         "all": -1
@@ -34,7 +41,7 @@
         "all": "equinox:leaf_fall/oak/stage_1"
       },
       "under_textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "under_tint": {
         "all": -1
@@ -135,7 +142,7 @@
         "all": "equinox:leaf_fall/oak/stage_1"
       },
       "under_textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "under_tint": {
         "all": -1
@@ -148,7 +155,7 @@
         "all": "equinox:leaf_fall/oak/stage_2"
       },
       "under_textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "under_tint": {
         "all": -1
@@ -161,7 +168,7 @@
         "all": "equinox:leaf_fall/oak/stage_3"
       },
       "under_textures": {
-        "all": "equinox:block/trees/oak_leaves_bare_v3_5"
+        "all": "equinox:block/trees/oak_twigs"
       },
       "under_tint": {
         "all": -1
