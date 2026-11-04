@@ -30,7 +30,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.IEventBus;
+import net.minecraft.server.TickTask;
+import net.minecraft.util.RandomSource;
 import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -68,6 +71,12 @@ public final class TreeFruit {
     private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3),
             new Kind(Blocks.BIRCH_LEAVES, 30, 12, 14, BIRCH_SEEDS, 1, 3)};
 
+    private static final DeferredRegister<com.mojang.serialization.MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
+            DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Equinox.MOD_ID);
+    static {
+        LOOT_MODIFIERS.register("ripe_tree_fruit", () -> RipeFruitDrops.CODEC);
+    }
+
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Equinox.MOD_ID);
     /** A chunk's picked leaves: packed local position -> year picked. Saved as pairs of ints. */
     private static final Codec<Int2IntOpenHashMap> CODEC = Codec.INT_STREAM.xmap(stream -> fromPairs(stream.toArray()),
@@ -80,6 +89,7 @@ public final class TreeFruit {
 
     public static void init(IEventBus modBus) {
         ITEMS.register(modBus);
+        LOOT_MODIFIERS.register(modBus);
         ATTACHMENTS.register(modBus);
         modBus.addListener(BuildCreativeModeTabContentsEvent.class, event -> {
             if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
@@ -144,11 +154,18 @@ public final class TreeFruit {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
         if (!(level instanceof ServerLevel server)) return;
-        Kind kind = kind(state);
-        int count = kind.min + server.random.nextInt(kind.max - kind.min + 1);
-        Block.popResourceFromFace(server, pos, event.getFace() == null ? net.minecraft.core.Direction.UP : event.getFace(), new ItemStack(kind.item.get(), count));
+        Block.popResourceFromFace(server, pos, event.getFace() == null ? net.minecraft.core.Direction.UP : event.getFace(), pick(kind(state), server.random));
         server.playSound(null, pos, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, 0.8F + server.random.nextFloat() * 0.4F);
         setPicked(server, pos, (int) Seasons.get(server).year());
+    }
+
+    private static ItemStack pick(Kind kind, RandomSource random) {
+        return new ItemStack(kind.item.get(), kind.min + random.nextInt(kind.max - kind.min + 1));
+    }
+
+    /** RipeFruitDrops: what a breaking leaf block drops on top of its own loot (its ripe fruit), or empty. */
+    static ItemStack ripeDrop(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
+        return ripe(level, pos, state) ? pick(kind(state), random) : ItemStack.EMPTY;
     }
 
     private static int pickedYear(Level level, BlockPos pos) {
@@ -178,7 +195,13 @@ public final class TreeFruit {
 
     /** LevelChunkMixin: the block at pos changed; a pick mark goes with the leaves. */
     public static void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        if (level instanceof ServerLevel server && old.getBlock() != now.getBlock() && kind(old) != null) setPicked(server, pos, Integer.MIN_VALUE);
+        if (!(level instanceof ServerLevel server) || old.getBlock() == now.getBlock() || kind(old) == null) return;
+        // After this tick: a player's break removes the block before making its drops, which still need the mark
+        // (a picked block drops no fruit, RipeFruitDrops).
+        BlockPos at = pos.immutable();
+        server.getServer().tell(new TickTask(server.getServer().getTickCount(), () -> {
+            if (kind(server.getBlockState(at)) == null || server.getBlockState(at).getBlock() != old.getBlock()) setPicked(server, at, Integer.MIN_VALUE);
+        }));
     }
 
     /** Client: logging out forgets everything. */
