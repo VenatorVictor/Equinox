@@ -46,6 +46,12 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
      * itself (SnowStateMixin), so the snow sits like a vanilla layer and smooth lighting works on it.
      */
     private static final ModelProperty<IQuadTransformer> OFFSET = new ModelProperty<>();
+    /**
+     * The snow's top face can go with the up side (drawn unless a block above hides it, like vanilla's culling): then
+     * every snow face has a cull side, which shaders use to see the snow as snow (ShaderBlockAppearanceMixin). Not
+     * when the block above would hide it: there the gap under that block still shows it, so it stays with no side.
+     */
+    private static final ModelProperty<Boolean> TOP_UP = new ModelProperty<>();
 
     private final int layers;
     /** Whether the block's own model draws in solid too (fences, walls), found on first use. */
@@ -81,12 +87,14 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
     @Override
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter region, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData data) {
         data = super.getModelData(region, pos, state, data);
-        if (!state.hasOffsetFunction()) return data;
-        Vec3 offset = SnowyPlants.plantOffset(state, region, pos);
-        if (offset.equals(Vec3.ZERO)) return data;
-        IQuadTransformer move = QuadTransformers.applying(new Transformation(
-                new Matrix4f().translation((float) offset.x, (float) offset.y, (float) offset.z)));
-        return data.derive().with(OFFSET, move).build();
+        ModelData.Builder builder = data.derive();
+        if (Block.shouldRenderFace(state, region, pos, Direction.UP, pos.above())) builder.with(TOP_UP, true);
+        if (state.hasOffsetFunction()) {
+            Vec3 offset = SnowyPlants.plantOffset(state, region, pos);
+            if (!offset.equals(Vec3.ZERO)) builder.with(OFFSET, QuadTransformers.applying(new Transformation(
+                    new Matrix4f().translation((float) offset.x, (float) offset.y, (float) offset.z))));
+        }
+        return builder.build();
     }
 
     @Override
@@ -99,8 +107,16 @@ public final class SnowyPlantModel extends BakedModelWrapper<BakedModel> {
         if (move != null && !ownQuads.isEmpty()) ownQuads = move.process(ownQuads);
         if (!snow) return ownQuads;
         BlockState snowState = snow();
+        BakedModel snowModel = model(snowState);
         List<BakedQuad> quads = new ArrayList<>(ownQuads);
-        quads.addAll(model(snowState).getQuads(snowState, side, rand, ModelData.EMPTY, renderType));
+        if (Boolean.TRUE.equals(data.get(TOP_UP)) && (side == null || side == Direction.UP)) {
+            // The top face (no cull side in the model) moves from the no-side list to the up one.
+            if (side == Direction.UP) quads.addAll(snowModel.getQuads(snowState, side, rand, ModelData.EMPTY, renderType));
+            for (BakedQuad quad : snowModel.getQuads(snowState, null, rand, ModelData.EMPTY, renderType))
+                if ((quad.getDirection() == Direction.UP) == (side == Direction.UP)) quads.add(quad);
+            return quads;
+        }
+        quads.addAll(snowModel.getQuads(snowState, side, rand, ModelData.EMPTY, renderType));
         return quads;
     }
 
