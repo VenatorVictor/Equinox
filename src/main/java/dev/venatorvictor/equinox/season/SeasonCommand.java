@@ -13,6 +13,7 @@ import dev.venatorvictor.equinox.snow.Snowpack;
 import dev.venatorvictor.equinox.climate.Zone;
 import dev.venatorvictor.equinox.api.Temperatures;
 import dev.venatorvictor.equinox.daylength.DayLength;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -52,18 +53,42 @@ public final class SeasonCommand {
     private static int show(CommandSourceStack source) {
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.show",
+        // Easy to read: the season in its colour, then one line per topic, a coloured label, grey text, white numbers;
+        // the testing lines (climate, surroundings, zone) last and dimmer.
+        ChatFormatting colour = switch (state.season()) {
+            case SPRING -> ChatFormatting.GREEN;
+            case SUMMER -> ChatFormatting.YELLOW;
+            case AUTUMN -> ChatFormatting.GOLD;
+            case WINTER -> ChatFormatting.AQUA;
+        };
+        Component title = Component.translatable("commands.equinox.season.title",
                 Component.translatable("equinox.part." + PARTS.get(state.part())),
-                Component.translatable("equinox.season." + state.season().id()),
-                state.dayOfSeason() + 1, state.daysPerSeason(), state.year() + 1), false);
-        // For testing: the biome's climate zone and seasonal change (with the season's and the day's variation, before the zone's factor), and the biome's temperature here (snow and ice below 0.15).
+                Component.translatable("equinox.season." + state.season().id())).withStyle(colour, ChatFormatting.BOLD);
+        send(source, Component.translatable("commands.equinox.season.show", title, value(state.dayOfSeason() + 1),
+                value(state.daysPerSeason()), value(state.year() + 1)).withStyle(ChatFormatting.GRAY));
         BlockPos pos = BlockPos.containing(source.getPosition());
+        Temperatures.DayRange today = Temperatures.airToday(source.getLevel(), pos);
+        send(source, line("weather", ChatFormatting.GOLD, false,
+                value(String.format("%.1f", Temperatures.air(source.getLevel(), pos))), value(String.format("%.1f", today.low())),
+                value(String.format("%.1f", today.high())), value(String.format("%.1f", Temperatures.water(source.getLevel(), pos))),
+                value(String.format("%.1f", DayLength.daylightHours(state.dayTime(), state.daysPerSeason())))));
+        // Snow: whether it lies here, the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15).
+        var holder = source.getLevel().getBiome(pos);
+        var snowDays = holder.getData(dev.venatorvictor.equinox.climate.BiomeSnow.TYPE);
+        Float warmest = holder.unwrapKey().map(Snowpack.warmest()::get).orElse(null);
+        send(source, line("snow", ChatFormatting.AQUA, false,
+                Component.translatable(SnowRules.lies(holder, pos, Snowpack.warmest()) ? "gui.yes" : "gui.no").withStyle(ChatFormatting.WHITE),
+                value(snowDays != null ? String.format("%.0f", snowDays.days()) : "-"),
+                value(warmest != null ? String.format("%.2f", warmest) : "-")));
+        // For testing: the biome's climate zone and seasonal change (with the season's and the day's variation, before
+        // the zone's factor), and the biome's temperature here (snow and ice below 0.15).
         Biome biome = source.getLevel().getBiome(pos).value();
         Zone zone = Climate.zoneOf(biome);
         String climate = zone.id + (Climate.wet(zone) ? "_wet" : Climate.dry(zone) ? "_dry" : "");
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.climate",
+        send(source, line("climate", ChatFormatting.DARK_AQUA, true,
                 Component.translatable("equinox.climate." + climate), String.format("%+.2f", Climate.change(biome)),
-                String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()), String.format("%.2f", ((ClimateBiome) (Object) biome).equinox$temperature(pos))), false);
+                String.format("%+.2f", Climate.seasonVariation()), String.format("%+.2f", Climate.dailyVariation()),
+                String.format("%.2f", ((ClimateBiome) (Object) biome).equinox$temperature(pos))));
         // Climate blending: the biomes around (largest weights first) and how much warmer (+) or colder they make it here.
         float blend = dev.venatorvictor.equinox.climate.ClimateBlend.delta(biome, pos, ((ClimateBiome) (Object) biome).equinox$blendKind());
         var mix = dev.venatorvictor.equinox.climate.ClimateBlend.mix(pos.getX() >> 4, pos.getZ() >> 4);
@@ -79,26 +104,30 @@ public final class SeasonCommand {
                 around.append(key != null ? key.getPath() : "?").append(' ').append(Math.round(mix.weights()[i] * 100)).append('%');
             }
         }
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.blend",
-                String.format("%+.2f", blend), around.isEmpty() ? "-" : around.toString()), false);
+        send(source, line("blend", ChatFormatting.DARK_AQUA, true, String.format("%+.2f", blend), around.isEmpty() ? "-" : around.toString()));
         // Climate zone: how much of the winter's cold applies here (100% = full winter, 0% = none, near the warm bands).
         float cooling = dev.venatorvictor.equinox.climate.ClimateBlend.coolingAt(false, pos);
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.zone",
-                Float.isNaN(cooling) ? "-" : Math.round(cooling * 100) + "%"), false);
-        // Snow: the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15) and whether it lies here.
-        var holder = source.getLevel().getBiome(pos);
-        var snowDays = holder.getData(dev.venatorvictor.equinox.climate.BiomeSnow.TYPE);
-        Float warmest = holder.unwrapKey().map(Snowpack.warmest()::get).orElse(null);
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.snow",
-                snowDays != null ? String.format("%.0f", snowDays.days()) : "-", warmest != null ? String.format("%.2f", warmest) : "-",
-                Component.translatable(SnowRules.lies(holder, pos, Snowpack.warmest()) ? "gui.yes" : "gui.no")), false);
-        Temperatures.DayRange today = Temperatures.airToday(source.getLevel(), pos);
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.celsius",
-                String.format("%.1f", Temperatures.air(source.getLevel(), pos)), String.format("%.1f", today.low()),
-                String.format("%.1f", today.high()), String.format("%.1f", Temperatures.water(source.getLevel(), pos))), false);
-        source.sendSuccess(() -> Component.translatable("commands.equinox.season.daylight",
-                String.format("%.1f", DayLength.daylightHours(state.dayTime(), state.daysPerSeason()))), false);
+        send(source, line("zone", ChatFormatting.DARK_AQUA, true, Float.isNaN(cooling) ? "-" : Math.round(cooling * 100) + "%"));
         return state.season().ordinal() * SeasonState.PARTS + state.part() + 1;
+    }
+
+    private static void send(CommandSourceStack source, Component line) {
+        source.sendSuccess(() -> line, false);
+    }
+
+    private static Component value(Object value) {
+        return Component.literal(String.valueOf(value)).withStyle(ChatFormatting.WHITE);
+    }
+
+    /** "Label  text": the label in its colour, the text grey (testing lines: dark grey, values grey). */
+    private static Component line(String key, ChatFormatting labelColour, boolean testing, Object... args) {
+        if (testing) for (int i = 0; i < args.length; i++)
+            if (!(args[i] instanceof Component)) args[i] = Component.literal(String.valueOf(args[i])).withStyle(ChatFormatting.GRAY);
+        return Component.empty()
+                .append(Component.translatable("commands.equinox.season.label." + key).withStyle(labelColour))
+                .append(Component.literal("  "))
+                .append(Component.translatable("commands.equinox.season." + key, args)
+                        .withStyle(testing ? ChatFormatting.DARK_GRAY : ChatFormatting.GRAY));
     }
 
     private static int set(CommandSourceStack source, String seasonId, String partId) {
