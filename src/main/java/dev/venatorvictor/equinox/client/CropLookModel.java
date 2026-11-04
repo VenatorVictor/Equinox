@@ -18,6 +18,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SugarCaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
@@ -63,7 +64,7 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
         java.util.Set<Block> fruits = Crops.fruits();
         for (Block block : BuiltInRegistries.BLOCK) {
-            if (!Crops.mortal(block) && !fruits.contains(block)) continue;
+            if (!Crops.mortal(block) && !fruits.contains(block) && !(block instanceof SugarCaneBlock)) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
                 BakedModel model = event.getModels().get(location);
@@ -82,7 +83,8 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         }
         if (!ClientConfig.CROP_LOOKS.get()) return data;
         int look;
-        if (Crops.mortal(state.getBlock())) look = Crops.look(level, pos, state);
+        if (state.getBlock() instanceof SugarCaneBlock) look = Crops.caneLook(region, pos); // by its water only
+        else if (Crops.mortal(state.getBlock())) look = Crops.look(level, pos, state);
         else { // a pumpkin or melon: its stem's look, if a stem holds it
             BlockPos stem = Crops.stemOf(level, pos, state.getBlock());
             look = stem == null ? 0 : Crops.look(level, stem, level.getBlockState(stem));

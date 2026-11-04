@@ -15,6 +15,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.AttachedStemBlock;
@@ -22,6 +24,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.SugarCaneBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.FarmlandWaterManager;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
@@ -268,8 +272,43 @@ public final class Crops {
         };
     }
 
+    /** Sugar cane's water: next to liquid water (or vanilla's frosted ice), frozen (only ice there) or dry. */
+    public enum CaneWater { WET, FROZEN, DRY }
+
+    /**
+     * The water next to the soil under a sugar cane column (pos is any of its blocks). Without it the cane stays
+     * (SugarCaneBlockMixin, vanilla breaks it) but doesn't grow, and looks dry, or frozen when the water froze.
+     */
+    public static CaneWater caneWater(BlockGetter level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        BlockPos base = pos;
+        while (base.getY() > level.getMinBuildHeight() && level.getBlockState(base.below()).getBlock() == state.getBlock()) base = base.below();
+        BlockPos soil = base.below();
+        boolean ice = false;
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos side = soil.relative(direction);
+            BlockState sideState = level.getBlockState(side);
+            if (state.canBeHydrated(level, base, level.getFluidState(side), side) || sideState.is(Blocks.FROSTED_ICE)) return CaneWater.WET;
+            if (sideState.is(BlockTags.ICE)) ice = true;
+        }
+        return ice ? CaneWater.FROZEN : CaneWater.DRY;
+    }
+
+    /** CropLookModel for sugar cane: dry = the strongest wilted look, frozen = the strongest dormant one. */
+    public static int caneLook(BlockGetter level, BlockPos pos) {
+        return switch (caneWater(level, pos)) {
+            case WET -> 0;
+            case FROZEN -> -4;
+            case DRY -> 4;
+        };
+    }
+
     public static void onCropGrow(CropGrowEvent.Pre event) {
         if (event.getResult() == CropGrowEvent.Pre.Result.DO_NOT_GROW || !(event.getLevel() instanceof Level level)) return;
+        if (event.getState().getBlock() instanceof SugarCaneBlock && caneWater(level, event.getPos()) != CaneWater.WET) {
+            event.setResult(CropGrowEvent.Pre.Result.DO_NOT_GROW);
+            return;
+        }
         Effect effect = effect(level, event.getPos(), event.getState());
         if (effect == Effect.FASTER) {
             if (level.random.nextFloat() < Config.idealBonus()) event.setResult(CropGrowEvent.Pre.Result.GROW);
