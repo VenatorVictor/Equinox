@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import dev.venatorvictor.equinox.client.EquinoxClient;
 import dev.venatorvictor.equinox.climate.BiomeCelsius;
 import dev.venatorvictor.equinox.climate.Climate;
-import dev.venatorvictor.equinox.crops.CropBlocks;
 import dev.venatorvictor.equinox.crops.CropClimate;
 import dev.venatorvictor.equinox.crops.CropWarmth;
 import dev.venatorvictor.equinox.crops.Crops;
@@ -96,7 +95,6 @@ public final class Equinox {
             event.register(dev.venatorvictor.equinox.climate.BiomeSnow.TYPE);
             event.register(CropClimate.TYPE);
         });
-        CropBlocks.register(modBus);
         dev.venatorvictor.equinox.snow.SnowBlocks.register(modBus);
         NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
         // Biome data maps (°C year, snow days) can arrive after the tags, on the client too: sort the biomes again then.

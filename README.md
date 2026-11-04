@@ -24,8 +24,8 @@ No library mods are needed.
 - Lakes and rivers freeze while it snows.
 
 ### Crops
-- Crops grow by temperature: fast when it's ideal, slowly when it's cool or warm, dormant in the cold, killed by
-  frost or heat.
+- Crops grow by temperature: fast when it's ideal, slowly when it's cool or warm, dormant in the cold. Frost or heat
+  sends them back to their first stage: the harvest is lost, the plant isn't.
 - Campfires, torches and other heat sources protect them; ice cools them.
 - On hot days farmland needs water closer by.
 

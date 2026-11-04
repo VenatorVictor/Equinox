@@ -44,7 +44,6 @@ public final class EquinoxClient {
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerPlants);
         modBus.addListener(RegisterColorHandlersEvent.ColorResolvers.class, dev.venatorvictor.equinox.client.colors.TreeColors::registerResolvers);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SeasonalTextures::onModifyBakingResult);
-        modBus.addListener(ModelEvent.ModifyBakingResult.class, DeadCropModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, CropLookModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyPlantModel::onModifyBakingResult);
         modBus.addListener(ModelEvent.ModifyBakingResult.class, SnowyBlockModel::onModifyBakingResult);

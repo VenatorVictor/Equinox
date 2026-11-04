@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.SugarCaneBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.neoforged.neoforge.common.FarmlandWaterManager;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
@@ -43,10 +45,9 @@ import java.util.Map;
 /**
  * Crops by temperature in °C (dev.venatorvictor.equinox.api.Temperatures, plus heaters and coolers, CropWarmth). Each
  * crop has a range (CropClimate: data map, else from its season tags). On the day's average: below grows_from =
- * dormant, ideal = faster, cool or warm = 1 in slow_growth chances, above grows_to = stops (dies on dry farmland).
+ * dormant, ideal = faster, cool or warm = 1 in slow_growth chances, above grows_to = stops (starts over on dry farmland).
  * Tonight's low below the cold limit or today's high above the heat limit (or the heat stop zone on dry farmland)
- * kills crops standing on farmland (CropBlock, StemBlock; others like rice panicles or tomatoes on rope only stop):
- * they become a dead crop. Other plants (saplings, berries, cane, cocoa...) only grow slower or stop. Hooked into the growth
+ * sends crops (CropBlock, StemBlock, mortal()) back to their first stage: they don't die, the harvest is lost. Other plants (saplings, berries, cane, cocoa...) only grow slower or stop. Hooked into the growth
  * events, bone meal and the crop's own random tick (RandomTickMixin); ripe crops random tick too (CropBlockMixin) so
  * frost reaches them. Dimensions without seasons and plants without a range grow as in vanilla.
  */
@@ -133,7 +134,7 @@ public final class Crops {
 
     /**
      * How far a living crop is from growing well, for its look (client, CropLookModel): 0 = fine, 1 = growing slowly
-     * near a limit (the warning), 2..4 = stopped, further past the limit (4 = at the killing limit). Negative = cold,
+     * near a limit (the warning), 2..4 = stopped, further past the limit (4 = at the limit where it starts over). Negative = cold,
      * positive = heat.
      */
     public static int look(Level level, BlockPos pos, BlockState state) {
@@ -152,21 +153,21 @@ public final class Crops {
         return 0;
     }
 
-    /** Stopped: 2, 3 or 4 by how far past the limit, out of the room left before it dies. */
+    /** Stopped: 2, 3 or 4 by how far past the limit, out of the room left before it starts over. */
     private static int step(float past, float room) {
         float f = room <= 0 ? 1 : past / room;
         return f < 1 / 3F ? 2 : f < 2 / 3F ? 3 : 4;
     }
 
-    /** Planted crops that aren't CropBlocks but die too (rice and young tomatoes from a farming mod). */
+    /** Planted crops that aren't CropBlocks but start over too (rice and young tomatoes from a farming mod). */
     private static final java.util.Set<ResourceLocation> MORTAL_EXTRA = java.util.Set.of(
             ResourceLocation.fromNamespaceAndPath("farmersdelight", "rice"),
             ResourceLocation.fromNamespaceAndPath("farmersdelight", "budding_tomatoes"));
 
     /**
-     * Frost and heat kill planted crops: CropBlocks (all their parts, on farmland or not: rice panicles, tomatoes on
-     * rope), stems, and MORTAL_EXTRA. Wild crops (wild crops from mods, berries), pumpkins and melons without a
-     * stem, cocoa, cane, cactus and bamboo only stop, so generated land isn't spoiled.
+     * Frost and heat send planted crops back to their first stage: CropBlocks (all their parts, on farmland or not:
+     * rice panicles, tomatoes on rope), stems, and MORTAL_EXTRA. Wild crops (wild crops from mods, berries), pumpkins
+     * and melons without a stem, cocoa, cane, cactus and bamboo only stop.
      */
     public static boolean mortal(Block block) {
         return block instanceof CropBlock || block instanceof StemBlock || block instanceof AttachedStemBlock
@@ -200,7 +201,7 @@ public final class Crops {
         return null;
     }
 
-    /** RandomTickMixin, before every random tick of a block: kills a farmland crop past its limits. True = it died. */
+    /** RandomTickMixin, before every random tick of a block: a crop past its limits starts over. True = it changed. */
     public static boolean onRandomTick(BlockState state, ServerLevel level, BlockPos pos) {
         if (!mortal(state.getBlock())) return false;
         if (state.hasProperty(SnowyCrops.SNOWY)) { // snow settles or melts; this tick does nothing else
@@ -212,34 +213,37 @@ public final class Crops {
         }
         Effect effect = effect(level, pos, state);
         if (effect != Effect.FROST && effect != Effect.HEAT) return false;
-        DeadCropBlock.Cause cause = effect == Effect.FROST ? DeadCropBlock.Cause.FROST : DeadCropBlock.Cause.HEAT;
-        // The whole plant dies (rice and its panicles, a tomato vine up its rope), top first so no part pops off.
+        // The whole plant starts over (rice and its panicles, a tomato vine up its rope): the parts above go, top first
+        // so none pops off, and the bottom goes back to its first stage. Nothing drops: the harvest is lost.
         BlockPos bottom = pos;
         while (bottom.getY() > level.getMinBuildHeight() && mortal(level.getBlockState(bottom.below()).getBlock())) bottom = bottom.below();
         BlockPos top = pos;
         while (top.getY() < level.getMaxBuildHeight() - 1 && mortal(level.getBlockState(top.above()).getBlock())) top = top.above();
-        for (BlockPos p = top; p.getY() >= bottom.getY(); p = p.below()) kill(level, p, level.getBlockState(p), cause);
-        Block fruit = fruitOf(state.getBlock());
-        if (fruit != null) { // the pumpkin or melon it holds dies with it
-            BlockPos fruitPos = pos.relative(state.getValue(AttachedStemBlock.FACING));
-            BlockState fruitState = level.getBlockState(fruitPos);
-            if (fruitState.is(fruit)) {
-                level.setBlock(fruitPos, CropBlocks.DEAD_FRUIT.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause), Block.UPDATE_ALL);
-                if (level.getBlockEntity(fruitPos) instanceof DeadCropBlockEntity entity) entity.setOriginal(fruitState);
-            }
-        }
+        BlockState bottomState = level.getBlockState(bottom);
+        BlockState young = firstStage(bottomState);
+        if (top.equals(bottom) && young == bottomState) return false; // already at its start: nothing to undo
+        for (BlockPos p = top; p.getY() > bottom.getY(); p = p.below()) level.removeBlock(p, false);
+        level.setBlock(bottom, young, Block.UPDATE_ALL);
         return true;
     }
 
-    /** Turns one plant block into a dead crop that remembers it (snow and water kept). */
-    private static void kill(ServerLevel level, BlockPos pos, BlockState state, DeadCropBlock.Cause cause) {
-        boolean snowy = cause == DeadCropBlock.Cause.FROST && state.hasProperty(SnowyCrops.SNOWY) && state.getValue(SnowyCrops.SNOWY);
-        BlockState dead = CropBlocks.DEAD_CROP.get().defaultBlockState().setValue(DeadCropBlock.CAUSE, cause)
-                .setValue(DeadCropBlock.SNOWY, snowy).setValue(DeadCropBlock.WATERLOGGED, state.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
-        // Flagged as a piston move: tomatoes on rope put their rope back when replaced (onRemove),
-        // which would overwrite the dead crop.
-        level.setBlock(pos, dead, Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
-        if (level.getBlockEntity(pos) instanceof DeadCropBlockEntity entity) entity.setOriginal(state);
+    /**
+     * A crop's first stage, its other properties kept (snow, water): age at its lowest, an attached stem back to a
+     * young stem (the pumpkin or melon it held stays).
+     */
+    private static BlockState firstStage(BlockState state) {
+        if (state.getBlock() instanceof AttachedStemBlock) {
+            Block stem = BuiltInRegistries.BLOCK.get(((AttachedStemBlockAccessor) state.getBlock()).equinox$stem());
+            BlockState young = stem.defaultBlockState();
+            if (state.hasProperty(SnowyCrops.SNOWY) && young.hasProperty(SnowyCrops.SNOWY)) young = young.setValue(SnowyCrops.SNOWY, state.getValue(SnowyCrops.SNOWY));
+            return young;
+        }
+        for (Property<?> property : state.getProperties())
+            if (property instanceof IntegerProperty age && property.getName().equals("age")) {
+                int first = java.util.Collections.min(age.getPossibleValues());
+                return state.getValue(age) == first ? state : state.setValue(age, first);
+            }
+        return state;
     }
 
     /**

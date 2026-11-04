@@ -15,7 +15,6 @@
     "ServerLevelTimeMixin",
     "BlockSnowyMixin",
     "StateDefinitionBuilderAccessor",
-    "IceSeamMixin",
     "ServerLevelSnowfallMixin",
     "SnowStateMixin",
     "BlockStateSnowBreakMixin",
