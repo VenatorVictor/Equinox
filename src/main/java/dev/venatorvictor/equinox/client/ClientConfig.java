@@ -16,7 +16,6 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue MANGROVE;
     public static final ModConfigSpec.EnumValue<TreeColors> TREE_COLORS;
     public static final ModConfigSpec.BooleanValue SEASONAL_TEXTURES;
-    public static final ModConfigSpec.EnumValue<SnowModels> SNOW_MODELS;
     public static final ModConfigSpec.BooleanValue DH_REFRESH;
     public static final ModConfigSpec.BooleanValue DH_SNOW;
     public static final ModConfigSpec.BooleanValue CROP_LOOKS;
@@ -32,9 +31,6 @@ public final class ClientConfig {
      * the original's brightness; OFF = the earlier colors (biome tables).
      */
     public enum TreeColors { REPLACE, FILTER, OFF }
-
-    /** Snowy leaves: NEW = a thin snow layer on top, VANILLA = snow drawn on their own faces. */
-    public enum SnowModels { NEW, VANILLA }
 
     /** What makes snowy textures and LOD snow fade in (4 steps). */
     public enum SnowLook { GROUND, CALENDAR }
@@ -70,9 +66,6 @@ public final class ClientConfig {
         SEASONAL_TEXTURES = BUILDER.comment("Seasonal block textures from resource packs in the seasonal texture format",
                         "(assets/<namespace>/season_textures/*.json), e.g. Seasonal Plants and Seasonal Trees.")
                 .define("seasonal_textures", true);
-        SNOW_MODELS = BUILDER.comment("Snowy leaves: NEW = a thin snow layer on top of the leaves, VANILLA = snow drawn on the leaves'",
-                        "own faces (their shape as it is).")
-                .defineEnum("snow_models", SnowModels.NEW);
         BUILDER.pop().push("crops");
         CROP_LOOKS = BUILDER.comment("Crops that don't grow show it, in 4 steps: a hint while they grow slowly near a limit,",
                         "then stronger the further past it (dormant from cold, wilted from heat).")

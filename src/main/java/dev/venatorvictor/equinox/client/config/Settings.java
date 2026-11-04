@@ -151,9 +151,6 @@ final class Settings {
         all.add(client(ClientConfig.SNOW_LOOK, "snow_look").tab(SNOW, null)
                 .choice(ClientConfig.SnowLook.GROUND, "ground").choice(ClientConfig.SnowLook.CALENDAR, "calendar")
                 .cost(Cost.NONE).applies("redraw"));
-        all.add(client(ClientConfig.SNOW_MODELS, "snow_models").tab(SNOW, null)
-                .choice(ClientConfig.SnowModels.NEW, "new").choice(ClientConfig.SnowModels.VANILLA, "vanilla")
-                .cost(Cost.LOW).applies("redraw"));
 
         // ---- Looks
         all.add(client(ClientConfig.GRASS, "grass").tab(LOOKS, "colors")

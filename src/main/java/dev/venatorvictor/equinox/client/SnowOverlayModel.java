@@ -32,7 +32,6 @@ import net.minecraft.world.level.block.ChainBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.GrassBlock;
-import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.StairBlock;
@@ -54,15 +53,15 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs, chains, leaves, the snowy grass block):
+ * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs, chains, the snowy grass block):
  * the block's own faces again, a hair in front, with one shared see-through texture: a snow cap on side faces (the
  * face's own texture coordinates, so it sits at the top of each face), vanilla's snow on top faces. Any block of
  * those kinds works (modded ones too) with any texture pack, as the block's textures are never replaced.
  * Like the snowy textures, the snow fades in over the look steps (side faces from the top down).
- * Leaves with snow_models = NEW get a thin snow layer on top instead of snow on their top face.
+ * Not leaves: they only show the real snow layer lying on them (and their own snowy textures under it).
  */
 public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
-    /** Look step 0..4 (low 3 bits), +8: draw the snow layer on top (leaves, NEW). */
+    /** Look step 1..4. */
     private static final ModelProperty<Integer> SNOW = new ModelProperty<>();
     private static final ChunkRenderTypeSet CUTOUT = ChunkRenderTypeSet.of(RenderType.cutout());
     private static final ResourceLocation CAP = ResourceLocation.fromNamespaceAndPath("equinox", "block/snow_cap");
@@ -71,7 +70,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     /** Distance in front of the face (blocks). */
     private static final float LIFT = 0.0015F;
 
-    private enum Kind { FULL, HALF, LEAVES, GRASS }
+    private enum Kind { FULL, HALF, GRASS }
 
     private final Kind kind;
     /** Overlay quads per (base quad, step), made once. */
@@ -86,7 +85,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     private static @Nullable Kind kind(Block block) {
         if (block instanceof StairBlock || block instanceof SlabBlock) return Kind.HALF;
         if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock || block instanceof ChainBlock) return Kind.FULL;
-        if (block instanceof LeavesBlock) return Kind.LEAVES;
         if (block instanceof GrassBlock) return Kind.GRASS;
         return null;
     }
@@ -117,9 +115,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         data = super.getModelData(region, pos, state, data);
         int step = step(region, pos, state);
         if (step == 0) return data;
-        int packed = step;
-        if (kind == Kind.LEAVES && ClientConfig.SNOW_MODELS.get() == ClientConfig.SnowModels.NEW && region.getBlockState(pos.above()).isAir()) packed |= 8;
-        return data.derive().with(SNOW, packed).build();
+        return data.derive().with(SNOW, step).build();
     }
 
     /** How snowy the block looks, 0..4: snow lying on it, or the same rule as the snowy textures. */
@@ -139,14 +135,12 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
 
     @Override
     public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
-        Integer packed = data.get(SNOW);
-        if (packed == null || state == null) return super.getQuads(state, side, rand, data, renderType);
+        Integer step = data.get(SNOW);
+        if (step == null || state == null) return super.getQuads(state, side, rand, data, renderType);
         ChunkRenderTypeSet ownTypes = super.getRenderTypes(state, rand, data);
         List<BakedQuad> quads = renderType == null || ownTypes.contains(renderType)
                 ? new ArrayList<>(super.getQuads(state, side, rand, data, renderType)) : new ArrayList<>();
         if (renderType != null && renderType != RenderType.cutout()) return quads;
-        int step = packed & 7;
-        boolean layer = (packed & 8) != 0;
         if (cap == null) {
             cap = sprite(CAP);
             capHalf = sprite(CAP_HALF);
@@ -156,16 +150,9 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         for (RenderType type : ownTypes) {
             for (BakedQuad quad : super.getQuads(state, side, rand, data, type)) {
                 if (quad.getSprite() == snowTop) continue; // the fence's own snow layer
-                if (layer && quad.getDirection() == Direction.UP) continue;
                 BakedQuad snow = overlay(quad, step);
                 if (snow != null) quads.add(snow);
             }
-        }
-        if (layer && side == null) {
-            BlockState one = Blocks.SNOW.defaultBlockState();
-            BakedModel snowModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(one);
-            for (Direction direction : new Direction[]{null, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST})
-                for (BakedQuad quad : snowModel.getQuads(one, direction, rand, ModelData.EMPTY, null)) quads.add(raised(quad));
         }
         return quads;
     }
@@ -245,11 +232,4 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         }
     }
 
-    /** A snow layer quad moved up one block (the layer lying on the leaves). */
-    private static BakedQuad raised(BakedQuad quad) {
-        int[] v = quad.getVertices().clone();
-        int stride = v.length / 4;
-        for (int i = 0; i < 4; i++) v[i * stride + 1] = Float.floatToRawIntBits(Float.intBitsToFloat(v[i * stride + 1]) + 1F);
-        return new BakedQuad(v, -1, quad.getDirection(), quad.getSprite(), quad.isShade(), quad.hasAmbientOcclusion());
-    }
 }
