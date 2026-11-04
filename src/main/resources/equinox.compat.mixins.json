@@ -6,7 +6,7 @@
   "client": [
     "FullDataToRenderDataTransformerMixin",
     "SnowModRenderMixin",
-    "ShaderBlockAppearanceMixin"
+    "ShaderSnowIdMixin"
   ],
   "injectors": {
     "defaultRequire": 0
