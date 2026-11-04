@@ -112,12 +112,17 @@ public final class SeasonalTextures {
 
     private static Set<TextureAtlasSprite> usedSprites(BakedModel model, RandomSource random) {
         Set<TextureAtlasSprite> used = new HashSet<>();
-        for (Direction side : Direction.values()) {
+        // Some models need a block state and fail without one: they keep their textures.
+        try {
+            for (Direction side : Direction.values()) {
+                random.setSeed(42L);
+                for (BakedQuad quad : model.getQuads(null, side, random)) used.add(quad.getSprite());
+            }
             random.setSeed(42L);
-            for (BakedQuad quad : model.getQuads(null, side, random)) used.add(quad.getSprite());
+            for (BakedQuad quad : model.getQuads(null, null, random)) used.add(quad.getSprite());
+        } catch (RuntimeException e) {
+            return Set.of();
         }
-        random.setSeed(42L);
-        for (BakedQuad quad : model.getQuads(null, null, random)) used.add(quad.getSprite());
         return used;
     }
 
