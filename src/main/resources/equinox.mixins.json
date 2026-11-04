@@ -27,7 +27,9 @@
     "PathNavigationRegionAccessor",
     "SnowyDirtShapeMixin",
     "BiomeFoliageAccessor",
-    "SugarCaneBlockMixin"
+    "SugarCaneBlockMixin",
+    "SnowGravityMixin",
+    "FallingSnowMixin"
   ],
   "client": [
     "client.BiomeColorMixin",
