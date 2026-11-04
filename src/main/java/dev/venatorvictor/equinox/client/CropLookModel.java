@@ -103,8 +103,11 @@ public final class CropLookModel extends BakedModelWrapper<BakedModel> {
         List<BakedQuad> swapped = new ArrayList<>(original.size());
         Map<BakedQuad, BakedQuad> cache = quads[kind.ordinal()];
         Map<TextureAtlasSprite, TextureAtlasSprite> spriteCache = sprites[kind.ordinal()];
+        // Sugar cane's texture is pale and gets its green from the grass tint, which would cover its looks: untinted.
+        // (One model per block state, so the cache only ever holds one of the two.)
+        boolean keepTint = !(state != null && state.getBlock() instanceof SugarCaneBlock);
         for (BakedQuad quad : original)
-            swapped.add(cache.computeIfAbsent(quad, q -> DeadCropModel.retexture(q, DeadCropModel.sprite(spriteCache, q.getSprite(), kind), true)));
+            swapped.add(cache.computeIfAbsent(quad, q -> DeadCropModel.retexture(q, DeadCropModel.sprite(spriteCache, q.getSprite(), kind), keepTint)));
         return swapped;
     }
 
