@@ -232,5 +232,6 @@
   "equinox.settings.choice.replace": "Substituir",
   "equinox.settings.choice.filter": "Filtro",
   "equinox.settings.choice.off": "Desligado",
-  "item.equinox.acorn": "Bolota"
+  "item.equinox.acorn": "Bolota",
+  "item.equinox.birch_seeds": "Sementes de Bétula"
 }

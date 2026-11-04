@@ -47,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Seeds and fruit on tree leaves, picked by hand (right click), like berries. For now: oak acorns.
+ * Seeds and fruit on tree leaves, picked by hand (right click), like berries: oak acorns, birch seeds.
  * <p>
  * Some leaf blocks bear (a fixed share, by position, so server and client agree without saving anything). The look
  * comes from the seasonal texture files ("fruit_textures", drawn over bearing leaves that weren't picked this year);
@@ -57,13 +57,16 @@ import java.util.function.Supplier;
 public final class TreeFruit {
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Equinox.MOD_ID);
     public static final DeferredItem<Item> ACORN = ITEMS.register("acorn", () -> new SeedItem(Blocks.OAK_SAPLING, new Item.Properties()));
+    public static final DeferredItem<Item> BIRCH_SEEDS = ITEMS.register("birch_seeds", () -> new SeedItem(Blocks.BIRCH_SAPLING, new Item.Properties()));
 
     /** One kind of tree: its leaves, the share of them that bear, the ripe year steps (first..last), what a pick gives. */
     private record Kind(Block leaves, int percent, int ripeFrom, int ripeTo, Supplier<Item> item, int min, int max) {}
 
-    // Ripe: end of late summer .. end of early autumn (mid September to late October), as in
-    // season_textures/minecraft_oak_leaves.json.
-    private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3)};
+    // Ripe, as in the season_textures files: acorns from the end of late summer to the end of early autumn (mid
+    // September to late October, minecraft_oak_leaves.json); birch seed catkins brown from the start of early autumn
+    // to the start of mid autumn (late September to early November, minecraft_birch_leaves.json).
+    private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3),
+            new Kind(Blocks.BIRCH_LEAVES, 30, 12, 14, BIRCH_SEEDS, 1, 3)};
 
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Equinox.MOD_ID);
     /** A chunk's picked leaves: packed local position -> year picked. Saved as pairs of ints. */
@@ -79,7 +82,10 @@ public final class TreeFruit {
         ITEMS.register(modBus);
         ATTACHMENTS.register(modBus);
         modBus.addListener(BuildCreativeModeTabContentsEvent.class, event -> {
-            if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(ACORN.get());
+            if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
+                event.accept(ACORN.get());
+                event.accept(BIRCH_SEEDS.get());
+            }
         });
         modBus.addListener(RegisterPayloadHandlersEvent.class, event ->
                 event.registrar("1").optional().playToClient(Payload.TYPE, Payload.CODEC, (payload, context) -> context.enqueueWork(payload::receive)));

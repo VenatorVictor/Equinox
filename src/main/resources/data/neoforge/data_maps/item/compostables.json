@@ -2,6 +2,9 @@
   "values": {
     "equinox:acorn": {
       "chance": 0.3
+    },
+    "equinox:birch_seeds": {
+      "chance": 0.3
     }
   }
 }

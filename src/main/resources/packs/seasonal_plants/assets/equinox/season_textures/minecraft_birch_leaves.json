@@ -3,14 +3,77 @@
     "minecraft:block/birch_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
+  "snow_needs_snow_above": true,
   "slices": [
     {
       "start": "late_autumn_start",
-      "end": "early_spring_start",
+      "end": "late_autumn_start",
       "textures": {
-        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+        "all": "equinox:block/trees/birch_twigs"
       },
       "tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_last"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_textures": {
+        "all": "equinox:block/trees/birch_twigs_snowy"
+      },
+      "snow_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_autumn_end",
+      "end": "late_winter_end",
+      "textures": {
+        "all": "equinox:block/trees/birch_twigs"
+      },
+      "tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "snow_textures": {
+        "all": "equinox:block/trees/birch_twigs_snowy"
+      },
+      "snow_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "early_spring_start",
+      "end": "early_spring_start",
+      "textures": {
+        "all": "equinox:block/trees/birch_twigs"
+      },
+      "tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_swell"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "snow_textures": {
+        "all": "equinox:block/trees/birch_twigs_snowy"
+      },
+      "snow_tint": {
         "all": -1
       }
     },
@@ -21,9 +84,95 @@
         "all": "equinox:leaf_fall/birch/stage_2"
       },
       "under_textures": {
-        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+        "all": "equinox:block/trees/birch_twigs"
       },
       "under_tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_open"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_tiny"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "mid_spring_start",
+      "end": "mid_spring_start",
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_full"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_small"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "mid_spring_end",
+      "end": "mid_spring_end",
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_fade"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_small_fade"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_spring_start",
+      "end": "mid_summer_end",
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_green"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "late_summer_start",
+      "end": "late_summer_end",
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_new"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_turning"
+      },
+      "fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "early_autumn_start",
+      "end": "early_autumn_start",
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_brown"
+      },
+      "fruit_tint": {
         "all": -1
       }
     },
@@ -34,9 +183,21 @@
         "all": "equinox:leaf_fall/birch/stage_1"
       },
       "under_textures": {
-        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+        "all": "equinox:block/trees/birch_twigs"
       },
       "under_tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_brown"
+      },
+      "fruit_tint": {
         "all": -1
       }
     },
@@ -47,9 +208,21 @@
         "all": "equinox:leaf_fall/birch/stage_2"
       },
       "under_textures": {
-        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+        "all": "equinox:block/trees/birch_twigs"
       },
       "under_tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_brown"
+      },
+      "fruit_tint": {
         "all": -1
       }
     },
@@ -60,9 +233,21 @@
         "all": "equinox:leaf_fall/birch/stage_3"
       },
       "under_textures": {
-        "all": "equinox:block/trees/birch_leaves_bare_v3_2"
+        "all": "equinox:block/trees/birch_twigs"
       },
       "under_tint": {
+        "all": -1
+      },
+      "over_textures": {
+        "all": "equinox:block/trees/birch_catkins_winter"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/birch_seeds_breaking"
+      },
+      "fruit_tint": {
         "all": -1
       }
     }

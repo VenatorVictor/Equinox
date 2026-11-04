@@ -165,6 +165,11 @@ public final class SeasonalTextures {
                 if (over.length > 0) variants[i].over = over[i % over.length];
                 if (fruit.length > 0) variants[i].fruit = fruit[i % fruit.length];
             }
+            // The snow set keeps what is drawn in front (catkins and seeds on snowy bare twigs).
+            for (int i = 0; i < snowVariants.length; i++) {
+                if (over.length > 0) snowVariants[i].over = over[i % over.length];
+                if (fruit.length > 0) snowVariants[i].fruit = fruit[i % fruit.length];
+            }
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % ColorTables.STEPS) {
                 byTerm[term] = variants;

@@ -37,6 +37,9 @@ No library mods are needed.
 - Oaks hang catkins in late spring. About a third of oak leaf blocks also get tiny red flowers that grow into
   acorns over the summer; pick the ripe acorns in mid autumn with a right click (they come back the next year).
   Planting an acorn grows an oak sapling.
+- Birches keep small dark catkins on their bare twigs all winter; they open yellow at leaf-out. About a third of
+  birch leaf blocks also hang seed catkins, green all summer and brown in autumn: pick them for birch seeds, which
+  grow a birch sapling.
 
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.

@@ -350,5 +350,6 @@
   "equinox.settings.choice.replace": "Replace",
   "equinox.settings.choice.filter": "Filter",
   "equinox.settings.choice.off": "Off",
-  "item.equinox.acorn": "Acorn"
+  "item.equinox.acorn": "Acorn",
+  "item.equinox.birch_seeds": "Birch Seeds"
 }

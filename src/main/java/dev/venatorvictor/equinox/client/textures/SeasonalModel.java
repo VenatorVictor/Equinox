@@ -105,7 +105,11 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             SeasonalTextures.Variant normal = hasNormal ? choose(variants, pos) : null;
             boolean fruit = normal != null && normal.fruit != null && state != null
                     && dev.venatorvictor.equinox.trees.TreeFruit.showsFruit(level, state, pos);
-            if (step >= 4) return pick(choose(snowVariants, pos), null, false);
+            if (step >= 4) {
+                SeasonalTextures.Variant snow = choose(snowVariants, pos);
+                return pick(snow, null, snow != null && snow.fruit != null && state != null
+                        && dev.venatorvictor.equinox.trees.TreeFruit.showsFruit(level, state, pos));
+            }
             if (step > 0) {
                 SeasonalTextures.Variant snow = choose(snowVariants, pos);
                 return pick(normal, snow == null ? null : snow.overlay(step), fruit);
