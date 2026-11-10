@@ -4,6 +4,7 @@ import dev.venatorvictor.equinox.api.SeasonState;
 import dev.venatorvictor.equinox.api.Seasons;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -16,7 +17,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * times the zone's factor. In seasonal zones the same climate also sets the Minecraft temperature (snow, ice, rain),
  * and the daily mean here is read back from it, so the two always agree. Underground the season fades out over 20 blocks toward 15.6 °C, then it
  * warms toward ~32 °C near bedrock (the Nether is below; an almost linear curve); open sky keeps the weather. Cave biomes with
- * a value (lush caves, deep dark, sulfur caves) replace both.
+ * a value (lush caves, deep dark, sulfur caves) replace both. Other dimensions (Nether, End) use their biome's value as it is.
  */
 public final class Celsius {
     /** °C per Minecraft temperature unit, for the variation (0.067 season variation: about 2 °C). */
@@ -36,6 +37,7 @@ public final class Celsius {
     /** The air at pos, dayWeight 0 = tonight's low, 1 = today's high. */
     public static float air(Level level, BlockPos pos, float dayWeight) {
         Holder<Biome> here = level.getBiome(pos);
+        if (!here.is(BiomeTags.IS_OVERWORLD)) return otherDimension(here, dayWeight);
         BiomeCelsius cave = here.getData(BiomeCelsius.TYPE);
         if (cave != null && Climate.zoneOf(here.value()) == Zone.CAVE) return Mth.lerp(dayWeight, cave.night(), cave.day());
         int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
@@ -56,6 +58,10 @@ public final class Celsius {
         int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
         if (pos.getY() < surface && !level.canSeeSky(pos)) return air(level, pos, 0.5F); // underground: the rock's
         Holder<Biome> holder = level.getBiome(pos);
+        if (!holder.is(BiomeTags.IS_OVERWORLD)) {
+            BiomeCelsius other = holder.getData(BiomeCelsius.TYPE);
+            return other != null && other.water().isPresent() ? other.water().get() : Math.max(0, otherDimension(holder, 0.5F));
+        }
         Zone zone = Climate.zoneOf(holder.value());
         BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
         float night = entry != null ? entry.night() : fallback(holder.value()) - 4, day = entry != null ? entry.day() : night + 8;
@@ -111,6 +117,17 @@ public final class Celsius {
     }
 
     /** Biomes without a value (other mods): a rough mean from the climate temperature (plains 0.8: 14 °C). */
+    /**
+     * Nether, End and other dimensions: the biome's value as it is, no seasons, depth or height (the Nether's roof
+     * would otherwise read as underground).
+     */
+    private static float otherDimension(Holder<Biome> holder, float dayWeight) {
+        BiomeCelsius entry = holder.getData(BiomeCelsius.TYPE);
+        if (entry != null) return Mth.lerp(dayWeight, entry.night(), entry.day());
+        float mean = fallback(holder.value());
+        return Mth.lerp(dayWeight, mean - 4, mean + 4);
+    }
+
     private static float fallback(Biome biome) {
         float temperature = biome.getBaseTemperature() + ((ClimateBiome) (Object) biome).equinox$shift();
         return Mth.clamp(temperature * 25 - 6, -25, 35);
