@@ -1,5 +1,6 @@
 package dev.venatorvictor.equinox.client;
 
+import dev.venatorvictor.equinox.api.SeasonState;
 import dev.venatorvictor.equinox.climate.FarBlend;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -101,11 +102,14 @@ public final class EquinoxClient {
         ChunkRefresher.tick();
 
         boolean changed = ColorClock.tick(level);
-        int step = ColorClock.active ? ColorClock.step : -1;
-        // Textures change once per color step and can be anywhere (also after joining, when the first chunks
-        // were meshed before the season was known); snowy textures follow the daily temperature, so with those
-        // every color update redraws everything; colors only need the surface.
-        if (SeasonalTextures.any && step != lastStep || SeasonalTextures.anySnow && changed) ChunkRefresher.refreshAll();
+        int step = ColorClock.active ? ColorClock.week : -1;
+        // Textures change by the week, only in weeks where some file changes them (or after a jump of more than a
+        // week, e.g. a command, or joining: the first chunks were meshed before the season was known), and can be
+        // anywhere; snowy textures follow the daily temperature, so with those every color update redraws
+        // everything; colors only need the surface.
+        boolean newTextures = step != lastStep && (lastStep < 0 || step < 0
+                || step != (lastStep + 1) % SeasonState.WEEKS || SeasonalTextures.CHANGES[step]);
+        if (SeasonalTextures.any && newTextures || SeasonalTextures.anySnow && changed) ChunkRefresher.refreshAll();
         else if (changed) ChunkRefresher.refreshVisible();
         lastStep = step;
         if (ClientSnow.takeRefresh()) snowChanged();

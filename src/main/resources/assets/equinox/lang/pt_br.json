@@ -1,7 +1,7 @@
 {
   "equinox.settings.days_per_season.name": "Duração da estação",
   "equinox.settings.heading.calendar": "Calendário",
-  "equinox.settings.days_per_season.desc": "Dias em uma estação. Um ano tem 4 estações, cada uma com início, meio e fim.\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
+  "equinox.settings.days_per_season.desc": "Dias em uma estação, de 14 em 14: uma estação tem 14 semanas de dias inteiros (42 dias: 3 dias por semana). Um ano tem 4 estações, cada uma com início, meio e fim.\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
   "equinox.settings.latitude.name": "Latitude",
   "equinox.settings.heading.day_length": "Duração do dia",
   "equinox.settings.latitude.desc": "O sol fica mais tempo no céu no verão e menos no inverno, como nesta latitude na Terra. Nos equinócios os dias ficam como no vanilla (13,6 horas). Mobs, camas e sensores de luz solar seguem o sol.\nO controle mostra as horas de sol no dia mais longo (primeiro dia do verão) / no mais curto (primeiro dia do inverno). 0: dias do vanilla o ano todo.",

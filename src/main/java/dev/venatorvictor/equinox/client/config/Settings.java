@@ -64,7 +64,7 @@ final class Settings {
 
         // ---- Seasons
         all.add(server(Config.DAYS_PER_SEASON, "days_per_season").tab(SEASONS, "calendar")
-                .cost(Cost.NONE).range(3, 120, 1)
+                .cost(Cost.NONE).range(14, 168, 14)
                 .label((v, x) -> u("season_days", days(v), (int) v * 4)));
         all.add(server(Config.LATITUDE, "latitude").tab(SEASONS, "day_length")
                 .cost(Cost.NONE).range(0, 60, 1)

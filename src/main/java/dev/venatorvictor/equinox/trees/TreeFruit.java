@@ -144,8 +144,8 @@ public final class TreeFruit {
         if (kind == null || !bears(kind, pos)) return false;
         SeasonState season = Seasons.get(level);
         if (season == null) return false;
-        int step = Math.min((int) (season.yearProgress() * 24), 23); // year step, 0 = the spring equinox
-        if (step < kind.ripeFrom || step > kind.ripeTo) return false;
+        int week = season.week(); // 0 = the first days of spring
+        if (week < SeasonState.stepStartWeek(kind.ripeFrom) || week > SeasonState.stepEndWeek(kind.ripeTo)) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
         if (((ClimateBiome) (Object) biome.value()).equinox$climate() != ClimateBiome.SEASONAL) return false;
         return pickedYear(level, pos) != season.year();

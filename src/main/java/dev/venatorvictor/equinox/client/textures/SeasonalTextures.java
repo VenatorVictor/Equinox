@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.venatorvictor.equinox.Equinox;
-import dev.venatorvictor.equinox.client.colors.ColorTables;
 import dev.venatorvictor.equinox.climate.ClimateBiome;
 import dev.venatorvictor.equinox.climate.ColorProfile;
 import net.minecraft.client.Minecraft;
@@ -47,10 +46,11 @@ import java.util.function.Predicate;
 
 /**
  * Reads seasonal texture files (assets/<ns>/season_textures/*.json), so
- * resource packs in that format work here. Each file swaps texture variables of block models per year step
- * (24 a year, 2 per season part, on the calendar: step 0 = the spring equinox), in the biomes it names. Steps are
- * named <part>_<season>_<start|end> (early_spring_start .. late_winter_end); the format's own 24 names are read
- * by position (its first name = early_spring_start). Supported: target, biomes, slices with start/end, solar_term, season,
+ * resource packs in that format work here. Each file swaps texture variables of block models per week
+ * (14 a season, 56 a year, whole days each, on the calendar: week 0 = the first days of spring), in the biomes it
+ * names. Weeks are named <season>_week_<1..14>; the older step names <part>_<season>_<start|end>
+ * (early_spring_start .. late_winter_end) cover 2 or 3 weeks each (YearSteps), and the format's own 24 names are
+ * read by position (its first name = early_spring_start). Supported: target, biomes, slices with start/end, solar_term, season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants
@@ -67,6 +67,10 @@ import java.util.function.Predicate;
  * Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
+    private static final int WEEKS = dev.venatorvictor.equinox.api.SeasonState.WEEKS;
+    private static final int PER = dev.venatorvictor.equinox.api.SeasonState.WEEKS_PER_SEASON;
+    /** Weeks when some loaded file changes its textures from the week before (a texture redraw is only needed then). */
+    public static final boolean[] CHANGES = new boolean[WEEKS];
     private static final String DIRECTORY = "season_textures";
     private static final List<String> SEASONS = List.of("spring", "summer", "autumn", "winter");
 
@@ -89,6 +93,13 @@ public final class SeasonalTextures {
             }
         }
         any = !rules.isEmpty();
+        java.util.Arrays.fill(CHANGES, false);
+        for (Rule rule : rules) {
+            for (int w = 0; w < WEEKS; w++) {
+                int prev = (w + WEEKS - 1) % WEEKS;
+                if (rule.byTerm()[w] != rule.byTerm()[prev] || rule.snowByTerm()[w] != rule.snowByTerm()[prev]) CHANGES[w] = true;
+            }
+        }
         anySnow = rules.stream().anyMatch(rule -> rule.hasSnow);
         if (!any) return;
 
@@ -149,8 +160,8 @@ public final class SeasonalTextures {
         }
         if (models.isEmpty()) return null;
 
-        Variant[][] byTerm = new Variant[ColorTables.STEPS][];
-        Variant[][] snowByTerm = new Variant[ColorTables.STEPS][];
+        Variant[][] byTerm = new Variant[WEEKS][];
+        Variant[][] snowByTerm = new Variant[WEEKS][];
         Set<TextureAtlasSprite> used = new HashSet<>();
         for (JsonElement element : GsonHelper.getAsJsonArray(json, "slices")) {
             JsonObject slice = element.getAsJsonObject();
@@ -190,7 +201,7 @@ public final class SeasonalTextures {
                 }
             }
             // Later slices win.
-            for (int term = range[0]; ; term = (term + 1) % ColorTables.STEPS) {
+            for (int term = range[0]; ; term = (term + 1) % WEEKS) {
                 byTerm[term] = variants;
                 snowByTerm[term] = snowVariants;
                 if (term == range[1]) break;
@@ -227,19 +238,22 @@ public final class SeasonalTextures {
 
     /** {first, last} year step (inclusive, may wrap past the end of the year), or null if unreadable. */
     private static int[] range(JsonObject slice) {
-        int start = term(slice, "start"), end = term(slice, "end");
-        int single = term(slice, "solar_term");
-        int season = season(slice, "season");
-        if (start < 0) start = single >= 0 ? single : season >= 0 ? season * 6 : season(slice, "start_season") * 6;
-        if (end < 0) end = single >= 0 ? single : season >= 0 ? season * 6 + 5 : season(slice, "end_season") * 6 + 5;
+        int start = term(slice, "start", true), end = term(slice, "end", false);
+        int singleStart = term(slice, "solar_term", true), singleEnd = term(slice, "solar_term", false);
+        int season = season(slice, "season"), startSeason = season(slice, "start_season"), endSeason = season(slice, "end_season");
+        if (start < 0) start = singleStart >= 0 ? singleStart : season >= 0 ? season * PER : startSeason >= 0 ? startSeason * PER : -1;
+        if (end < 0) end = singleEnd >= 0 ? singleEnd : season >= 0 ? season * PER + PER - 1 : endSeason >= 0 ? endSeason * PER + PER - 1 : -1;
         boolean noStart = start < 0, noEnd = end < 0;
-        if (noStart && noEnd) return new int[]{0, ColorTables.STEPS - 1};
+        if (noStart && noEnd) return new int[]{0, WEEKS - 1};
         if (noStart || noEnd) return null;
         return new int[]{start, end};
     }
 
-    private static int term(JsonObject slice, String key) {
-        return slice.has(key) ? YearSteps.index(GsonHelper.getAsString(slice, key)) : -1;
+    /** The first (or last) week a step name covers, -1 if missing or unknown. */
+    private static int term(JsonObject slice, String key, boolean first) {
+        if (!slice.has(key)) return -1;
+        String name = GsonHelper.getAsString(slice, key);
+        return first ? YearSteps.startWeek(name) : YearSteps.endWeek(name);
     }
 
     private static int season(JsonObject slice, String key) {

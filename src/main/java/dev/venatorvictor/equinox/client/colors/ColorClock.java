@@ -15,6 +15,8 @@ public final class ColorClock {
     public static volatile int step = 0;
     /** 0..1 through the current step, rounded down to the configured updates. */
     public static volatile float progress = 0F;
+    /** The week of the year for seasonal textures (0 .. 55, 14 a season, whole days; SeasonState.week). */
+    public static volatile int week = 0;
 
     private static int lastUpdate = -1;
 
@@ -29,6 +31,7 @@ public final class ColorClock {
         int updates = ClientConfig.UPDATES_PER_STEP.get();
         int update = quantize(calendar.yearProgress() * ColorTables.STEPS, updates);
         step = update / updates;
+        week = calendar.week();
         progress = (float) (update % updates) / updates;
         active = true;
 
