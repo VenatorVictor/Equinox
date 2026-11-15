@@ -116,7 +116,6 @@ public final class Celsius {
         return from + (to - from) * phase.blend();
     }
 
-    /** Biomes without a value (other mods): a rough mean from the climate temperature (plains 0.8: 14 °C). */
     /**
      * Nether, End and other dimensions: the biome's value as it is, no seasons, depth or height (the Nether's roof
      * would otherwise read as underground).
@@ -128,13 +127,9 @@ public final class Celsius {
         return Mth.lerp(dayWeight, mean - 4, mean + 4);
     }
 
+    /** Biomes without a value (other mods): the mean from the climate temperature (Climate.meanCelsius). */
     private static float fallback(Biome biome) {
-        return fallbackMean(biome.getBaseTemperature() + ((ClimateBiome) (Object) biome).equinox$shift());
-    }
-
-    /** A rough daily mean (°C) from a Minecraft temperature: plains 0.8 = 14 °C, at most 35. */
-    public static float fallbackMean(float temperature) {
-        return Mth.clamp(temperature * 25 - 6, -25, 35);
+        return Climate.meanCelsius(biome.getBaseTemperature() + ((ClimateBiome) (Object) biome).equinox$shift());
     }
 
     /** Default water temperature from the air (in units of 25 °C): a few °C colder. */

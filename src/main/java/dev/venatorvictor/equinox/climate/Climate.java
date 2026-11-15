@@ -226,10 +226,7 @@ public final class Climate {
         if (zone.seasonal()) {
             // The °C climate decides: the biome's daily mean (data map, else from its Minecraft temperature) and the
             // daily mean change at each season point, turned into Minecraft's scale (fromCelsius).
-            // Tropical biomes without a value (other mods, Minecraft temperature up to 2.0) keep the rough mean they had
-            // before they had seasons (Celsius.fallbackMean, at most 35 °C), not 56 °C from the temperate scale.
-            float mean = entry != null ? (entry.night() + entry.day()) / 2
-                    : zone.tropical ? Celsius.fallbackMean(temperature) : toCelsius(temperature);
+            float mean = entry != null ? (entry.night() + entry.day()) / 2 : meanCelsius(temperature);
             changes = new float[Season.COUNT];
             for (int i = 0; i < Season.COUNT; i++) {
                 float change = celsius == null ? 0 : (celsius[i * 2] + celsius[i * 2 + 1]) / 2;
@@ -280,6 +277,19 @@ public final class Climate {
     /** A daily mean in °C on Minecraft's temperature scale: SNOW_CELSIUS is the snow line, Celsius.PER_UNIT °C per unit. */
     public static float fromCelsius(float celsius) {
         return SNOW_LINE + (celsius - SNOW_CELSIUS) / Celsius.PER_UNIT;
+    }
+
+    /** Above this Minecraft temperature (jungle) the °C rise flattens: vanilla gives every hot biome 2.0. */
+    private static final float HOT_KNEE = 0.95F;
+    /** °C per unit above HOT_KNEE: 2.0 (desert, savanna, badlands) is about 30 °C. */
+    private static final float HOT_PER_UNIT = 5F;
+
+    /**
+     * A biome's daily mean (°C) from its Minecraft temperature, for overworld biomes without a °C value (other mods):
+     * the climate scale (toCelsius) up to HOT_KNEE, much flatter above, so no biome gets 56 °C.
+     */
+    public static float meanCelsius(float temperature) {
+        return temperature <= HOT_KNEE ? toCelsius(temperature) : toCelsius(HOT_KNEE) + (temperature - HOT_KNEE) * HOT_PER_UNIT;
     }
 
     /** Back: a Minecraft temperature as a daily mean in °C. */
