@@ -1,0 +1,13 @@
+{
+  "target": [
+    "minecraft:block/oak_leaves"
+  ],
+  "biomes": "#equinox:tropical_zones",
+  "slices": [
+    {
+      "textures": {
+        "all": "equinox:block/trees/oak_leaves_warm"
+      }
+    }
+  ]
+}

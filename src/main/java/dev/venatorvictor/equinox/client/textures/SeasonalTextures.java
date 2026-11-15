@@ -263,6 +263,12 @@ public final class SeasonalTextures {
      */
     private static Predicate<Holder<Biome>> biomes(JsonElement json) {
         if (json == null) return biome -> true;
+        if (json.isJsonPrimitive() && json.getAsString().equals("#equinox:tropical_zones")) {
+            // Not a real tag: every land biome in a tropical climate zone (Zone.tropical: savanna, rainforest, monsoon,
+            // untagged hot biomes), the biomes the "seasonal" files leave out.
+            return biome -> ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL
+                    && ((ClimateBiome) (Object) biome.value()).equinox$zone().tropical;
+        }
         if (json.isJsonPrimitive() && json.getAsString().startsWith("#")) {
             ResourceLocation id = ResourceLocation.parse(json.getAsString().substring(1));
             TagKey<Biome> tag = TagKey.create(Registries.BIOME, id);
