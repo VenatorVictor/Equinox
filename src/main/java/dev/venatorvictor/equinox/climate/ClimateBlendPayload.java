@@ -44,6 +44,8 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
 
     private void receive() {
         ClimateBlend.put(chunk, toMix(biomes, weights, cooling));
+        // Colors blend between chunk mixes: this chunk and its neighbours may have been drawn without it.
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) dev.venatorvictor.equinox.client.ChunkRefresher.blendArrived(chunk);
     }
 
     /** Server: work out mixes as chunks load, send them as chunks are sent; forget them when the server stops. */

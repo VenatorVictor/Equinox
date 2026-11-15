@@ -1,6 +1,8 @@
 package dev.venatorvictor.equinox.client.colors;
 
 import dev.venatorvictor.equinox.client.ClientConfig;
+import dev.venatorvictor.equinox.climate.ClimateBiome;
+import dev.venatorvictor.equinox.climate.ClimateBlend;
 import dev.venatorvictor.equinox.mixin.BiomeFoliageAccessor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.BiomeColors;
@@ -100,23 +102,86 @@ public final class TreeColors {
                 .orElseGet(((BiomeFoliageAccessor) (Object) biome)::equinox$foliageFromTexture);
     }
 
-    /** Spring/summer color: the biome's own, or green where the biome's own is an autumn color. */
-    public static final ColorResolver BASE = (biome, x, z) -> {
+    private static int base(Biome biome) {
         int c = raw(biome);
         return autumnal(c) ? FoliageColor.getDefaultColor() & 0xFFFFFF : c;
-    };
-    /** The biome's own color where it is an autumn one, else black (summed, so blending weighs it). */
-    public static final ColorResolver BIOME_AUTUMN = (biome, x, z) -> {
+    }
+
+    private static int biomeAutumn(Biome biome) {
         int c = raw(biome);
         return autumnal(c) ? c : 0;
-    };
+    }
+
+    // Each resolver blends the biomes around the column like the climate (blended(): ClimateBlend.colorMix), then
+    // Minecraft's Biome Blend smooths on top.
+
+    /** Spring/summer color: the biome's own, or green where the biome's own is an autumn color. */
+    public static final ColorResolver BASE = (biome, x, z) -> blended(biome, x, z, TreeColors::base);
+    /** The biome's own color where it is an autumn one, else black (summed, so blending weighs it). */
+    public static final ColorResolver BIOME_AUTUMN = (biome, x, z) -> blended(biome, x, z, TreeColors::biomeAutumn);
     /** White where the biome's color is an autumn one: the blended red channel is the autumn share. */
-    public static final ColorResolver AUTUMN_SHARE = (biome, x, z) -> autumnal(raw(biome)) ? 0xFFFFFF : 0;
+    public static final ColorResolver AUTUMN_SHARE = (biome, x, z) -> blended(biome, x, z, b -> autumnal(raw(b)) ? 0xFFFFFF : 0);
+    /** The biome's seasonal foliage color (its color profile's table), for acacia and jungle. */
+    public static final ColorResolver SEASONED_FOLIAGE = (biome, x, z) -> {
+        ClimateBlend.ColorMix mix = ClimateBlend.colorMix(Mth.floor(x), Mth.floor(z));
+        float cooling = mix.cooling;
+        return blend(biome, mix, b -> SeasonColors.grassOrFoliage(false, raw(b), b, SeasonColors.cold(b, cooling)) & 0xFFFFFF);
+    };
+    /**
+     * How strong the seasons are here for tree colors, as grey (red channel 0..255 = 0..1): the biomes' season
+     * strength (their summer-to-winter drop) by their shares, times the climate zone's cold.
+     */
+    public static final ColorResolver STRENGTH = (biome, x, z) -> {
+        if (!ClientConfig.CLIMATE_COLOR_STRENGTH.get()) return 0xFFFFFF;
+        ClimateBlend.ColorMix mix = ClimateBlend.colorMix(Mth.floor(x), Mth.floor(z));
+        float cooling = mix.cooling;
+        float own = strength(biome, cooling), s = own;
+        float k = ClientConfig.CLIMATE_COLOR_BLEND.get().floatValue();
+        if (k > 0 && mix.count > 0) {
+            float sum = 0;
+            for (int i = 0; i < mix.count; i++) sum += mix.weights[i] * strength(mix.biomes[i], cooling);
+            s = own + (sum - own) * k;
+        }
+        int v = Mth.clamp(Math.round(s * 255), 0, 255);
+        return v << 16 | v << 8 | v;
+    };
+
+    private static float strength(Biome biome, float cooling) {
+        return ((ClimateBiome) (Object) biome).equinox$seasonStrength() * SeasonColors.cold(biome, cooling);
+    }
+
+    private static int blended(Biome own, double x, double z, java.util.function.ToIntFunction<Biome> color) {
+        return blend(own, ClimateBlend.colorMix(Mth.floor(x), Mth.floor(z)), color);
+    }
+
+    /** A color of each biome in the mix by its share, mixed with the own biome's by climate_color_blend. */
+    private static int blend(Biome own, ClimateBlend.ColorMix mix, java.util.function.ToIntFunction<Biome> color) {
+        int ownColor = color.applyAsInt(own);
+        float k = ClientConfig.CLIMATE_COLOR_BLEND.get().floatValue();
+        if (k <= 0 || mix.count == 0) return ownColor;
+        float r = 0, g = 0, b = 0;
+        for (int i = 0; i < mix.count; i++) {
+            int c = color.applyAsInt(mix.biomes[i]);
+            float w = mix.weights[i];
+            r += w * (c >> 16 & 0xFF);
+            g += w * (c >> 8 & 0xFF);
+            b += w * (c & 0xFF);
+        }
+        int mixed = Math.round(r) << 16 | Math.round(g) << 8 | Math.round(b);
+        return k >= 1 ? mixed : ColorTables.mix(mixed, k, ownColor, 1F - k) & 0xFFFFFF;
+    }
 
     public static void registerResolvers(RegisterColorHandlersEvent.ColorResolvers event) {
         event.register(BASE);
         event.register(BIOME_AUTUMN);
         event.register(AUTUMN_SHARE);
+        event.register(SEASONED_FOLIAGE);
+        event.register(STRENGTH);
+    }
+
+    /** The season strength at pos (0..1). */
+    private static float strengthAt(BlockAndTintGetter level, BlockPos pos) {
+        return (level.getBlockTint(pos, STRENGTH) >> 16 & 0xFF) / 255F;
     }
 
     /** Gold, orange or red, strong enough not to be a dull green-brown. */
@@ -139,40 +204,41 @@ public final class TreeColors {
         int share = level.getBlockTint(pos, AUTUMN_SHARE) >> 16 & 0xFF;
         int autumn = share == 0 ? tree.autumn
                 : add(level.getBlockTint(pos, BIOME_AUTUMN), scale(tree.autumn, 1F - share / 255F));
-        return color(tree, base, autumn, pos, false);
+        return color(tree, base, autumn, pos, false, strengthAt(level, pos));
     }
 
     /** Acacia and jungle: the biome tables, except in autumn-colored biomes. */
     public static int autumnBiomeLeaves(BlockAndTintGetter level, BlockPos pos) {
         if (level == null || pos == null) return FoliageColor.getDefaultColor();
-        int seasoned = BiomeColors.getAverageFoliageColor(level, pos);
+        int seasoned = level.getBlockTint(pos, SEASONED_FOLIAGE);
         if (!ColorClock.active || ClientConfig.TREE_COLORS.get() == ClientConfig.TreeColors.OFF) return seasoned;
         int share = level.getBlockTint(pos, AUTUMN_SHARE) >> 16 & 0xFF;
         if (share == 0) return seasoned;
         float s = share / 255F;
         int autumn = scale(level.getBlockTint(pos, BIOME_AUTUMN), 1F / s);
-        int tree = color(AUTUMN_BIOME, level.getBlockTint(pos, BASE), autumn, pos, false);
+        int tree = color(AUTUMN_BIOME, level.getBlockTint(pos, BASE), autumn, pos, false, strengthAt(level, pos));
         return ColorTables.mix(tree, s, seasoned, 1F - s);
     }
 
     /** Leaves with a fixed color (birch, spruce). */
-    public static int fixedTree(Tree tree, int base, BlockPos pos, boolean patches) {
-        return color(tree, base, tree.autumn, pos, patches);
+    public static int fixedTree(Tree tree, int base, BlockAndTintGetter level, BlockPos pos, boolean patches) {
+        return color(tree, base, tree.autumn, pos, patches, level == null ? 1F : strengthAt(level, pos));
     }
 
-    private static int color(Tree tree, int base, int autumn, BlockPos pos, boolean patches) {
+    /** strength: how strong the seasons are here (0..1, STRENGTH); scales each week's shift. */
+    private static int color(Tree tree, int base, int autumn, BlockPos pos, boolean patches, float strength) {
         int step = ColorClock.step;
-        int now = at(tree, base, autumn, step, pos, patches);
+        int now = at(tree, base, autumn, step, pos, patches, strength);
         if (ClientConfig.SMOOTH.get()) {
             float p = ColorClock.progress;
             int previous = ColorClock.previous(step);
             if (p < 1F && !java.util.Arrays.equals(tree.table[step], tree.table[previous]))
-                now = ColorTables.mix(now, p, at(tree, base, autumn, previous, pos, patches), 1F - p);
+                now = ColorTables.mix(now, p, at(tree, base, autumn, previous, pos, patches, strength), 1F - p);
         }
         return 0xFF000000 | (ClientConfig.TREE_COLORS.get() == ClientConfig.TreeColors.FILTER ? brightnessOf(now, base) : now);
     }
 
-    private static int at(Tree tree, int base, int autumn, int step, BlockPos pos, boolean patches) {
+    private static int at(Tree tree, int base, int autumn, int step, BlockPos pos, boolean patches, float strength) {
         float[] entry = tree.table[step];
         int kind = (int) entry[0];
         if (kind == O) return base & 0xFFFFFF;
@@ -184,7 +250,8 @@ public final class TreeColors {
             case W -> tree.winter;
             default -> tree.extra;
         };
-        return ColorTables.mix(target & 0xFFFFFF, entry[1], base & 0xFFFFFF, 1F - entry[1]);
+        float mix = entry[1] * strength;
+        return ColorTables.mix(target & 0xFFFFFF, mix, base & 0xFFFFFF, 1F - mix);
     }
 
     /** FILTER: the new color's hue, the original color's brightness. */

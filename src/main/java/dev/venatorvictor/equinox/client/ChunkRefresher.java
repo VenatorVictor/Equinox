@@ -84,6 +84,7 @@ public final class ChunkRefresher {
 
     /** Client tick: redraw the next share of the queued sections. */
     public static void tick() {
+        redrawArrived();
         if (QUEUE.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
@@ -111,6 +112,46 @@ public final class ChunkRefresher {
                 if (level.getChunkSource().getChunk(x, z, false) == null) continue;
                 for (int y = level.getMinSection(); y < level.getMaxSection(); y++) mc.levelRenderer.setSectionDirty(x, y, z);
             }
+        }
+    }
+
+    /** Chunks whose climate blend arrived this tick (packed ChunkPos). */
+    private static final it.unimi.dsi.fastutil.longs.LongOpenHashSet ARRIVED = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+
+    /** A chunk's climate blend arrived (render thread): its colors and its neighbours' are redrawn next tick. */
+    public static void blendArrived(long chunk) {
+        if (ClientConfig.CLIMATE_COLOR_BLEND.get() > 0) ARRIVED.add(chunk);
+    }
+
+    /** Forget the colors of the chunks around arrived blends and redraw their surface (grass, plants, tree tops). */
+    private static void redrawArrived() {
+        if (ARRIVED.isEmpty()) return;
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel level = mc.level;
+        if (level == null) {
+            ARRIVED.clear();
+            return;
+        }
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet around = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        for (long chunk : ARRIVED) {
+            int x = net.minecraft.world.level.ChunkPos.getX(chunk), z = net.minecraft.world.level.ChunkPos.getZ(chunk);
+            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) around.add(net.minecraft.world.level.ChunkPos.asLong(x + dx, z + dz));
+        }
+        ARRIVED.clear();
+        var caches = ((dev.venatorvictor.equinox.mixin.client.ClientLevelTintAccessor) level).equinox$tintCaches();
+        for (long chunk : around) {
+            int x = net.minecraft.world.level.ChunkPos.getX(chunk), z = net.minecraft.world.level.ChunkPos.getZ(chunk);
+            LevelChunk loaded = level.getChunkSource().getChunk(x, z, false);
+            if (loaded == null) continue;
+            for (var cache : caches.values()) cache.invalidateForChunk(x, z);
+            IntArraySet sections = new IntArraySet();
+            for (int lx = 0; lx < 16; lx += 3) {
+                for (int lz = 0; lz < 16; lz += 3) {
+                    sections.add(SectionPos.blockToSectionCoord(loaded.getHeight(Heightmap.Types.WORLD_SURFACE, lx, lz)));
+                    sections.add(SectionPos.blockToSectionCoord(loaded.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz)));
+                }
+            }
+            for (int y : sections) mc.levelRenderer.setSectionDirty(x, y, z);
         }
     }
 

@@ -9,7 +9,8 @@ import net.minecraft.world.level.biome.Biome;
  * A biome's climate, from the tag equinox:climate/<id>, each modelled on a real place (Vienna, New Orleans,
  * Helsinki, Utqiagvik, Säntis, Svalbard, Phoenix, Moab, Manaus, Kolkata, Darwin). Seasonal zones change the biome's
  * °C by their value at the start of each season's mid part (config celsius_changes), blended in between, and their Minecraft
- * temperature follows the °C (Climate.categorize); tropical zones keep theirs and get wet and dry seasons instead.
+ * temperature follows the °C (Climate.categorize). Every land zone has seasons, with its real swing: tropical ones
+ * barely change (savanna about 4 °C, jungle none) and also get wet and dry seasons (rain); leaves don't fall there.
  */
 public enum Zone {
     TEMPERATE(ClimateBiome.SEASONAL, false, 1F),
@@ -22,11 +23,11 @@ public enum Zone {
     HOT_DESERT(ClimateBiome.SEASONAL, false, 0.8F),
     COLD_DESERT(ClimateBiome.SEASONAL, false, 0.8F),
     /** Rain all year, no dry season. */
-    RAINFOREST(ClimateBiome.TROPICAL, false, 0.3F),
+    RAINFOREST(ClimateBiome.SEASONAL, false, 0.3F, true),
     /** Wet summer, dry winter. */
-    MONSOON(ClimateBiome.TROPICAL, false, 0.3F),
+    MONSOON(ClimateBiome.SEASONAL, false, 0.3F, true),
     /** Wet summer, dry from late autumn to early spring. */
-    SAVANNA(ClimateBiome.TROPICAL, false, 0.3F),
+    SAVANNA(ClimateBiome.SEASONAL, false, 0.3F, true),
     /** Oceans: no seasons in Minecraft (snow, ice), but the °C climate changes a little (sea lags, tropics barely). */
     WARM_OCEAN(ClimateBiome.NONE, false, 0.3F),
     LUKEWARM_OCEAN(ClimateBiome.NONE, false, 0.3F),
@@ -34,8 +35,8 @@ public enum Zone {
     COLD_OCEAN(ClimateBiome.NONE, false, 0.3F),
     /** Cave biomes: no seasons underground. */
     CAVE(ClimateBiome.NONE, false, 0F),
-    /** Untagged biomes hotter than 0.8: no seasons; crops grow as in the tropics. */
-    HOT(ClimateBiome.HOT, false, 0.3F),
+    /** Untagged biomes hotter than 0.8: tropical; crops grow as in the tropics. */
+    HOT(ClimateBiome.SEASONAL, false, 0.3F, true),
     /** Nether, end, untagged oceans. */
     NONE(ClimateBiome.NONE, false, 0.3F);
 
@@ -44,16 +45,24 @@ public enum Zone {
 
     public final String id = name().toLowerCase(java.util.Locale.ROOT);
     public final TagKey<Biome> tag = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("equinox", "climate/" + id));
-    /** ClimateBiome.SEASONAL, TROPICAL, HOT or NONE. */
+    /** ClimateBiome.SEASONAL or NONE. */
     public final byte kind;
     public final boolean thaws;
     /** Multiplies the season and daily variation (real-life spread: tropics small, the cold north big). */
     public final float factor;
 
+    /** Warm all year: rain decides its seasons (wet and dry), leaves don't fall, no tree fruit to pick. */
+    public final boolean tropical;
+
     Zone(byte kind, boolean thaws, float factor) {
+        this(kind, thaws, factor, false);
+    }
+
+    Zone(byte kind, boolean thaws, float factor, boolean tropical) {
         this.kind = kind;
         this.thaws = thaws;
         this.factor = factor;
+        this.tropical = tropical;
     }
 
     /** Salt water: freezes at −2 °C instead of 0. */

@@ -41,6 +41,18 @@ public abstract class BiomeMixin implements ClimateBiome {
     private boolean equinox$geothermal;
     @Unique
     private byte equinox$snowLock = ClimateBiome.SNOW_FREE;
+    @Unique
+    private float equinox$seasonStrength = 1F;
+
+    @Override
+    public float equinox$seasonStrength() {
+        return equinox$seasonStrength;
+    }
+
+    @Override
+    public void equinox$setSeasonStrength(float strength) {
+        equinox$seasonStrength = strength;
+    }
 
     @Shadow
     protected abstract float getTemperature(BlockPos pos);

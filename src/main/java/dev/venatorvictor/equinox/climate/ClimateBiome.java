@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 
 /** Added to Biome by BiomeMixin: the biome's climate, set when tags or the config load (Climate.categorize). */
 public interface ClimateBiome {
-    /** NONE: no seasons at all. HOT: too hot to change (untagged hot biomes); crops grow as in the tropics. */
-    byte NONE = 0, SEASONAL = 1, TROPICAL = 2, HOT = 3;
+    /** NONE: no seasons at all (oceans, caves, other dimensions); SEASONAL: every land biome (tropical ones too, Zone.tropical). */
+    byte NONE = 0, SEASONAL = 1;
     /** Climate blending (ClimateBlend): not blended (other dimensions, caves), land (Config.blendStrength), full (rivers, beaches). */
     byte BLEND_NONE = 0, BLEND_LAND = 1, BLEND_FULL = 2;
 
@@ -48,6 +48,14 @@ public interface ClimateBiome {
     boolean equinox$clientSide();
 
     void equinox$setClientSide(boolean client);
+
+    /**
+     * How strong its seasons are for colors, 0..1: its summer-to-winter drop in °C over a temperate one's (23 °C, Vienna).
+     * Plains 1, swamp 0.7, monsoon 0.43, savanna 0.17, jungle 0.
+     */
+    float equinox$seasonStrength();
+
+    void equinox$setSeasonStrength(float strength);
 
     /** The biome's color profile (seasonal colors, client side). */
     ColorProfile equinox$colorProfile();

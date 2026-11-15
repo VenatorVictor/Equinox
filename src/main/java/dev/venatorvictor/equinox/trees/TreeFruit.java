@@ -148,7 +148,8 @@ public final class TreeFruit {
         int week = season.week(); // 0 = the first days of spring
         if (week < kind.ripeFrom || week > kind.ripeTo) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
-        if (((ClimateBiome) (Object) biome.value()).equinox$climate() != ClimateBiome.SEASONAL) return false;
+        ClimateBiome climate = (ClimateBiome) (Object) biome.value();
+        if (climate.equinox$climate() != ClimateBiome.SEASONAL || climate.equinox$zone().tropical) return false;
         return pickedYear(level, pos) != season.year();
     }
 

@@ -35,9 +35,9 @@ public final class SeasonColors {
 
     public static void registerLeaves(RegisterColorHandlersEvent.Block event) {
         event.register((state, level, pos, tint) -> fixedTree(FoliageColor.getEvergreenColor(), ColorTables.SPRUCE,
-                TreeColors.SPRUCE, false, pos, ClientConfig.SPRUCE.get()), Blocks.SPRUCE_LEAVES);
+                TreeColors.SPRUCE, false, level, pos, ClientConfig.SPRUCE.get()), Blocks.SPRUCE_LEAVES);
         event.register((state, level, pos, tint) -> fixedTree(FoliageColor.getBirchColor(), ColorTables.BIRCH,
-                TreeColors.BIRCH, ClientConfig.BIRCH_PATCHES.get(), pos, ClientConfig.BIRCH.get()), Blocks.BIRCH_LEAVES);
+                TreeColors.BIRCH, ClientConfig.BIRCH_PATCHES.get(), level, pos, ClientConfig.BIRCH.get()), Blocks.BIRCH_LEAVES);
         event.register((state, level, pos, tint) -> leaves(FoliageColor.getMangroveColor(), ColorTables.MANGROVE, false, pos,
                 ClientConfig.MANGROVE.get()), Blocks.MANGROVE_LEAVES);
         event.register((state, level, pos, tint) -> TreeColors.biomeTree(TreeColors.OAK, level, pos), Blocks.OAK_LEAVES);
@@ -46,10 +46,11 @@ public final class SeasonColors {
     }
 
     /** Birch and spruce: per-tree colors, or the earlier tables with tree_colors = OFF. */
-    private static int fixedTree(int base, float[][] oldTable, TreeColors.Tree tree, boolean patches, BlockPos pos, boolean enabled) {
+    private static int fixedTree(int base, float[][] oldTable, TreeColors.Tree tree, boolean patches,
+                                 net.minecraft.world.level.BlockAndTintGetter level, BlockPos pos, boolean enabled) {
         if (ClientConfig.TREE_COLORS.get() == ClientConfig.TreeColors.OFF) return leaves(base, oldTable, patches, pos, enabled);
         if (!enabled || pos == null || !ColorClock.active) return base;
-        return TreeColors.fixedTree(tree, base, pos, patches);
+        return TreeColors.fixedTree(tree, base, level, pos, patches);
     }
 
     /**
@@ -70,18 +71,68 @@ public final class SeasonColors {
 
     /** The biome's own grass or foliage color (vanilla, or a biome mod's), with the season on top. BiomeColorMixin. */
     public static int grassOrFoliage(boolean grass, int original, Biome biome) {
+        return grassOrFoliage(grass, original, biome, 1F);
+    }
+
+    /**
+     * The same, with the cold seasons' colors (seasonal profiles) scaled by cold, 0..1: how much of the winter's cold
+     * the place gets (climate zones; ClimateBlend). Dry seasons and the other profiles don't change.
+     */
+    public static int grassOrFoliage(boolean grass, int original, Biome biome, float cold) {
         if (!ColorClock.active || !(grass ? ClientConfig.GRASS.get() : ClientConfig.FOLIAGE.get())) return original;
-        ColorTables.Term[] terms = TABLES[((ClimateBiome) (Object) biome).equinox$colorProfile().ordinal()];
-        int now = apply(grass, terms[ColorClock.step], original);
+        ColorProfile profile = ((ClimateBiome) (Object) biome).equinox$colorProfile();
+        ColorTables.Term[] terms = TABLES[profile.ordinal()];
+        float scale = profile == ColorProfile.SEASONAL || profile == ColorProfile.SEASONAL_HOT || profile == ColorProfile.SEASONAL_COLD ? cold : 1F;
+        int now = apply(grass, terms[ColorClock.step], original, scale);
         if (!ClientConfig.SMOOTH.get()) return now;
         ColorTables.Term prevTerm = terms[ColorClock.previousStep()];
         if (prevTerm.equals(terms[ColorClock.step])) return now;
         float p = ColorClock.progress;
-        return ColorTables.mix(now, p, apply(grass, prevTerm, original), 1F - p);
+        return ColorTables.mix(now, p, apply(grass, prevTerm, original, scale), 1F - p);
     }
 
-    private static int apply(boolean grass, ColorTables.Term term, int original) {
-        return ColorTables.mix(grass ? term.grass() : term.leaf(), term.mix(), original, 1F - term.mix());
+    private static int apply(boolean grass, ColorTables.Term term, int original, float scale) {
+        float mix = term.mix() * scale;
+        return ColorTables.mix(grass ? term.grass() : term.leaf(), mix, original, 1F - mix);
+    }
+
+    // ---- Climate color blending (ClientConfig.CLIMATE_COLOR_BLEND)
+
+    /** Set while blendedGrass reads the biomes' own colors (BiomeColorMixin then leaves them alone). */
+    public static final ThreadLocal<Boolean> RAW = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /** How much of the winter's cold a biome gets at a place (cooling: the climate zone there, NaN = unknown). */
+    public static float cold(Biome biome, float cooling) {
+        if (!ClientConfig.CLIMATE_COLOR_STRENGTH.get() || Float.isNaN(cooling)) return 1F;
+        return ((ClimateBiome) (Object) biome).equinox$zone() == dev.venatorvictor.equinox.climate.Zone.ALPINE ? 1F : cooling;
+    }
+
+    /**
+     * Grass color at a column: the seasonal grass colors of the land biomes around it (ClimateBlend.colorMix), by their
+     * shares, mixed with the column's own biome by climate_color_blend. ownRaw: the own biome's color without the season.
+     */
+    public static int blendedGrass(Biome own, double x, double z, int ownRaw) {
+        dev.venatorvictor.equinox.climate.ClimateBlend.ColorMix mix =
+                dev.venatorvictor.equinox.climate.ClimateBlend.colorMix(Mth.floor(x), Mth.floor(z));
+        int ownColor = grassOrFoliage(true, ownRaw, own, cold(own, mix.cooling));
+        float k = ClientConfig.CLIMATE_COLOR_BLEND.get().floatValue();
+        if (k <= 0 || mix.count == 0) return ownColor;
+        float r = 0, g = 0, b = 0;
+        RAW.set(Boolean.TRUE);
+        try {
+            for (int i = 0; i < mix.count; i++) {
+                Biome biome = mix.biomes[i];
+                int c = grassOrFoliage(true, biome.getGrassColor(x, z), biome, cold(biome, mix.cooling));
+                float w = mix.weights[i];
+                r += w * (c >> 16 & 0xFF);
+                g += w * (c >> 8 & 0xFF);
+                b += w * (c & 0xFF);
+            }
+        } finally {
+            RAW.set(Boolean.FALSE);
+        }
+        int mixed = Math.round(r) << 16 | Math.round(g) << 8 | Math.round(b);
+        return k >= 1 ? mixed : ColorTables.mix(mixed, k, ownColor, 1F - k) & 0xFFFFFF;
     }
 
     private static int leaves(int base, float[][] table, boolean patches, BlockPos pos, boolean enabled) {

@@ -272,7 +272,8 @@ public final class SeasonalTextures {
             // but they have winters), so a tree standing on a biome border loses its leaves as a whole.
             boolean climate = format && (id.getPath().equals("seasonal") || id.getPath().equals("rain/seasonal"));
             return biome -> biome.is(tag) || fallback.contains(((ClimateBiome) (Object) biome.value()).equinox$colorProfile())
-                    || climate && ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL;
+                    || climate && ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL
+                    && !((ClimateBiome) (Object) biome.value()).equinox$zone().tropical;
         }
         Set<ResourceLocation> ids = new HashSet<>();
         for (String biome : strings(json)) ids.add(ResourceLocation.parse(biome));

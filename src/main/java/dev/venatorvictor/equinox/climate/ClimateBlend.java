@@ -166,6 +166,78 @@ public final class ClimateBlend {
         if (coolWeight >= 1e-4F) out[1] = coolSum / coolWeight;
     }
 
+    // ---- Colors (client): the same mixes give grass and leaf colors, so they fade over the blend radius too.
+
+    /** Up to this many biomes in a color mix (4 chunk mixes merged). */
+    public static final int MAX_COLOR_BIOMES = 48;
+
+    /** A color mix at a column: biomes, their weights (summing to 1) and how many; cooling (0..1, NaN = unknown). */
+    public static final class ColorMix {
+        public final Biome[] biomes = new Biome[MAX_COLOR_BIOMES];
+        public final float[] weights = new float[MAX_COLOR_BIOMES];
+        public int count;
+        public float cooling;
+    }
+
+    private static final ThreadLocal<ColorMix> COLOR_MIX = ThreadLocal.withInitial(ColorMix::new);
+
+    /**
+     * Client: the land biomes around a column and their shares, blended between the chunk mixes around it (or the far
+     * ones), the same mixes the temperature uses. Seas, rivers and beaches have no land color of their own and are
+     * left out. Count 0 where no mix is known. The result is reused by the next call on this thread.
+     */
+    public static ColorMix colorMix(int x, int z) {
+        ColorMix out = COLOR_MIX.get();
+        out.count = 0;
+        out.cooling = Float.NaN;
+        if (!colorAround(CLIENT, 16, x, z, out) && farCell > 0) colorAround(FAR, farCell, x, z, out);
+        return out;
+    }
+
+    /** False when no mix with biomes is known around. */
+    private static boolean colorAround(Map<Long, Mix> mixes, int cell, int x, int z, ColorMix out) {
+        if (mixes.isEmpty()) return false;
+        float half = cell / 2F;
+        float gx = (x - half) / cell, gz = (z - half) / cell;
+        int x0 = (int) Math.floor(gx), z0 = (int) Math.floor(gz);
+        float fx = gx - x0, fz = gz - z0;
+        float total = 0, coolSum = 0, coolWeight = 0;
+        for (int i = 0; i < 4; i++) {
+            int dx = i & 1, dz = i >> 1;
+            Mix mix = mixes.get(ChunkPos.asLong(x0 + dx, z0 + dz));
+            if (mix == null) continue;
+            float w = (dx == 0 ? 1 - fx : fx) * (dz == 0 ? 1 - fz : fz);
+            if (w <= 0) continue;
+            if (!Float.isNaN(mix.cooling)) {
+                coolSum += w * mix.cooling;
+                coolWeight += w;
+            }
+            for (int b = 0; b < mix.biomes.length; b++) {
+                Biome biome = mix.biomes[b];
+                ClimateBiome climate = (ClimateBiome) (Object) biome;
+                if (climate.equinox$blendKind() != ClimateBiome.BLEND_LAND || climate.equinox$zone().sea()) continue;
+                float share = w * mix.weights[b];
+                total += share;
+                int k = 0;
+                while (k < out.count && out.biomes[k] != biome) k++;
+                if (k == out.count) {
+                    if (k == MAX_COLOR_BIOMES) continue;
+                    out.biomes[k] = biome;
+                    out.weights[k] = 0;
+                    out.count++;
+                }
+                out.weights[k] += share;
+            }
+        }
+        if (coolWeight >= 1e-4F) out.cooling = coolSum / coolWeight;
+        if (total < 1e-4F) {
+            out.count = 0;
+            return false;
+        }
+        for (int k = 0; k < out.count; k++) out.weights[k] /= total;
+        return true;
+    }
+
     /** The server's mix of a chunk, or null if not known. */
     public static Mix mix(int chunkX, int chunkZ) {
         return SERVER.get(ChunkPos.asLong(chunkX, chunkZ));

@@ -10,6 +10,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
@@ -22,7 +23,7 @@ import java.util.List;
  * a little every tick instead of jumping. On top, each season and each day get a random variation (warmer or colder
  * than usual, times the zone's factor), the same for a world on both sides. All on the calendar: spring starts at the
  * equinox, and the warmest and coldest times are the start of mid summer and mid winter, a third of a season (about
- * a month) after the longest and shortest days, as on Earth. Tropical zones keep their temperature and get wet and dry seasons. The config can also give a
+ * a month) after the longest and shortest days, as on Earth. Tropical zones change only a little and also get wet and dry seasons. The config can also give a
  * biome another temperature for the climate only (grass colors read the biome's own value), for biome mods that change
  * temperatures to tint grass (beach 2.0, old growth pine taiga 2.0...).
  */
@@ -245,10 +246,22 @@ public final class Climate {
                 : never ? lockShift(temperature, changes, false, zone.factor) : 0;
         ClimateBiome climate = (ClimateBiome) (Object) holder.value();
         climate.equinox$setClimate(zone, temperature - own, lockShift, changes);
+        climate.equinox$setSeasonStrength(seasonStrength(zone, celsius));
         climate.equinox$setGeothermal(holder.is(Geothermal.TAG));
         climate.equinox$setSnowLock(always ? ClimateBiome.SNOW_ALWAYS : never ? ClimateBiome.SNOW_NEVER : ClimateBiome.SNOW_FREE);
         climate.equinox$setBlendKind(!holder.is(BiomeTags.IS_OVERWORLD) || zone == Zone.CAVE ? ClimateBiome.BLEND_NONE
                 : holder.is(BiomeTags.IS_RIVER) || holder.is(BiomeTags.IS_BEACH) ? ClimateBiome.BLEND_FULL : ClimateBiome.BLEND_LAND);
+    }
+
+    /** A temperate year's drop from summer to winter (°C, daily means): season strength 1. */
+    private static final float TEMPERATE_DROP = 23F;
+
+    /** How strong a biome's seasons are for colors (ClimateBiome.equinox$seasonStrength). */
+    private static float seasonStrength(Zone zone, float[] celsius) {
+        if (!zone.seasonal() || celsius == null) return 0;
+        int summer = Season.SUMMER.ordinal() * 2, winter = Season.WINTER.ordinal() * 2;
+        float drop = (celsius[summer] + celsius[summer + 1]) / 2 - (celsius[winter] + celsius[winter + 1]) / 2;
+        return Mth.clamp(drop / TEMPERATE_DROP, 0F, 1F);
     }
 
     /** The biome's snow days (data map), 365 for snowy biomes while snow_locks is on. Null without a value. */

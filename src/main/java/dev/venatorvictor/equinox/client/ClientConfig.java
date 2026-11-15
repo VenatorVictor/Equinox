@@ -10,6 +10,8 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue FOLIAGE;
     public static final ModConfigSpec.BooleanValue SMOOTH;
     public static final ModConfigSpec.IntValue UPDATES_PER_STEP;
+    public static final ModConfigSpec.DoubleValue CLIMATE_COLOR_BLEND;
+    public static final ModConfigSpec.BooleanValue CLIMATE_COLOR_STRENGTH;
     public static final ModConfigSpec.BooleanValue SPRUCE;
     public static final ModConfigSpec.BooleanValue BIRCH;
     public static final ModConfigSpec.BooleanValue BIRCH_PATCHES;
@@ -40,12 +42,20 @@ public final class ClientConfig {
 
     static {
         BUILDER.comment(
-                "Seasonal colors. The year is split into 24 color steps, 2 per season part.",
+                "Seasonal colors, by week (56 a year).",
                 "Biome color profiles can be forced with biome tags equinox:color/<stable|slightly|monsoonal|seasonal|seasonal/hot|seasonal/cold>",
                 "Biomes in equinox:no_seasons keep their colors.")
                 .push("colors");
         GRASS = BUILDER.comment("Seasonal grass colors.").define("grass", true);
         FOLIAGE = BUILDER.comment("Seasonal colors of leaves that take the biome's color (oak, jungle, acacia, dark oak...).").define("foliage", true);
+        CLIMATE_COLOR_BLEND = BUILDER.comment("Grass and leaf colors blended like the climate: each place takes the colors of the biomes around",
+                        "it (the server's blend_radius, nearer ones count more), so biome borders fade over many blocks instead of",
+                        "Minecraft's Biome Blend (a few blocks). Worked out per chunk, so it costs the same at any radius. 1 = fully,",
+                        "0 = only the block's own biome (as before; Minecraft's Biome Blend still applies on top).")
+                .defineInRange("climate_color_blend", 1.0, 0.0, 1.0);
+        CLIMATE_COLOR_STRENGTH = BUILDER.comment("Seasonal colors as strong as the seasons are cold: a place with a mild winter (the climate zone, warm",
+                        "neighbours) changes less, savannas a little, jungles not at all. false = every biome's table at full strength.")
+                .define("climate_color_strength", true);
         SMOOTH = BUILDER.comment("Blend each week's color into the next over its days. false = colors jump once per week.")
                 .define("smooth_transition", true);
         UPDATES_PER_STEP = BUILDER.comment("How many times per week the color blend is updated and nearby chunks re-colored.",

@@ -159,6 +159,10 @@ final class Settings {
                 .cost(Cost.LOW).applies("redraw"));
         all.add(client(ClientConfig.SMOOTH, "smooth").tab(LOOKS, null)
                 .cost(Cost.MEDIUM));
+        all.add(client(ClientConfig.CLIMATE_COLOR_BLEND, "climate_color_blend").tab(LOOKS, null)
+                .cost(Cost.LOW).scale(100).range(0, 100, 5).applies("redraw").label((v, x) -> (int) v + "%"));
+        all.add(client(ClientConfig.CLIMATE_COLOR_STRENGTH, "climate_color_strength").tab(LOOKS, null)
+                .cost(Cost.NONE).applies("redraw"));
         all.add(client(ClientConfig.TREE_COLORS, "tree_colors").tab(LOOKS, "tree_colors")
                 .choice(ClientConfig.TreeColors.REPLACE, "replace").choice(ClientConfig.TreeColors.FILTER, "filter")
                 .choice(ClientConfig.TreeColors.OFF, "off").cost(Cost.NONE).applies("redraw"));
