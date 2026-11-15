@@ -169,12 +169,21 @@ public final class SeasonalTextures {
             Variant[] under = variants(slice.get("under_textures"), slice.get("under_tint"), models, sprites, new HashSet<>());
             Variant[] over = variants(slice.get("over_textures"), slice.get("over_tint"), models, sprites, used);
             Variant[] fruit = variants(slice.get("fruit_textures"), slice.get("fruit_tint"), models, sprites, used);
+            // over_percent: the share of all blocks (in percent) that show the over_textures (catkins); default all.
+            int overPercent = GsonHelper.getAsInt(slice, "over_percent", 100);
             // Only drawn in front: the block keeps its own texture under it.
             if (variants.length == 0 && (over.length > 0 || fruit.length > 0)) variants = new Variant[]{new Variant(Map.of())};
             for (int i = 0; i < variants.length; i++) {
                 if (under.length > 0) variants[i].under = under[i % under.length];
                 if (over.length > 0) variants[i].over = over[i % over.length];
                 if (fruit.length > 0) variants[i].fruit = fruit[i % fruit.length];
+                if (over.length > 0 && overPercent < 100) {   // the same set without the over_textures, for the rest
+                    Variant bare = new Variant(variants[i].remap);
+                    bare.under = variants[i].under;
+                    bare.fruit = variants[i].fruit;
+                    variants[i].noOver = bare;
+                    variants[i].overPercent = overPercent;
+                }
             }
             // The snow set keeps what is drawn in front (catkins and seeds on snowy bare twigs).
             for (int i = 0; i < snowVariants.length; i++) {
@@ -358,6 +367,10 @@ public final class SeasonalTextures {
 
         /** Drawn a hair in front of this set (over_textures), and instead of it on bearing leaves (fruit_textures), or null. */
         @Nullable Variant over, fruit;
+        /** With over_percent below 100: this set without over_textures, for the blocks that don't show them. */
+        @Nullable Variant noOver;
+        /** The share of all blocks (percent) showing over_textures (SeasonalModel picks which, by position). */
+        int overPercent = 100;
         /** A snow set whose snow is drawn in front (snow_over_textures): shown whole at any snow step. */
         boolean front;
         private final Map<BakedQuad, Optional<BakedQuad>> lifted = new ConcurrentHashMap<>();

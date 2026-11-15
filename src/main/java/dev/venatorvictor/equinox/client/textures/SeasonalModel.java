@@ -105,6 +105,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             SeasonalTextures.Variant normal = hasNormal ? choose(variants, pos) : null;
             boolean fruit = normal != null && normal.fruit != null && state != null
                     && dev.venatorvictor.equinox.trees.TreeFruit.showsFruit(level, state, pos);
+            if (!fruit && normal != null && normal.noOver != null && !showsOver(normal, state, pos)) normal = normal.noOver;
             SeasonalTextures.Variant frontSnow = step > 0 ? choose(snowVariants, pos) : null;
             if (step >= 4 || frontSnow != null && frontSnow.front) {
                 SeasonalTextures.Variant snow = choose(snowVariants, pos);
@@ -119,6 +120,17 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             return pick(normal, null, fruit);
         }
         return null;
+    }
+
+    /**
+     * Whether a block without fruit shows the over_textures (catkins), so that overPercent of all blocks do: where the
+     * slice has fruit, the bearing share already shows fruit instead, so the rest take a bigger share. By position.
+     */
+    private static boolean showsOver(SeasonalTextures.Variant variant, @Nullable BlockState state, BlockPos pos) {
+        int bearing = variant.fruit != null && state != null ? dev.venatorvictor.equinox.trees.TreeFruit.percent(state) : 0;
+        if (bearing >= 100) return true;
+        long hash = it.unimi.dsi.fastutil.HashCommon.mix(pos.asLong() * 0x9E3779B97F4A7C15L + 0x632BE59BD9B4E019L);
+        return Math.floorMod(hash, 10000) < variant.overPercent * 10000L / (100 - bearing);
     }
 
     private static @Nullable Pick pick(@Nullable SeasonalTextures.Variant variant, @Nullable SeasonalTextures.Overlay overlay, boolean fruit) {

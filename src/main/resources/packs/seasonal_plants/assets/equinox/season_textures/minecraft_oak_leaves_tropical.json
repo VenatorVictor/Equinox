@@ -12,7 +12,8 @@
       },
       "over_tint": {
         "all": -1
-      }
+      },
+      "over_percent": 60
     },
     {
       "start": "spring_week_3",
@@ -22,7 +23,8 @@
       },
       "over_tint": {
         "all": -1
-      }
+      },
+      "over_percent": 60
     },
     {
       "start": "spring_week_5",
@@ -33,6 +35,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "fruit_textures": {
         "all": "equinox:block/trees/oak_fruit_flower"
       },
@@ -49,6 +52,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "fruit_textures": {
         "all": "equinox:block/trees/oak_fruit_tiny"
       },

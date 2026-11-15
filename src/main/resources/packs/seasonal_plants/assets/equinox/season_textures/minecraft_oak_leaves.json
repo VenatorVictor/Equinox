@@ -77,6 +77,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_6_spring_week_7"
       },
@@ -102,6 +103,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_8_spring_week_9"
       },
@@ -118,6 +120,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "fruit_textures": {
         "all": "equinox:block/trees/oak_fruit_flower"
       },
@@ -146,6 +149,7 @@
       "over_tint": {
         "all": -1
       },
+      "over_percent": 60,
       "fruit_textures": {
         "all": "equinox:block/trees/oak_fruit_tiny"
       },

@@ -28,6 +28,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.IEventBus;
@@ -124,7 +125,18 @@ public final class TreeFruit {
     /** Whether the leaf block at pos is one that bears (fixed by position). Any side. */
     public static boolean bears(BlockState state, BlockPos pos) {
         Kind kind = kind(state);
-        return kind != null && bears(kind, pos);
+        return kind != null && !placed(state) && bears(kind, pos);
+    }
+
+    /** Leaves a player placed (vanilla's persistent flag): they never bear, so placing leaves can't farm fruit. */
+    private static boolean placed(BlockState state) {
+        return state.hasProperty(LeavesBlock.PERSISTENT) && state.getValue(LeavesBlock.PERSISTENT);
+    }
+
+    /** The share (percent) of this kind of leaves that bear, 0 for leaves without fruit. */
+    public static int percent(BlockState state) {
+        Kind kind = kind(state);
+        return kind == null ? 0 : kind.percent;
     }
 
     private static boolean bears(Kind kind, BlockPos pos) {
@@ -142,7 +154,7 @@ public final class TreeFruit {
     /** Ripe and on the tree: bearing, in a seasonal biome, in the ripe steps, not picked this year. */
     private static boolean ripe(Level level, BlockPos pos, BlockState state) {
         Kind kind = kind(state);
-        if (kind == null || !bears(kind, pos)) return false;
+        if (kind == null || !bears(state, pos)) return false;
         SeasonState season = Seasons.get(level);
         if (season == null) return false;
         int week = season.week(); // 0 = the first days of spring
