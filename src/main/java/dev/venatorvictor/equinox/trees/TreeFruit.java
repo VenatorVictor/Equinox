@@ -149,7 +149,8 @@ public final class TreeFruit {
         if (week < kind.ripeFrom || week > kind.ripeTo) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
         ClimateBiome climate = (ClimateBiome) (Object) biome.value();
-        if (climate.equinox$climate() != ClimateBiome.SEASONAL || climate.equinox$zone().tropical) return false;
+        // Warm zones: oaks are evergreen there but still make acorns (live oak); other trees have no fruit there.
+        if (climate.equinox$climate() != ClimateBiome.SEASONAL || climate.equinox$zone().tropical && kind.leaves != Blocks.OAK_LEAVES) return false;
         return pickedYear(level, pos) != season.year();
     }
 

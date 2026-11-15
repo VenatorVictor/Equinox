@@ -277,9 +277,14 @@ public final class SeasonalTextures {
             // "seasonal" also takes every biome with a seasonal climate (beaches, rivers: their colors barely change,
             // but they have winters), so a tree standing on a biome border loses its leaves as a whole.
             boolean climate = format && (id.getPath().equals("seasonal") || id.getPath().equals("rain/seasonal"));
-            return biome -> biome.is(tag) || fallback.contains(((ClimateBiome) (Object) biome.value()).equinox$colorProfile())
-                    || climate && ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL
-                    && !((ClimateBiome) (Object) biome.value()).equinox$zone().tropical;
+            // Warm zones (Zone.tropical) never take the "seasonal" files, even when their color profile is a seasonal
+            // one (sparse / bamboo jungle: SEASONAL_HOT), so their leaves don't fall; they have their own files.
+            return biome -> {
+                ClimateBiome c = (ClimateBiome) (Object) biome.value();
+                if (climate && c.equinox$zone().tropical) return false;
+                return biome.is(tag) || fallback.contains(c.equinox$colorProfile())
+                        || climate && c.equinox$climate() == ClimateBiome.SEASONAL;
+            };
         }
         Set<ResourceLocation> ids = new HashSet<>();
         for (String biome : strings(json)) ids.add(ResourceLocation.parse(biome));
