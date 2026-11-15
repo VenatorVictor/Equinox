@@ -20,8 +20,8 @@ import java.util.List;
 
 /** Seasonal grass/foliage/leaf formulas, fed by {@link ColorClock}. */
 public final class SeasonColors {
-    /** Birch autumn patches (tree_colors = OFF tables): from the start of early autumn to the start of early winter. */
-    private static final int PATCHES_FROM = 12, PATCHES_TO = 18;
+    /** Birch autumn patches (tree_colors = OFF tables): autumn week 1 to winter week 2. */
+    private static final int PATCHES_FROM = 28, PATCHES_TO = 43;
     private static final ColorTables.Term[][] TABLES = new ColorTables.Term[ColorProfile.VALUES.length][];
 
     static {

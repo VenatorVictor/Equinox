@@ -27,7 +27,7 @@ import java.util.Optional;
  * Leaf fall textures, made when resources load (atlas source in assets/minecraft/atlases/blocks.json) from whatever leaf
  * texture is active, so resource packs with the same leaf shapes keep their colors.
  * Each assets/<ns>/leaf_fall/<name>.json lists the leaves of one texture (their pixels, in the order they fall) and how
- * many have fallen at stages 1..3. Sprites: <ns>:leaf_fall/<name>/stage_<1..3>, the leaves still there (the twigs are
+ * many have fallen at stages 1, 2, 3 ... (as many as listed). Sprites: <ns>:leaf_fall/<name>/stage_<n>, the leaves still there (the twigs are
  * their own texture, drawn behind: under_textures in the seasonal texture files).
  * If the active texture doesn't have the same pixels as the leaf map (another pack's leaves), no stages are made and
  * the seasonal texture files leave those steps as they are.
@@ -65,7 +65,7 @@ public final class LeafFallTextures implements SpriteSource {
                     leaves.add(list);
                 }
                 var stages = GsonHelper.getAsJsonArray(json, "stages");
-                for (int stage = 1; stage <= 3; stage++) {
+                for (int stage = 1; stage <= stages.size(); stage++) {   // as many stages as the map lists
                     int fallen = stages.get(stage - 1).getAsInt();
                     ResourceLocation id = ResourceLocation.fromNamespaceAndPath(key.getNamespace(), "leaf_fall/" + name + "/stage_" + stage);
                     output.add(id, loader -> make(resources, texture, id, leaves, fallen));

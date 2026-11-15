@@ -46,12 +46,12 @@ public final class ClientConfig {
                 .push("colors");
         GRASS = BUILDER.comment("Seasonal grass colors.").define("grass", true);
         FOLIAGE = BUILDER.comment("Seasonal colors of leaves that take the biome's color (oak, jungle, acacia, dark oak...).").define("foliage", true);
-        SMOOTH = BUILDER.comment("Blend each color step into the next over its days. false = colors jump once per step.")
+        SMOOTH = BUILDER.comment("Blend each week's color into the next over its days. false = colors jump once per week.")
                 .define("smooth_transition", true);
-        UPDATES_PER_STEP = BUILDER.comment("How many times per color step the blend is updated and nearby chunks re-colored.",
-                        "A step is 1/24 of the year: 7 days with 42-day seasons, so 7 = once per in-game day.",
+        UPDATES_PER_STEP = BUILDER.comment("How many times per week the color blend is updated and nearby chunks re-colored.",
+                        "A week is 1/56 of the year: 3 days with 42-day seasons, so 3 = once per in-game day.",
                         "Each update re-colors visible chunks (and Distant Horizons LODs), so higher = smoother but more rebuilds.")
-                .defineInRange("updates_per_step", 7, 1, 48);
+                .defineInRange("updates_per_week", 3, 1, 48);
         BUILDER.pop().push("leaves");
         TREE_COLORS = BUILDER.comment("Tree colors through the year. Each tree has its own timing and autumn color (oak brown-gold, dark oak",
                         "copper, birch yellow); biomes whose own foliage color is an autumn one use it in autumn and are green before.",

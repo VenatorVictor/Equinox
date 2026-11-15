@@ -102,13 +102,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_spring_end"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_3_spring_week_5"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_spring_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_3_spring_week_5_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -130,13 +130,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_spring_start"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_6_spring_week_7"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_spring_start_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_6_spring_week_7_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -158,13 +158,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_spring_end"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_8_spring_week_9"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_spring_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_8_spring_week_9_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -180,13 +180,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_late_spring_start_mid_summer_end"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_10_summer_week_9"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_late_spring_start_mid_summer_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_spring_week_10_summer_week_9_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -208,13 +208,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_late_summer_start_late_summer_end"
+        "all": "equinox:block/trees/birch_leafsnow_summer_week_10_summer_week_14"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_late_summer_start_late_summer_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_summer_week_10_summer_week_14_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -236,13 +236,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_autumn_start"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_1_autumn_week_2"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_autumn_start_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_1_autumn_week_2_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -273,13 +273,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_autumn_end"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_3_autumn_week_5"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_early_autumn_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_3_autumn_week_5_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -310,13 +310,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_autumn_start"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_6_autumn_week_7"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_autumn_start_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_6_autumn_week_7_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
@@ -347,13 +347,13 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_autumn_end"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_8_autumn_week_9"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/birch_leafsnow_mid_autumn_end_fruit"
+        "all": "equinox:block/trees/birch_leafsnow_autumn_week_8_autumn_week_9_fruit"
       },
       "snow_fruit_tint": {
         "all": -1

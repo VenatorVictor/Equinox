@@ -6,8 +6,8 @@ import dev.venatorvictor.equinox.client.ClientConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
 
 /**
- * Where the client is in the color tables: 24 steps a year (2 per season part, 0 = the spring equinox), and how far
- * through the step, rounded down to the configured updates. On the calendar. Read from chunk-meshing threads, written
+ * Where the client is in the color tables: 56 weeks a year (14 a season, 0 = the spring equinox), and how far
+ * through the week, rounded down to the configured updates. On the calendar. Read from chunk-meshing threads, written
  * on the client tick.
  */
 public final class ColorClock {
@@ -31,7 +31,7 @@ public final class ColorClock {
         int updates = ClientConfig.UPDATES_PER_STEP.get();
         int update = quantize(calendar.yearProgress() * ColorTables.STEPS, updates);
         step = update / updates;
-        week = calendar.week();
+        week = calendar.week(); // same as step (whole-day weeks); kept for the texture code
         progress = (float) (update % updates) / updates;
         active = true;
 

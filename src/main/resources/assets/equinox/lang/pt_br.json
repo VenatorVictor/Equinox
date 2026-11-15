@@ -158,7 +158,7 @@
   "equinox.settings.biome_cell.cost": "2x2 checa 4 vezes menos biomas, 4x4 16 vezes menos.",
   "equinox.settings.updates_per_step.name": "Atualizações de cor",
   "equinox.settings.heading.this_computer_redraws": "Este computador: redesenho",
-  "equinox.settings.updates_per_step.desc": "Quantas vezes por passo de cor (1/24 do ano) a mistura suave de cores é atualizada. Cada atualização redesenha os chunks que você vê (e os LODs).",
+  "equinox.settings.updates_per_step.desc": "Quantas vezes por semana (1/56 do ano) a mistura suave de cores é atualizada. Cada atualização redesenha os chunks que você vê (e os LODs).",
   "equinox.settings.updates_per_step.cost": "Cada atualização redesenha todos os chunks visíveis.",
   "equinox.settings.redraw_seconds.name": "Espalhar redesenho",
   "equinox.settings.redraw_seconds.desc": "Quando as texturas de neve ou as cores mudam, os chunks perto são redesenhados do mais perto ao mais longe ao longo deste tempo em vez de todos de uma vez.",

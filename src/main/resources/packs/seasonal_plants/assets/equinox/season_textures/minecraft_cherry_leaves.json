@@ -5,8 +5,8 @@
   "biomes": "#equinox:seasonal_zones",
   "slices": [
     {
-      "start": "winter_week_13",
-      "end": "winter_week_14",
+      "start": "winter_week_14",
+      "end": "spring_week_1",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_1"
       },
@@ -21,7 +21,7 @@
       }
     },
     {
-      "start": "spring_week_1",
+      "start": "spring_week_2",
       "end": "spring_week_2",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_2"
@@ -38,7 +38,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_5",
+      "end": "spring_week_3",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_3"
       },
@@ -53,8 +53,8 @@
       }
     },
     {
-      "start": "spring_week_8",
-      "end": "spring_week_9",
+      "start": "spring_week_4",
+      "end": "spring_week_4",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
       },
@@ -69,7 +69,7 @@
       }
     },
     {
-      "start": "spring_week_10",
+      "start": "spring_week_8",
       "end": "summer_week_12",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_green"
@@ -148,7 +148,7 @@
     },
     {
       "start": "autumn_week_10",
-      "end": "winter_week_12",
+      "end": "winter_week_13",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
       },
