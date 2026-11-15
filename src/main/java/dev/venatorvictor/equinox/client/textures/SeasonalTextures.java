@@ -96,7 +96,8 @@ public final class SeasonalTextures {
                 int prev = (w + WEEKS - 1) % WEEKS;
                 if (rule.byTerm()[w] != rule.byTerm()[prev] || rule.snowByTerm()[w] != rule.snowByTerm()[prev]) CHANGES[w] = true;
                 // Where leaf fall is held back (near warm zones) the week shown instead can change on its own.
-                if (rule.fallWeeks() != null) for (int[] weeks : rule.fallWeeks()) if (weeks[w] != weeks[prev]) CHANGES[w] = true;
+                if (rule.fallWeeks() != null) for (int c = 0; c < rule.fallWeeks().length; c++)
+                    if (rule.fallWeeks()[c][w] != rule.fallWeeks()[c][prev] || rule.held()[c][w] != rule.held()[c][prev]) CHANGES[w] = true;
             }
         }
         anySnow = rules.stream().anyMatch(rule -> rule.hasSnow);
@@ -163,6 +164,8 @@ public final class SeasonalTextures {
         Variant[][] snowByTerm = new Variant[WEEKS][];
         // fall: how far the slice's leaves have fallen (0 = all on, 1.. = leaf fall stages, highest = bare twigs).
         int[] fall = new int[WEEKS];
+        // held_over_textures: drawn in front when the week's leaf fall is held back (default: its over_textures).
+        Variant[][] heldOver = new Variant[WEEKS][];
         Set<TextureAtlasSprite> used = new HashSet<>();
         for (JsonElement element : GsonHelper.getAsJsonArray(json, "slices")) {
             JsonObject slice = element.getAsJsonObject();
@@ -211,9 +214,11 @@ public final class SeasonalTextures {
                 }
             }
             int sliceFall = GsonHelper.getAsInt(slice, "fall", 0);
+            Variant[] sliceHeld = variants(slice.get("held_over_textures"), slice.get("held_over_tint"), models, sprites, used);
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % WEEKS) {
                 fall[term] = sliceFall;
+                heldOver[term] = sliceHeld.length > 0 ? sliceHeld : null;
                 byTerm[term] = variants;
                 snowByTerm[term] = snowVariants;
                 if (term == range[1]) break;
@@ -223,7 +228,8 @@ public final class SeasonalTextures {
         SnowMode snowMode = GsonHelper.getAsBoolean(json, "snow_only_in_snow_layer", false) ? SnowMode.SNOW_LAYER
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, fallWeeks(fall));
+        int[][] fallWeeks = fallWeeks(fall);
+        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, fallWeeks, held(fallWeeks, byTerm, heldOver));
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -368,16 +374,57 @@ public final class SeasonalTextures {
         return weeks;
     }
 
+    /**
+     * For each leaf fall limit and week shown instead (fallWeeks): the earlier week's leaves with this week's front
+     * (held_over_textures, else its catkins: over_textures, and its fruit), so flowers and catkins still come on time.
+     */
+    private static Variant[][][] held(int[][] fallWeeks, Variant[][] byTerm, Variant[][] heldOver) {
+        if (fallWeeks == null) return null;
+        Variant[][][] held = new Variant[fallWeeks.length][WEEKS][];
+        Map<List<Object>, Variant[]> made = new HashMap<>();
+        for (int c = 0; c < fallWeeks.length; c++) {
+            for (int w = 0; w < WEEKS; w++) {
+                int shown = fallWeeks[c][w];
+                if (shown == w) continue;
+                Variant[] base = byTerm[shown], now = byTerm[w], front = heldOver[w];
+                Variant first = now != null && now.length > 0 ? now[0] : null;
+                Variant over = front != null ? front[0] : first != null ? first.over : null;
+                int percent = front != null ? 100 : first != null ? first.overPercent : 100;
+                Variant fruit = first != null ? first.fruit : null;
+                held[c][w] = made.computeIfAbsent(java.util.Arrays.asList(base, now, front), k -> {
+                    Variant[] from = base != null && base.length > 0 ? base : new Variant[]{new Variant(Map.of())};
+                    Variant[] out = new Variant[from.length];
+                    for (int i = 0; i < from.length; i++) {
+                        Variant b = from[i], v = new Variant(b.remap);
+                        v.under = b.under;
+                        v.over = over != null ? over : b.over;
+                        v.fruit = fruit != null ? fruit : b.fruit;
+                        v.overPercent = over != null ? percent : b.overPercent;
+                        if (v.over != null && v.overPercent < 100) {
+                            Variant bare = new Variant(b.remap);
+                            bare.under = b.under;
+                            bare.fruit = v.fruit;
+                            v.noOver = bare;
+                        }
+                        out[i] = v;
+                    }
+                    return out;
+                });
+            }
+        }
+        return held;
+    }
+
     /** When the snow textures show: where snow lies, there and under open sky, only inside a snow mod's snow, or only under a snow layer. */
     enum SnowMode { COLD, SKY, SNOW_LAYER, SNOW_ABOVE }
 
     /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
-    /** fallWeeks: see fallWeeks(), null without leaf fall. */
+    /** fallWeeks: see fallWeeks(), null without leaf fall; held: see held(), by limit and week. */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean hasSnow, int[][] fallWeeks) {
+                SnowMode snowMode, boolean hasSnow, int[][] fallWeeks, Variant[][][] held) {
         Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode,
-             int[][] fallWeeks) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0), fallWeeks);
+             int[][] fallWeeks, Variant[][][] held) {
+            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0), fallWeeks, held);
         }
 
         /** The file's highest fall (bare), 0 without leaf fall. */

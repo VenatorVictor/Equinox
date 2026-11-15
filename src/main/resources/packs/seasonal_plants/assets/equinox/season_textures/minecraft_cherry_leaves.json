@@ -19,7 +19,13 @@
       "under_tint": {
         "all": -1
       },
-      "fall": 4
+      "fall": 4,
+      "held_over_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_1"
+      },
+      "held_over_tint": {
+        "all": -1
+      }
     },
     {
       "start": "spring_week_2",
@@ -36,7 +42,13 @@
       "under_tint": {
         "all": -1
       },
-      "fall": 4
+      "fall": 4,
+      "held_over_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_2"
+      },
+      "held_over_tint": {
+        "all": -1
+      }
     },
     {
       "start": "spring_week_3",
@@ -53,7 +65,13 @@
       "under_tint": {
         "all": -1
       },
-      "fall": 4
+      "fall": 4,
+      "held_over_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_3"
+      },
+      "held_over_tint": {
+        "all": -1
+      }
     },
     {
       "start": "spring_week_4",
@@ -70,7 +88,13 @@
       "under_tint": {
         "all": -1
       },
-      "fall": 4
+      "fall": 4,
+      "held_over_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
+      },
+      "held_over_tint": {
+        "all": -1
+      }
     },
     {
       "start": "spring_week_8",

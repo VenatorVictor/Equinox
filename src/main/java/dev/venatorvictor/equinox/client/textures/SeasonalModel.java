@@ -95,12 +95,15 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         float warm = Float.NaN;
         for (SeasonalTextures.Rule rule : rules) {
             int term = ColorClock.week;
+            SeasonalTextures.Variant[] variants = rule.byTerm()[term];
             if (rule.fallWeeks() != null) {   // near warm zones the leaves fall less (blended like the colors)
                 if (warm != warm) warm = dev.venatorvictor.equinox.climate.ClimateBlend.warmShare(pos.getX(), pos.getZ());
                 int limit = fallLimit(rule.maxFall(), warm);
-                if (limit < rule.maxFall()) term = rule.fallWeeks()[limit][term];
+                if (limit < rule.maxFall() && rule.fallWeeks()[limit][term] != term) {
+                    variants = rule.held()[limit][term];   // an earlier week's leaves, this week's catkins / flowers
+                    term = rule.fallWeeks()[limit][term];
+                }
             }
-            SeasonalTextures.Variant[] variants = rule.byTerm()[term];
             SeasonalTextures.Variant[] snowVariants = rule.snowByTerm()[term];
             boolean hasNormal = variants != null && variants.length > 0, hasSnow = snowVariants != null && snowVariants.length > 0;
             if (!hasNormal && !hasSnow) continue;
