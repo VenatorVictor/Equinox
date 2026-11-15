@@ -57,6 +57,13 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Shadow
     protected abstract float getTemperature(BlockPos pos);
 
+    @Shadow
+    public abstract float getBaseTemperature();
+
+    /** 0 not known yet, 1 plain temperature (no frozen-ocean modifier), 2 modified. */
+    @Unique
+    private byte equinox$plain;
+
     @Override
     public float equinox$temperature(BlockPos pos) {
         return getTemperature(pos);
@@ -159,13 +166,33 @@ public abstract class BiomeMixin implements ClimateBiome {
     @Inject(method = "getTemperature", at = @At("RETURN"), cancellable = true)
     private void equinox$seasonalTemperature(BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (Climate.WORLDGEN.get()) return; // world generation keeps vanilla's climate
-        float[] changes = equinox$changes;
-        float seasonal = equinox$lockShift;
-        if (changes != null) seasonal += Climate.change(changes, equinox$zone.factor);
-        float shift = equinox$shift + ClimateBlend.adjust((Biome) (Object) this, pos, equinox$blendKind, seasonal);
+        float shift = equinox$shiftAt(pos);
         float temperature = cir.getReturnValueF() + shift;
         if (equinox$geothermal) temperature = Geothermal.apply(temperature, pos.getX(), pos.getZ());
         if (shift != 0 || equinox$geothermal) cir.setReturnValue(temperature);
+    }
+
+    /** The climate's change to the biome's temperature at this column now (season, snow lock, blending). */
+    @Unique
+    private float equinox$shiftAt(BlockPos pos) {
+        float seasonal = equinox$lockShift;
+        float[] changes = equinox$changes;
+        if (changes != null) seasonal += Climate.change(changes, equinox$zone.factor);
+        return equinox$shift + ClimateBlend.adjust((Biome) (Object) this, pos, equinox$blendKind, seasonal);
+    }
+
+    /**
+     * Rain or snow from the column's snow height (Climate.rainAt) instead of the full temperature: rain drawing asks
+     * every column around the player every frame. Geothermal patches and frozen-ocean temperatures take the full way.
+     */
+    @Inject(method = "warmEnoughToRain", at = @At("HEAD"), cancellable = true)
+    private void equinox$snowHeight(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        if (equinox$geothermal || Climate.WORLDGEN.get()) return;
+        if (equinox$plain == 0) equinox$plain = (byte) (((Biome) (Object) this).getModifiedClimateSettings().temperatureModifier()
+                == Biome.TemperatureModifier.NONE ? 1 : 2);
+        if (equinox$plain != 1) return;
+        Boolean rain = Climate.rainAt(getBaseTemperature() + equinox$shiftAt(pos), pos.getY());
+        if (rain != null) cir.setReturnValue(rain);
     }
 
     @Inject(method = "hasPrecipitation", at = @At("HEAD"), cancellable = true)

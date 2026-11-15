@@ -127,7 +127,14 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        phase = Phase.of(state, variationAt(state), dailyVariationAt(state));
+        Phase next = Phase.of(state, variationAt(state), dailyVariationAt(state)), now = phase;
+        // Only when it really moved (about every 5 s in a normal year, at once after /season set): cached
+        // temperatures (ClimateBlend) stay valid in between; a step is a few thousandths of a degree.
+        if (next.from() != now.from() || next.to() != now.to() || Math.abs(next.blend() - now.blend()) >= 1e-4F
+                || Math.abs(next.season() - now.season()) >= 1e-4F || Math.abs(next.daily() - now.daily()) >= 1e-3F) {
+            phase = next;
+            ClimateBlend.changed();
+        }
         Season season = state.season();
         summer = season == Season.SUMMER;
         winter = season == Season.WINTER;
@@ -205,6 +212,7 @@ public final class Climate {
         seasonal = seasonalOf(serverBiomes);
         // A new phase object, so cached temperatures (ClimateBlend) are worked out again.
         phase = new Phase(phase.from(), phase.to(), phase.blend(), phase.season(), phase.daily());
+        ClimateBlend.changed();
     }
 
     /** The server's biomes with seasons. */
@@ -275,6 +283,22 @@ public final class Climate {
 
     /** Vanilla snows and freezes below this temperature. */
     public static final float SNOW_LINE = 0.15F;
+
+    /** Vanilla's height cooling: per block above y 80, and its noise (TEMPERATURE_NOISE times 8 blocks) at most. */
+    private static final float PER_BLOCK = 0.05F / 40F, NOISE_COOLING = 8 * PER_BLOCK, SURE = NOISE_COOLING + 0.001F;
+
+    /**
+     * Snow height: rain (true) or snow (false) at height y, from the temperature of the column up to y 80 (low), or
+     * null when y is in the band where vanilla's height noise decides (work it out in full). Exact up to y 80; above,
+     * vanilla cools PER_BLOCK per block, give or take NOISE_COOLING, the same on any terrain.
+     */
+    public static Boolean rainAt(float low, int y) {
+        if (y <= 80) return low >= SNOW_LINE;
+        float above = low - SNOW_LINE - (y - 80) * PER_BLOCK;
+        if (above > SURE) return Boolean.TRUE;
+        if (above < -SURE) return Boolean.FALSE;
+        return null;
+    }
     /** The same in °C, on the daily mean: snow falls and water freezes below it. */
     public static final float SNOW_CELSIUS = 0.5F;
 

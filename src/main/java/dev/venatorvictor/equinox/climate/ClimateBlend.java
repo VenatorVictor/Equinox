@@ -17,6 +17,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import it.unimi.dsi.fastutil.HashCommon;
 
 /**
  * Climate blending: each chunk gets the mix of biomes around it (nearer ones count more, Config.blendRadius), read from
@@ -92,6 +94,26 @@ public final class ClimateBlend {
     private static final ThreadLocal<float[]> AROUND = ThreadLocal.withInitial(() -> new float[2]);
 
     /**
+     * Last samples per thread and side, by block column (the blend doesn't depend on height). Rain drawing asks the
+     * same few hundred columns every frame; a version bump (mixes changed, new climate phase) makes them stale.
+     */
+    private static final class Columns {
+        static final int SIZE = 2048;
+        final long[] keys = new long[SIZE];
+        final int[] stamps = new int[SIZE];
+        final float[] temperatures = new float[SIZE], coolings = new float[SIZE];
+    }
+
+    private static final ThreadLocal<Columns> CLIENT_COLUMNS = ThreadLocal.withInitial(Columns::new),
+            SERVER_COLUMNS = ThreadLocal.withInitial(Columns::new);
+    private static final AtomicInteger VERSION = new AtomicInteger(1);
+
+    /** The mixes or the climate phase changed: cached samples are worked out again. */
+    public static void changed() {
+        VERSION.incrementAndGet();
+    }
+
+    /**
      * The biome's seasonal change at pos (seasonal: season + snow tuning) in its climate zone, plus the blending's
      * change. Biomes without blending or with a snow lock keep their own climate.
      */
@@ -128,6 +150,24 @@ public final class ClimateBlend {
     /** [temperature of the mixes around, cooling] at pos, from the chunk mixes or (client) the far ones; NaN where unknown. */
     private static float[] sample(boolean client, BlockPos pos) {
         float[] out = AROUND.get();
+        Columns columns = (client ? CLIENT_COLUMNS : SERVER_COLUMNS).get();
+        long key = ((long) pos.getX() << 32) | (pos.getZ() & 0xFFFFFFFFL);
+        int i = (int) HashCommon.mix(key) & (Columns.SIZE - 1);
+        int stamp = VERSION.get();   // read before working it out: a change meanwhile makes this entry stale
+        if (columns.stamps[i] == stamp && columns.keys[i] == key) {
+            out[0] = columns.temperatures[i];
+            out[1] = columns.coolings[i];
+            return out;
+        }
+        sampleNow(client, pos, out);
+        columns.keys[i] = key;
+        columns.temperatures[i] = out[0];
+        columns.coolings[i] = out[1];
+        columns.stamps[i] = stamp;
+        return out;
+    }
+
+    private static void sampleNow(boolean client, BlockPos pos, float[] out) {
         around(client ? CLIENT : SERVER, 16, pos, out);
         if (client && farCell > 0 && (Float.isNaN(out[0]) || Float.isNaN(out[1]))) {
             float temperature = out[0], cooling = out[1];
@@ -135,7 +175,6 @@ public final class ClimateBlend {
             if (!Float.isNaN(temperature)) out[0] = temperature;
             if (!Float.isNaN(cooling)) out[1] = cooling;
         }
-        return out;
     }
 
     /** The mixes' temperature and cooling at pos, blended between the centers of the cells around it; NaN if none is known. */
@@ -259,6 +298,7 @@ public final class ClimateBlend {
     public static void put(long chunk, Mix mix) {
         if (CLIENT.size() > MAX_CHUNKS) CLIENT.clear();
         CLIENT.put(chunk, mix);
+        changed();
     }
 
     /** Client: the server sent far mixes (cells of cell blocks; a new size replaces the old ones). */
@@ -268,6 +308,7 @@ public final class ClimateBlend {
             farCell = cell;
         }
         FAR.put(key, mix);
+        changed();
     }
 
     /** Client: leaving a world. */
@@ -275,6 +316,7 @@ public final class ClimateBlend {
         CLIENT.clear();
         FAR.clear();
         farCell = 0;
+        changed();
     }
 
     /** Server stopped. */
@@ -282,6 +324,7 @@ public final class ClimateBlend {
         SERVER.clear();
         GRID.clear();
         gridStep = 0;
+        changed();
     }
 
     /** Server: the mix of a chunk, worked out the first time. Null when blending and climate zones are off. */
@@ -293,6 +336,7 @@ public final class ClimateBlend {
         if (mix == null) return null;
         if (SERVER.size() > MAX_CHUNKS) SERVER.clear();
         SERVER.put(key, mix);
+        changed();
         return mix;
     }
 
