@@ -187,6 +187,11 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         return own.contains(RenderType.solid()) && !own.contains(FRONT_LAYER);
     }
 
+    /** Whether the front layer is drawn on the side faces only: snow in front, and flowers / fruit on leaves. */
+    private static boolean sidesOnly(SeasonalTextures.Variant variant, @Nullable BlockState state) {
+        return variant.front || state != null && state.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock;
+    }
+
     private List<BakedQuad> frontOnly(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData data) {
         SeasonalTextures.Variant variant = data.get(VARIANT);
         if (variant == null) return List.of();
@@ -194,7 +199,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         if (front == null) return List.of();
         List<BakedQuad> out = new ArrayList<>();
         for (BakedQuad quad : super.getQuads(state, side, rand, data, RenderType.solid())) {
-            if (variant.front && quad.getDirection().getAxis().isVertical()) continue; // snow: side faces only
+            if (sidesOnly(variant, state) && quad.getDirection().getAxis().isVertical()) continue; // snow, leaf flowers/fruit: side faces only
             BakedQuad lifted = front.inFront(quad);
             if (lifted != null) out.add(lifted);
         }
@@ -243,8 +248,9 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
                 : fruit && variant.fruit != null ? variant.fruit : variant.over;
         if (front != null) {
             for (BakedQuad quad : quads) {
-                // Snow in front (snow_over_textures): only on the side faces, as the snow layer lies on the top.
-                if (variant.front && quad.getDirection().getAxis().isVertical()) continue;
+                // Snow in front (snow_over_textures): only on the side faces, as the snow layer lies on the top; flowers
+                // and fruit on leaves too (on the top and bottom they looked pasted on).
+                if (sidesOnly(variant, state) && quad.getDirection().getAxis().isVertical()) continue;
                 BakedQuad lifted = front.inFront(quad);
                 if (lifted != null) swapped.add(lifted);
             }
