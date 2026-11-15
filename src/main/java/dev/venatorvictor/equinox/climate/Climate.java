@@ -226,7 +226,10 @@ public final class Climate {
         if (zone.seasonal()) {
             // The °C climate decides: the biome's daily mean (data map, else from its Minecraft temperature) and the
             // daily mean change at each season point, turned into Minecraft's scale (fromCelsius).
-            float mean = entry != null ? (entry.night() + entry.day()) / 2 : toCelsius(temperature);
+            // Tropical biomes without a value (other mods, Minecraft temperature up to 2.0) keep the rough mean they had
+            // before they had seasons (Celsius.fallbackMean, at most 35 °C), not 56 °C from the temperate scale.
+            float mean = entry != null ? (entry.night() + entry.day()) / 2
+                    : zone.tropical ? Celsius.fallbackMean(temperature) : toCelsius(temperature);
             changes = new float[Season.COUNT];
             for (int i = 0; i < Season.COUNT; i++) {
                 float change = celsius == null ? 0 : (celsius[i * 2] + celsius[i * 2 + 1]) / 2;

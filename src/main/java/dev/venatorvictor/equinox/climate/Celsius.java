@@ -129,7 +129,11 @@ public final class Celsius {
     }
 
     private static float fallback(Biome biome) {
-        float temperature = biome.getBaseTemperature() + ((ClimateBiome) (Object) biome).equinox$shift();
+        return fallbackMean(biome.getBaseTemperature() + ((ClimateBiome) (Object) biome).equinox$shift());
+    }
+
+    /** A rough daily mean (°C) from a Minecraft temperature: plains 0.8 = 14 °C, at most 35. */
+    public static float fallbackMean(float temperature) {
         return Mth.clamp(temperature * 25 - 6, -25, 35);
     }
 
