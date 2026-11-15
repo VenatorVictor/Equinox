@@ -34,13 +34,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 4,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_1_spring_week_2"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 4
+      }
     },
     {
       "start": "spring_week_3",
@@ -54,13 +54,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 3,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_3_spring_week_5"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 3
+      }
     },
     {
       "start": "spring_week_6",
@@ -81,13 +81,13 @@
         "all": -1
       },
       "over_percent": 60,
+      "fall": 2,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_6_spring_week_7"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 2
+      }
     },
     {
       "start": "spring_week_8",
@@ -108,13 +108,13 @@
         "all": -1
       },
       "over_percent": 60,
+      "fall": 1,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_spring_week_8_spring_week_9"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 1
+      }
     },
     {
       "start": "spring_week_10",
@@ -274,13 +274,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 1,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_autumn_week_8_autumn_week_9"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 1
+      }
     },
     {
       "start": "autumn_week_10",
@@ -294,13 +294,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 2,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_autumn_week_10_autumn_week_11"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 2
+      }
     },
     {
       "start": "autumn_week_12",
@@ -314,13 +314,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 3,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_autumn_week_12_autumn_week_14"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 3
+      }
     },
     {
       "start": "winter_week_1",
@@ -334,13 +334,13 @@
       "under_tint": {
         "all": -1
       },
+      "fall": 4,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_winter_week_1"
       },
       "snow_over_tint": {
         "all": -1
-      },
-      "fall": 4
+      }
     },
     {
       "start": "autumn_week_6",
