@@ -12,7 +12,8 @@
       },
       "tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_6",
@@ -25,7 +26,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 2
     },
     {
       "start": "spring_week_8",
@@ -38,7 +40,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 1
     },
     {
       "start": "autumn_week_3",
@@ -74,7 +77,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 1
     },
     {
       "start": "autumn_week_10",
@@ -90,7 +94,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 2
     },
     {
       "start": "autumn_week_13",
@@ -106,7 +111,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 3
     }
   ]
 }

@@ -19,7 +19,8 @@
       },
       "snow_tint": {
         "all": -1
-      }
+      },
+      "fall": 5
     },
     {
       "start": "spring_week_1",
@@ -38,7 +39,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_3",
@@ -57,7 +59,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 3
     },
     {
       "start": "spring_week_6",
@@ -83,7 +86,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 2
     },
     {
       "start": "spring_week_8",
@@ -109,7 +113,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 1
     },
     {
       "start": "spring_week_10",
@@ -274,7 +279,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 1
     },
     {
       "start": "autumn_week_10",
@@ -293,7 +299,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 2
     },
     {
       "start": "autumn_week_12",
@@ -312,7 +319,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 3
     },
     {
       "start": "winter_week_1",
@@ -331,7 +339,8 @@
       },
       "snow_over_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "autumn_week_6",

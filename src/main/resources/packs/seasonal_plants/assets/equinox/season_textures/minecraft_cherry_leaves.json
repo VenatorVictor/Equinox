@@ -18,7 +18,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_2",
@@ -34,7 +35,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_3",
@@ -50,7 +52,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_4",
@@ -66,7 +69,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     },
     {
       "start": "spring_week_8",
@@ -112,7 +116,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 1
     },
     {
       "start": "autumn_week_6",
@@ -128,7 +133,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 2
     },
     {
       "start": "autumn_week_8",
@@ -144,7 +150,8 @@
       },
       "under_tint": {
         "all": -1
-      }
+      },
+      "fall": 3
     },
     {
       "start": "autumn_week_10",
@@ -154,7 +161,8 @@
       },
       "tint": {
         "all": -1
-      }
+      },
+      "fall": 4
     }
   ]
 }

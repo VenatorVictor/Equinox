@@ -194,6 +194,18 @@ public final class ClimateBlend {
         return out;
     }
 
+    /**
+     * Client: the share (0..1) of warm zones (Zone.tropical: savanna, rainforest, monsoon, hot) among the land biomes
+     * around a column, from the same mixes as the colors and the temperature; -1 where no mix is known.
+     */
+    public static float warmShare(int x, int z) {
+        ColorMix mix = colorMix(x, z);
+        if (mix.count == 0) return -1;
+        float warm = 0;
+        for (int k = 0; k < mix.count; k++) if (((ClimateBiome) (Object) mix.biomes[k]).equinox$zone().tropical) warm += mix.weights[k];
+        return warm;
+    }
+
     /** False when no mix with biomes is known around. */
     private static boolean colorAround(Map<Long, Mix> mixes, int cell, int x, int z, ColorMix out) {
         if (mixes.isEmpty()) return false;

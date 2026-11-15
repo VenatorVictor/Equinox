@@ -95,6 +95,8 @@ public final class SeasonalTextures {
             for (int w = 0; w < WEEKS; w++) {
                 int prev = (w + WEEKS - 1) % WEEKS;
                 if (rule.byTerm()[w] != rule.byTerm()[prev] || rule.snowByTerm()[w] != rule.snowByTerm()[prev]) CHANGES[w] = true;
+                // Where leaf fall is held back (near warm zones) the week shown instead can change on its own.
+                if (rule.fallWeeks() != null) for (int[] weeks : rule.fallWeeks()) if (weeks[w] != weeks[prev]) CHANGES[w] = true;
             }
         }
         anySnow = rules.stream().anyMatch(rule -> rule.hasSnow);
@@ -159,6 +161,8 @@ public final class SeasonalTextures {
 
         Variant[][] byTerm = new Variant[WEEKS][];
         Variant[][] snowByTerm = new Variant[WEEKS][];
+        // fall: how far the slice's leaves have fallen (0 = all on, 1.. = leaf fall stages, highest = bare twigs).
+        int[] fall = new int[WEEKS];
         Set<TextureAtlasSprite> used = new HashSet<>();
         for (JsonElement element : GsonHelper.getAsJsonArray(json, "slices")) {
             JsonObject slice = element.getAsJsonObject();
@@ -206,8 +210,10 @@ public final class SeasonalTextures {
                     snowVariants[i] = snow;
                 }
             }
+            int sliceFall = GsonHelper.getAsInt(slice, "fall", 0);
             // Later slices win.
             for (int term = range[0]; ; term = (term + 1) % WEEKS) {
+                fall[term] = sliceFall;
                 byTerm[term] = variants;
                 snowByTerm[term] = snowVariants;
                 if (term == range[1]) break;
@@ -217,7 +223,7 @@ public final class SeasonalTextures {
         SnowMode snowMode = GsonHelper.getAsBoolean(json, "snow_only_in_snow_layer", false) ? SnowMode.SNOW_LAYER
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode);
+        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, fallWeeks(fall));
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -333,14 +339,50 @@ public final class SeasonalTextures {
         return sprite.contents().name().equals(MissingTextureAtlasSprite.getLocation());
     }
 
+    /**
+     * For each leaf fall limit c (0 .. the file's highest fall - 1) and week: the week to show instead when that week's
+     * leaves have fallen further than c: the last week before it whose fall is c (else the last one below c), so the
+     * leaves stay as they were when they stopped falling, and nothing from spring shows in winter. Null when the file
+     * has no leaf fall.
+     */
+    private static int[][] fallWeeks(int[] fall) {
+        int max = 0;
+        for (int f : fall) max = Math.max(max, f);
+        if (max == 0) return null;
+        int[][] weeks = new int[max][WEEKS];
+        for (int c = 0; c < max; c++) {
+            for (int w = 0; w < WEEKS; w++) {
+                weeks[c][w] = w;
+                if (fall[w] <= c) continue;
+                int best = -1, bestFall = -1;
+                for (int d = 1; d < WEEKS && bestFall != c; d++) {
+                    int t = Math.floorMod(w - d, WEEKS);
+                    if (fall[t] <= c && fall[t] > bestFall) {
+                        best = t;
+                        bestFall = fall[t];
+                    }
+                }
+                if (best >= 0) weeks[c][w] = best;
+            }
+        }
+        return weeks;
+    }
+
     /** When the snow textures show: where snow lies, there and under open sky, only inside a snow mod's snow, or only under a snow layer. */
     enum SnowMode { COLD, SKY, SNOW_LAYER, SNOW_ABOVE }
 
     /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
+    /** fallWeeks: see fallWeeks(), null without leaf fall. */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean hasSnow) {
-        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0));
+                SnowMode snowMode, boolean hasSnow, int[][] fallWeeks) {
+        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode,
+             int[][] fallWeeks) {
+            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0), fallWeeks);
+        }
+
+        /** The file's highest fall (bare), 0 without leaf fall. */
+        int maxFall() {
+            return fallWeeks == null ? 0 : fallWeeks.length;
         }
     }
 

@@ -92,8 +92,14 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         ClientLevel level = Minecraft.getInstance().level;
         if (!ColorClock.active || level == null || !ClientConfig.SEASONAL_TEXTURES.get()) return null;
         Holder<Biome> biome = null;
+        float warm = Float.NaN;
         for (SeasonalTextures.Rule rule : rules) {
             int term = ColorClock.week;
+            if (rule.fallWeeks() != null) {   // near warm zones the leaves fall less (blended like the colors)
+                if (warm != warm) warm = dev.venatorvictor.equinox.climate.ClimateBlend.warmShare(pos.getX(), pos.getZ());
+                int limit = fallLimit(rule.maxFall(), warm);
+                if (limit < rule.maxFall()) term = rule.fallWeeks()[limit][term];
+            }
             SeasonalTextures.Variant[] variants = rule.byTerm()[term];
             SeasonalTextures.Variant[] snowVariants = rule.snowByTerm()[term];
             boolean hasNormal = variants != null && variants.length > 0, hasSnow = snowVariants != null && snowVariants.length > 0;
@@ -120,6 +126,16 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
             return pick(normal, null, fruit);
         }
         return null;
+    }
+
+    /**
+     * How far leaves may fall (0 = none, max = bare) at a warm zone share around the column (ClimateBlend.warmShare):
+     * all the way with no warm zone around, less and less toward a warm zone, none where it is half of the mix (the
+     * border); the warm zones' own files have no leaf fall. -1 (no mix known): no limit.
+     */
+    static int fallLimit(int max, float warm) {
+        if (warm <= 0) return max;
+        return Math.round(Math.max(0F, 1F - 2F * warm) * max);
     }
 
     /**
