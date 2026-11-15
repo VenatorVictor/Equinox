@@ -43,6 +43,10 @@ public final class SeasonColors {
         event.register((state, level, pos, tint) -> TreeColors.biomeTree(TreeColors.OAK, level, pos), Blocks.OAK_LEAVES);
         event.register((state, level, pos, tint) -> TreeColors.biomeTree(TreeColors.DARK_OAK, level, pos), Blocks.DARK_OAK_LEAVES);
         event.register((state, level, pos, tint) -> TreeColors.autumnBiomeLeaves(level, pos), Blocks.ACACIA_LEAVES, Blocks.JUNGLE_LEAVES);
+        // cherry: only its tinted season textures (tint 0) ask; vanilla's pink leaves have no tint
+        event.register((state, level, pos, tint) -> ClientConfig.TREE_COLORS.get() == ClientConfig.TreeColors.OFF
+                || pos == null || !ColorClock.active ? 0xFF000000 | TreeColors.CHERRY_GREEN
+                : TreeColors.fixedTree(TreeColors.CHERRY, TreeColors.CHERRY_GREEN, level, pos, false), Blocks.CHERRY_LEAVES);
     }
 
     /** Birch and spruce: per-tree colors, or the earlier tables with tree_colors = OFF. */

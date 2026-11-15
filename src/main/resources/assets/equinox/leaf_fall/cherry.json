@@ -1,6 +1,6 @@
 {
- "_comment": "Leaves of equinox:block/trees/cherry_leaves_green, in the order they fall: the user's birch leaves (cherry = birch moved 5 right, 5 down, +3 pixels), birch's fall order; the last entry is the twigs (never falls). stages: how many have fallen at stage 1, 2, 3 (stage 4 = all). Made by specs/tools/cherry_paint_spread.py.",
- "texture": "equinox:block/trees/cherry_leaves_green",
+ "_comment": "Leaves of equinox:block/trees/cherry_leaves, in the order they fall: the user's birch leaves (cherry = birch moved 5 right, 5 down, +3 pixels), birch's fall order; the last entry is the twigs (never falls). stages: how many have fallen at stage 1, 2, 3 (stage 4 = all). Made by specs/tools/cherry_paint_spread.py.",
+ "texture": "equinox:block/trees/cherry_leaves",
  "leaves": [
   "7,6 7,7 8,7",
   "3,5 4,5 3,6 4,6 4,7",

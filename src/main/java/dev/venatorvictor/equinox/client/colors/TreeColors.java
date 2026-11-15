@@ -71,6 +71,24 @@ public final class TreeColors {
             {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}   // winter 8-14
     });
 
+    /**
+     * Cherry: one painted texture (packs/.../trees/cherry_leaves.png, tint 0) colored by this table, like birch. Leaves
+     * come out after the blossoms (spring 8) in CHERRY_GREEN; yellow from summer 14 (the extra color), red-orange from
+     * autumn 3 as they start to fall (the painted leaves make the red, orange and yellow ones). Before spring 8 and
+     * after autumn 9 the season file shows untinted blossoms and twigs, so those weeks don't matter.
+     */
+    public static final int CHERRY_GREEN = 0xBADD3E;
+    public static final Tree CHERRY = new Tree(0xE8622A, 0x8B5A33, 0xE8B830, new float[][]{
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-7
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 8-14
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 1-7
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {T, .3F},   // summer 8-14: yellowing starts
+            {T, .55F}, {T, .8F}, {A, .8F}, {A, .9F}, {A, .95F}, {A, .95F}, {A, .95F},   // autumn 1-7: yellow, then red-orange
+            {A, .95F}, {A, .95F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // autumn 8-14
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // winter 1-7
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}   // winter 8-14
+    });
+
     /** Evergreen: bright new tips in May-June, duller and darker in winter. */
     public static final Tree SPRUCE = new Tree(0, 0x4A6A4A, 0x7FB24A, new float[][]{
             {W, .279F}, {W, .257F}, {W, .236F}, {W, .214F}, {W, .186F}, {W, .143F}, {W, .1F},   // spring 1-7
