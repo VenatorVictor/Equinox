@@ -101,7 +101,9 @@ public final class Celsius {
         float atNight = seasons && changes != null ? change(changes, phase, 0) : 0;
         float atNoon = seasons && changes != null ? change(changes, phase, 1) : 0;
         if (zone.seasonal()) {
+            // the biome temperature has no daily variation (Climate.change): the air gets it here
             float mean = Climate.toCelsius(Climate.temperature(holder.value(), pos));
+            if (seasons && changes != null) mean += phase.daily() * zone.factor * PER_UNIT;
             float swing = (day - night + atNoon - atNight) / 2;
             return mean + Mth.lerp(dayWeight, -swing, swing);
         }

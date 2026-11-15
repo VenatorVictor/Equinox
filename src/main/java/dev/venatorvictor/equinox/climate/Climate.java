@@ -81,10 +81,14 @@ public final class Climate {
         return phase.daily;
     }
 
-    /** The change now of a seasonal curve (mid spring, summer, autumn, winter), variation times factor included. */
+    /**
+     * The change now of a seasonal curve (mid spring, summer, autumn, winter), season variation times factor included.
+     * Not the daily variation: rain or snow, snow lying and melting follow the season, so one cold day doesn't bring
+     * snow that the next mild day's rain takes away again. The daily swing is only in the air temperature (Celsius).
+     */
     public static float change(float[] changes, float factor) {
         Phase p = phase;
-        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + (p.season + p.daily) * factor;
+        return changes[p.from] + (changes[p.to] - changes[p.from]) * p.blend + p.season * factor;
     }
 
     /** A biome's seasonal change now (0 without seasons). */
