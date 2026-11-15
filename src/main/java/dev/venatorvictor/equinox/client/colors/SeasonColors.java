@@ -22,7 +22,7 @@ import java.util.List;
 public final class SeasonColors {
     /** Birch autumn patches (tree_colors = OFF tables): autumn week 1 to winter week 2. */
     private static final int PATCHES_FROM = 28, PATCHES_TO = 43;
-    private static final ColorTables.Term[][] TABLES = new ColorTables.Term[ColorProfile.VALUES.length][];
+    private static final ColorTables.Week[][] TABLES = new ColorTables.Week[ColorProfile.VALUES.length][];
 
     static {
         TABLES[ColorProfile.STABLE.ordinal()] = ColorTables.STABLE;
@@ -81,19 +81,19 @@ public final class SeasonColors {
     public static int grassOrFoliage(boolean grass, int original, Biome biome, float cold) {
         if (!ColorClock.active || !(grass ? ClientConfig.GRASS.get() : ClientConfig.FOLIAGE.get())) return original;
         ColorProfile profile = ((ClimateBiome) (Object) biome).equinox$colorProfile();
-        ColorTables.Term[] terms = TABLES[profile.ordinal()];
+        ColorTables.Week[] weeks = TABLES[profile.ordinal()];
         float scale = profile == ColorProfile.SEASONAL || profile == ColorProfile.SEASONAL_HOT || profile == ColorProfile.SEASONAL_COLD ? cold : 1F;
-        int now = apply(grass, terms[ColorClock.step], original, scale);
+        int now = apply(grass, weeks[ColorClock.step], original, scale);
         if (!ClientConfig.SMOOTH.get()) return now;
-        ColorTables.Term prevTerm = terms[ColorClock.previousStep()];
-        if (prevTerm.equals(terms[ColorClock.step])) return now;
+        ColorTables.Week prevWeek = weeks[ColorClock.previousStep()];
+        if (prevWeek.equals(weeks[ColorClock.step])) return now;
         float p = ColorClock.progress;
-        return ColorTables.mix(now, p, apply(grass, prevTerm, original, scale), 1F - p);
+        return ColorTables.mix(now, p, apply(grass, prevWeek, original, scale), 1F - p);
     }
 
-    private static int apply(boolean grass, ColorTables.Term term, int original, float scale) {
-        float mix = term.mix() * scale;
-        return ColorTables.mix(grass ? term.grass() : term.leaf(), mix, original, 1F - mix);
+    private static int apply(boolean grass, ColorTables.Week week, int original, float scale) {
+        float mix = week.mix() * scale;
+        return ColorTables.mix(grass ? week.grass() : week.leaf(), mix, original, 1F - mix);
     }
 
     // ---- Climate color blending (ClientConfig.CLIMATE_COLOR_BLEND)

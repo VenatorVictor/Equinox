@@ -71,7 +71,7 @@ public final class SeasonalTextures {
     private static final String DIRECTORY = "season_textures";
     private static final List<String> SEASONS = List.of("spring", "summer", "autumn", "winter");
 
-    /** Whether any file was loaded; when false nothing is wrapped and term changes need no rebuild. */
+    /** Whether any file was loaded; when false nothing is wrapped and week changes need no rebuild. */
     public static volatile boolean any = false;
     /** Whether any file has snow textures, which also change when the first snow falls. */
     public static volatile boolean anySnow = false;
@@ -94,7 +94,7 @@ public final class SeasonalTextures {
         for (Rule rule : rules) {
             for (int w = 0; w < WEEKS; w++) {
                 int prev = (w + WEEKS - 1) % WEEKS;
-                if (rule.byTerm()[w] != rule.byTerm()[prev] || rule.snowByTerm()[w] != rule.snowByTerm()[prev]) CHANGES[w] = true;
+                if (rule.byWeek()[w] != rule.byWeek()[prev] || rule.snowByWeek()[w] != rule.snowByWeek()[prev]) CHANGES[w] = true;
                 // Where leaf fall is held back (near warm zones) the week shown instead can change on its own.
                 if (rule.fallWeeks() != null) for (int c = 0; c < rule.fallWeeks().length; c++)
                     if (rule.fallWeeks()[c][w] != rule.fallWeeks()[c][prev] || rule.held()[c][w] != rule.held()[c][prev]) CHANGES[w] = true;
@@ -160,8 +160,8 @@ public final class SeasonalTextures {
         }
         if (models.isEmpty()) return null;
 
-        Variant[][] byTerm = new Variant[WEEKS][];
-        Variant[][] snowByTerm = new Variant[WEEKS][];
+        Variant[][] byWeek = new Variant[WEEKS][];
+        Variant[][] snowByWeek = new Variant[WEEKS][];
         // fall: how far the slice's leaves have fallen (0 = all on, 1.. = leaf fall stages, highest = bare twigs).
         int[] fall = new int[WEEKS];
         // held_over_textures: drawn in front when the week's leaf fall is held back (default: its over_textures).
@@ -216,12 +216,12 @@ public final class SeasonalTextures {
             int sliceFall = GsonHelper.getAsInt(slice, "fall", 0);
             Variant[] sliceHeld = variants(slice.get("held_over_textures"), slice.get("held_over_tint"), models, sprites, used);
             // Later slices win.
-            for (int term = range[0]; ; term = (term + 1) % WEEKS) {
-                fall[term] = sliceFall;
-                heldOver[term] = sliceHeld.length > 0 ? sliceHeld : null;
-                byTerm[term] = variants;
-                snowByTerm[term] = snowVariants;
-                if (term == range[1]) break;
+            for (int week = range[0]; ; week = (week + 1) % WEEKS) {
+                fall[week] = sliceFall;
+                heldOver[week] = sliceHeld.length > 0 ? sliceHeld : null;
+                byWeek[week] = variants;
+                snowByWeek[week] = snowVariants;
+                if (week == range[1]) break;
             }
         }
         if (used.isEmpty()) return null;
@@ -229,7 +229,7 @@ public final class SeasonalTextures {
                 : GsonHelper.getAsBoolean(json, "snow_needs_snow_above", false) ? SnowMode.SNOW_ABOVE
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
         int[][] fallWeeks = fallWeeks(fall);
-        return new Rule(biomes(json.get("biomes")), byTerm, snowByTerm, used, snowMode, fallWeeks, held(fallWeeks, byTerm, heldOver));
+        return new Rule(biomes(json.get("biomes")), byWeek, snowByWeek, used, snowMode, fallWeeks, held(fallWeeks, byWeek, heldOver));
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -256,7 +256,7 @@ public final class SeasonalTextures {
 
     /** {first, last} year step (inclusive, may wrap past the end of the year), or null if unreadable. */
     private static int[] range(JsonObject slice) {
-        int start = term(slice, "start"), end = term(slice, "end");
+        int start = weekOf(slice, "start"), end = weekOf(slice, "end");
         int season = season(slice, "season"), startSeason = season(slice, "start_season"), endSeason = season(slice, "end_season");
         if (start < 0) start = season >= 0 ? season * PER : startSeason >= 0 ? startSeason * PER : -1;
         if (end < 0) end = season >= 0 ? season * PER + PER - 1 : endSeason >= 0 ? endSeason * PER + PER - 1 : -1;
@@ -267,7 +267,7 @@ public final class SeasonalTextures {
     }
 
     /** The week a slice's start or end names, -1 if missing or unknown. */
-    private static int term(JsonObject slice, String key) {
+    private static int weekOf(JsonObject slice, String key) {
         return slice.has(key) ? YearSteps.week(GsonHelper.getAsString(slice, key)) : -1;
     }
 
@@ -378,7 +378,7 @@ public final class SeasonalTextures {
      * For each leaf fall limit and week shown instead (fallWeeks): the earlier week's leaves with this week's front
      * (held_over_textures, else its catkins: over_textures, and its fruit), so flowers and catkins still come on time.
      */
-    private static Variant[][][] held(int[][] fallWeeks, Variant[][] byTerm, Variant[][] heldOver) {
+    private static Variant[][][] held(int[][] fallWeeks, Variant[][] byWeek, Variant[][] heldOver) {
         if (fallWeeks == null) return null;
         Variant[][][] held = new Variant[fallWeeks.length][WEEKS][];
         Map<List<Object>, Variant[]> made = new HashMap<>();
@@ -386,7 +386,7 @@ public final class SeasonalTextures {
             for (int w = 0; w < WEEKS; w++) {
                 int shown = fallWeeks[c][w];
                 if (shown == w) continue;
-                Variant[] base = byTerm[shown], now = byTerm[w], front = heldOver[w];
+                Variant[] base = byWeek[shown], now = byWeek[w], front = heldOver[w];
                 Variant first = now != null && now.length > 0 ? now[0] : null;
                 Variant over = front != null ? front[0] : first != null ? first.over : null;
                 int percent = front != null ? 100 : first != null ? first.overPercent : 100;
@@ -418,13 +418,13 @@ public final class SeasonalTextures {
     /** When the snow textures show: where snow lies, there and under open sky, only inside a snow mod's snow, or only under a snow layer. */
     enum SnowMode { COLD, SKY, SNOW_LAYER, SNOW_ABOVE }
 
-    /** One file. snowByTerm: textures used instead where snow lies (empty = none). */
+    /** One file. snowByWeek: textures used instead where snow lies (empty = none). */
     /** fallWeeks: see fallWeeks(), null without leaf fall; held: see held(), by limit and week. */
-    record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites,
+    record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byWeek, Variant[][] snowByWeek, Set<TextureAtlasSprite> sprites,
                 SnowMode snowMode, boolean hasSnow, int[][] fallWeeks, Variant[][][] held) {
-        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byTerm, Variant[][] snowByTerm, Set<TextureAtlasSprite> sprites, SnowMode snowMode,
+        Rule(Predicate<Holder<Biome>> biomes, Variant[][] byWeek, Variant[][] snowByWeek, Set<TextureAtlasSprite> sprites, SnowMode snowMode,
              int[][] fallWeeks, Variant[][][] held) {
-            this(biomes, byTerm, snowByTerm, sprites, snowMode, java.util.Arrays.stream(snowByTerm).anyMatch(v -> v != null && v.length > 0), fallWeeks, held);
+            this(biomes, byWeek, snowByWeek, sprites, snowMode, java.util.Arrays.stream(snowByWeek).anyMatch(v -> v != null && v.length > 0), fallWeeks, held);
         }
 
         /** The file's highest fall (bare), 0 without leaf fall. */

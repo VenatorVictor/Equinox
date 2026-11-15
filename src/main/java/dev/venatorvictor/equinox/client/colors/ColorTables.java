@@ -18,9 +18,9 @@ public final class ColorTables {
     private static final int WINTER = 12689779; // #C1A173
     private static final int GOLD = 16765952;   // #FFD400
 
-    public record Term(int grass, float mix, int leaf) {}
+    public record Week(int grass, float mix, int leaf) {}
 
-    public static final Term[] TEMPERATE = {
+    public static final Week[] TEMPERATE = {
             t(WINTER, .251F, WINTER, .251F), t(WINTER, .183F, WINTER, .183F), t(WINTER, .114F, WINTER, .114F), t(WINTER, .046F, WINTER, .046F), t(0, 0F), t(0, 0F), t(0, 0F),   // spring 1-7
             t(GREEN, .069F), t(GREEN, .137F), t(GREEN, .206F), t(GREEN, .274F), t(GREEN, .343F), t(GREEN, .411F), t(GREEN, .48F),   // spring 8-14
             t(GREEN, .48F), t(GREEN, .64F, GREEN, .1F), t(GREEN, .686F, GREEN, .129F), t(GREEN, .754F, GREEN, .171F), t(GREEN, .8F, GREEN, .214F), t(GREEN, .8F, GREEN, .257F), t(GREEN, .8F, GREEN, .3F),   // summer 1-7
@@ -31,7 +31,7 @@ public final class ColorTables {
             t(WINTER, .731F, WINTER, .731F), t(WINTER, .663F, WINTER, .663F), t(WINTER, .594F, WINTER, .594F), t(WINTER, .526F, WINTER, .526F), t(WINTER, .457F, WINTER, .457F), t(WINTER, .389F, WINTER, .389F), t(WINTER, .32F, WINTER, .32F)   // winter 8-14
     };
 
-    public static final Term[] MONSOONAL = {
+    public static final Week[] MONSOONAL = {
             t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F),   // spring 1-7
             t(GREEN, .069F), t(GREEN, .137F), t(GREEN, .206F), t(GREEN, .274F), t(GREEN, .343F), t(GREEN, .411F), t(GREEN, .48F),   // spring 8-14
             t(GREEN, .48F), t(GREEN, .64F, GREEN, .1F), t(GREEN, .686F, GREEN, .129F), t(GREEN, .754F, GREEN, .171F), t(GREEN, .8F, GREEN, .214F), t(GREEN, .8F, GREEN, .257F), t(GREEN, .8F, GREEN, .3F),   // summer 1-7
@@ -42,7 +42,7 @@ public final class ColorTables {
             t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F), t(0, 0F)   // winter 8-14
     };
 
-    public static final Term[] COLD = {
+    public static final Week[] COLD = {
             t(WINTER, .179F, WINTER, .179F), t(WINTER, .157F, WINTER, .157F), t(WINTER, .107F, WINTER, .107F), t(WINTER, .043F, WINTER, .043F), t(0, 0F), t(0, 0F), t(0, 0F),   // spring 1-7
             t(WINTER, .043F, WINTER, .043F), t(WINTER, .086F, WINTER, .086F), t(WINTER, .117F, WINTER, .117F), t(WINTER, .143F, WINTER, .143F), t(WINTER, .137F, WINTER, .137F), t(WINTER, .069F, WINTER, .069F), t(0, 0F),   // spring 8-14
             t(GREEN, .069F), t(GREEN, .137F), t(GREEN, .16F), t(GREEN, .4F, GREEN, .2F), t(GREEN, .4F, GREEN, .207F), t(GREEN, .4F, GREEN, .229F), t(GREEN, .4F, GREEN, .25F),   // summer 1-7
@@ -53,7 +53,7 @@ public final class ColorTables {
             t(WINTER, .311F, WINTER, .311F), t(WINTER, .303F, WINTER, .303F), t(WINTER, .286F, WINTER, .286F), t(WINTER, .264F, WINTER, .264F), t(WINTER, .243F, WINTER, .243F), t(WINTER, .221F, WINTER, .221F), t(WINTER, .2F, WINTER, .2F)   // winter 8-14
     };
 
-    public static final Term[] HOT = {
+    public static final Week[] HOT = {
             t(WINTER, .057F, WINTER, .057F), t(WINTER, .014F, WINTER, .014F), t(GREEN, .023F), t(GREEN, .057F), t(GREEN, .091F), t(GREEN, .126F), t(GREEN, .16F),   // spring 1-7
             t(GREEN, .177F), t(GREEN, .194F), t(GREEN, .214F), t(GREEN, .236F), t(GREEN, .25F), t(GREEN, .3F, GREEN, .05F), t(GREEN, .3F, GREEN, .05F),   // spring 8-14
             t(GREEN, .321F, GREEN, .071F), t(GREEN, .343F, GREEN, .093F), t(GREEN, .364F, GREEN, .114F), t(GREEN, .386F, GREEN, .136F), t(GREEN, .4F, GREEN, .157F), t(GREEN, .4F, GREEN, .179F), t(GREEN, .4F, GREEN, .2F),   // summer 1-7
@@ -65,9 +65,9 @@ public final class ColorTables {
     };
 
     /** "slightly": temperate colors at a fixed 10 % strength. */
-    public static final Term[] SLIGHTLY = withMix(TEMPERATE, .1F);
+    public static final Week[] SLIGHTLY = withMix(TEMPERATE, .1F);
     /** "stable": no change. */
-    public static final Term[] STABLE = withMix(TEMPERATE, 0F);
+    public static final Week[] STABLE = withMix(TEMPERATE, 0F);
 
     public static final float[][] SPRUCE = scale(new float[][]{
             {9880142, .046F}, {9880142, .071F}, {9880142, .1F}, {9880142, .13F}, {9880142, .154F}, {9880142, .167F}, {9880142, .18F},   // spring 1-7
@@ -111,17 +111,17 @@ public final class ColorTables {
         return a << 24 | r << 16 | g << 8 | b;
     }
 
-    private static Term t(int grass, float mix, int birch, float birchAlpha) {
-        return new Term(grass, mix, mix(birch, birchAlpha, FoliageColor.getDefaultColor(), 1F - birchAlpha));
+    private static Week t(int grass, float mix, int birch, float birchAlpha) {
+        return new Week(grass, mix, mix(birch, birchAlpha, FoliageColor.getDefaultColor(), 1F - birchAlpha));
     }
 
-    private static Term t(int grass, float mix) {
-        return new Term(grass, mix, FoliageColor.getDefaultColor());
+    private static Week t(int grass, float mix) {
+        return new Week(grass, mix, FoliageColor.getDefaultColor());
     }
 
-    private static Term[] withMix(Term[] base, float mix) {
-        Term[] out = new Term[base.length];
-        for (int i = 0; i < base.length; i++) out[i] = new Term(base[i].grass(), mix, base[i].leaf());
+    private static Week[] withMix(Week[] base, float mix) {
+        Week[] out = new Week[base.length];
+        for (int i = 0; i < base.length; i++) out[i] = new Week(base[i].grass(), mix, base[i].leaf());
         return out;
     }
 
