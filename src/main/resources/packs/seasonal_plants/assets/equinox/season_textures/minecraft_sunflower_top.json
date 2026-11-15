@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "mid_autumn_start",
-      "end": "late_spring_start",
+      "start": "autumn_week_6",
+      "end": "spring_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_leaves_petals",
         "front": "equinox:block/plants/minecraft_sunflower_front_leaves"
@@ -27,8 +27,8 @@
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "late_spring_end",
+      "start": "spring_week_13",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_bud_green_petals",
         "front": "equinox:block/plants/minecraft_sunflower_front_bud_green"
@@ -48,8 +48,8 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_start",
+      "start": "summer_week_1",
+      "end": "summer_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_bud_color_petals",
         "front": "equinox:block/plants/minecraft_sunflower_front_bud_color"
@@ -69,8 +69,8 @@
       }
     },
     {
-      "start": "early_summer_end",
-      "end": "early_summer_end",
+      "start": "summer_week_3",
+      "end": "summer_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_opening_petals",
         "front": "equinox:block/plants/minecraft_sunflower_front_opening"
@@ -90,8 +90,8 @@
       }
     },
     {
-      "start": "mid_summer_start",
-      "end": "late_summer_end",
+      "start": "summer_week_6",
+      "end": "summer_week_14",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_bloom_petals_snow",
         "back": "equinox:block/plants/minecraft_sunflower_back_bloom_snow",
@@ -103,8 +103,8 @@
       }
     },
     {
-      "start": "early_autumn_start",
-      "end": "early_autumn_end",
+      "start": "autumn_week_1",
+      "end": "autumn_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_top_seed_petals",
         "front": "equinox:block/plants/minecraft_sunflower_front_seed"

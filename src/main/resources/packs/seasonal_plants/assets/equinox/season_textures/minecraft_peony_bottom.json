@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "mid_summer_start",
-      "end": "early_spring_start",
+      "start": "summer_week_6",
+      "end": "spring_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
+      "start": "spring_week_3",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_peony_bottom_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "spring_week_6",
+      "end": "spring_week_7",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bud_color_petals"
       },
@@ -38,8 +38,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_opening_petals"
       },
@@ -48,15 +48,15 @@
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_end",
+      "start": "spring_week_10",
+      "end": "spring_week_14",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_bloom_petals_snow"
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_end",
+      "start": "summer_week_1",
+      "end": "summer_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_peony_bottom_seed_petals"
       },

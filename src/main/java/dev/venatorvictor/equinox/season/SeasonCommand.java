@@ -26,21 +26,18 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * /season, /season get: show the season. /season set <season> [early|mid|late]: jump to the start of it this year.
+ * /season, /season get: show the season. /season set <season> [week 1-14]: jump to the start of it this year.
  * /season add <days>. Setting moves the day count (the season is the day count), keeping the time of day.
  */
 public final class SeasonCommand {
-    private static final List<String> PARTS = List.of("early", "mid", "late");
-
     public static void register(RegisterCommandsEvent event) {
         LiteralArgumentBuilder<CommandSourceStack> set = Commands.literal("set").requires(source -> source.hasPermission(2));
         set.then(Commands.argument("season", StringArgumentType.word())
                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(Arrays.stream(Season.VALUES).map(Season::id), builder))
-                .executes(context -> set(context.getSource(), StringArgumentType.getString(context, "season"), "early"))
-                .then(Commands.argument("part", StringArgumentType.word())
-                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(PARTS, builder))
+                .executes(context -> set(context.getSource(), StringArgumentType.getString(context, "season"), 1))
+                .then(Commands.argument("week", IntegerArgumentType.integer(1, SeasonState.WEEKS_PER_SEASON))
                         .executes(context -> set(context.getSource(), StringArgumentType.getString(context, "season"),
-                                StringArgumentType.getString(context, "part")))));
+                                IntegerArgumentType.getInteger(context, "week")))));
         event.getDispatcher().register(Commands.literal("season")
                 .executes(context -> show(context.getSource()))
                 .then(Commands.literal("get").executes(context -> show(context.getSource())))
@@ -62,8 +59,7 @@ public final class SeasonCommand {
             case WINTER -> ChatFormatting.AQUA;
         };
         Component title = Component.translatable("commands.equinox.season.title",
-                Component.translatable("equinox.part." + PARTS.get(state.part())),
-                Component.translatable("equinox.season." + state.season().id())).withStyle(colour, ChatFormatting.BOLD);
+                Component.translatable("equinox.season." + state.season().id()), state.weekOfSeason() + 1).withStyle(colour, ChatFormatting.BOLD);
         send(source, Component.translatable("commands.equinox.season.show", title, value(state.dayOfSeason() + 1),
                 value(state.daysPerSeason()), value(state.year() + 1)).withStyle(ChatFormatting.GRAY));
         BlockPos pos = BlockPos.containing(source.getPosition());
@@ -108,7 +104,7 @@ public final class SeasonCommand {
         // Climate zone: how much of the winter's cold applies here (100% = full winter, 0% = none, near the warm bands).
         float cooling = dev.venatorvictor.equinox.climate.ClimateBlend.coolingAt(false, pos);
         send(source, line("zone", ChatFormatting.DARK_AQUA, true, Float.isNaN(cooling) ? "-" : Math.round(cooling * 100) + "%"));
-        return state.season().ordinal() * SeasonState.PARTS + state.part() + 1;
+        return state.week() + 1;
     }
 
     private static void send(CommandSourceStack source, Component line) {
@@ -130,16 +126,15 @@ public final class SeasonCommand {
                         .withStyle(testing ? ChatFormatting.DARK_GRAY : ChatFormatting.GRAY));
     }
 
-    private static int set(CommandSourceStack source, String seasonId, String partId) {
+    private static int set(CommandSourceStack source, String seasonId, int week) {
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
         Season season = Season.byId(seasonId);
-        int part = PARTS.indexOf(partId);
-        if (season == null || part < 0) {
-            source.sendFailure(Component.translatable("commands.equinox.season.unknown", seasonId + " " + partId));
+        if (season == null) {
+            source.sendFailure(Component.translatable("commands.equinox.season.unknown", seasonId));
             return 0;
         }
-        SeasonClock.setDayTime(source.getServer(), SeasonClock.startOf(state, season.ordinal(), part));
+        SeasonClock.setDayTime(source.getServer(), SeasonClock.startOf(state, season.ordinal(), week - 1));
         return show(source);
     }
 

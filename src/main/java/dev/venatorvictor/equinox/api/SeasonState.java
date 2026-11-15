@@ -3,16 +3,13 @@ package dev.venatorvictor.equinox.api;
 /**
  * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring,
  * the spring equinox; the seasons start at the equinoxes and solstices.
- * Each season has three parts, early, mid and late; progress values allow finer steps where needed (colors).
+ * Each season has 14 weeks of whole days; progress values allow finer steps where needed (colors).
  */
 public record SeasonState(long dayTime, int daysPerSeason) {
     public static final int DAY = 24000;
-    public static final int PARTS = 3;
     /** Texture steps: 14 a season ("weeks", about 6.5 calendar days), 56 a year, each a whole number of days. */
     public static final int WEEKS_PER_SEASON = 14;
     public static final int WEEKS = WEEKS_PER_SEASON * Season.COUNT;
-    /** First week of each of the 6 old steps of a season (early/mid/late x start/end, 7 days each in a 42-day season). */
-    private static final int[] OLD_STEP_WEEK = {0, 2, 5, 7, 9, 12, 14};
 
     public long seasonTicks() {
         return (long) daysPerSeason * DAY;
@@ -37,14 +34,14 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (float) (ticksInYear() % seasonTicks()) / seasonTicks();
     }
 
-    /** 0 = early, 1 = mid, 2 = late. */
-    public int part() {
-        return Math.min((int) (seasonProgress() * PARTS), PARTS - 1);
+    /** 0 .. 13: the week of the season. */
+    public int weekOfSeason() {
+        return week() % WEEKS_PER_SEASON;
     }
 
-    /** Counts up through the years: season * PARTS + part, plus PARTS * 4 per year. Changes when the part changes. */
-    public long partsSinceStart() {
-        return Math.floorDiv(dayTime, seasonTicks() * Season.COUNT) * Season.COUNT * PARTS + season().ordinal() * PARTS + part();
+    /** Counts up through the years: the week of the year plus 56 per year. Changes when the week changes. */
+    public long weeksSinceStart() {
+        return year() * WEEKS + week();
     }
 
     /**
@@ -56,14 +53,9 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (int) Math.min(day * WEEKS_PER_SEASON / daysPerSeason, WEEKS - 1);
     }
 
-    /** The first week of an old year step (0 .. 23: early_spring_start .. late_winter_end). */
-    public static int stepStartWeek(int step) {
-        return step / 6 * WEEKS_PER_SEASON + OLD_STEP_WEEK[step % 6];
-    }
-
-    /** The last week of an old year step. */
-    public static int stepEndWeek(int step) {
-        return step / 6 * WEEKS_PER_SEASON + OLD_STEP_WEEK[step % 6 + 1] - 1;
+    /** The week of the year (0 .. 55) of a season's week 1 .. 14. */
+    public static int week(Season season, int week) {
+        return season.ordinal() * WEEKS_PER_SEASON + week - 1;
     }
 
     /** 0 for the first day of the season. */

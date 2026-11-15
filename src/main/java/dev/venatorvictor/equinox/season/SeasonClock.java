@@ -51,10 +51,12 @@ public final class SeasonClock {
         }
     }
 
-    /** The day time of the start of a season part this year, keeping the time of day. */
-    static long startOf(SeasonState state, int seasonIndex, int part) {
+    /** The day time of the start of a season's week (0 .. 13) this year, keeping the time of day. */
+    static long startOf(SeasonState state, int seasonIndex, int week) {
         long yearStart = state.year() * state.seasonTicks() * 4;
-        long day = (long) seasonIndex * state.daysPerSeason() + (long) part * state.daysPerSeason() / SeasonState.PARTS;
+        // the first day of that week (SeasonState.week rounds down, so the ceiling lands in it)
+        long day = (long) seasonIndex * state.daysPerSeason()
+                + ((long) week * state.daysPerSeason() + SeasonState.WEEKS_PER_SEASON - 1) / SeasonState.WEEKS_PER_SEASON;
         return yearStart + day * SeasonState.DAY + Math.floorMod(state.dayTime(), SeasonState.DAY);
     }
 

@@ -7,8 +7,8 @@
   "snow_needs_snow_above": true,
   "slices": [
     {
-      "start": "early_spring_start",
-      "end": "mid_spring_start",
+      "start": "spring_week_1",
+      "end": "spring_week_7",
       "snow_over_textures": {
         "all": "equinox:block/trees/spruce_snow"
       },
@@ -17,8 +17,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
       "over_textures": {
         "all": "equinox:block/trees/spruce_pollen_bud"
       },
@@ -45,8 +45,8 @@
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_start",
+      "start": "spring_week_10",
+      "end": "spring_week_12",
       "over_textures": {
         "all": "equinox:block/trees/spruce_pollen_red"
       },
@@ -73,8 +73,8 @@
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "late_spring_end",
+      "start": "spring_week_13",
+      "end": "spring_week_14",
       "over_textures": {
         "all": "equinox:block/trees/spruce_pollen_open"
       },
@@ -101,8 +101,8 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_start",
+      "start": "summer_week_1",
+      "end": "summer_week_2",
       "over_textures": {
         "all": "equinox:block/trees/spruce_pollen_done"
       },
@@ -129,8 +129,8 @@
       }
     },
     {
-      "start": "early_summer_end",
-      "end": "mid_summer_end",
+      "start": "summer_week_3",
+      "end": "summer_week_9",
       "fruit_textures": {
         "all": "equinox:block/trees/spruce_cones_green"
       },
@@ -151,8 +151,8 @@
       }
     },
     {
-      "start": "late_summer_start",
-      "end": "late_summer_start",
+      "start": "summer_week_10",
+      "end": "summer_week_12",
       "fruit_textures": {
         "all": "equinox:block/trees/spruce_cones_turning"
       },
@@ -173,8 +173,8 @@
       }
     },
     {
-      "start": "late_summer_end",
-      "end": "early_autumn_end",
+      "start": "summer_week_13",
+      "end": "autumn_week_5",
       "fruit_textures": {
         "all": "equinox:block/trees/spruce_cones_ripe"
       },
@@ -195,8 +195,8 @@
       }
     },
     {
-      "start": "mid_autumn_start",
-      "end": "late_winter_end",
+      "start": "autumn_week_6",
+      "end": "winter_week_14",
       "fruit_textures": {
         "all": "equinox:block/trees/spruce_cones_old"
       },

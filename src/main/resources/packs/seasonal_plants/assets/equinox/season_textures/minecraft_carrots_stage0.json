@@ -5,8 +5,8 @@
   "snow_needs_sky": true,
   "slices": [
     {
-      "start": "early_spring_start",
-      "end": "late_winter_end",
+      "start": "spring_week_1",
+      "end": "winter_week_14",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_carrots_stage0_snow"
       },

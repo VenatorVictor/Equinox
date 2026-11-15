@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "early_spring_start",
-      "end": "early_spring_start",
+      "start": "spring_week_1",
+      "end": "spring_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_red_tulip_bud_color_stem"
@@ -18,8 +18,8 @@
       }
     },
     {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
+      "start": "spring_week_3",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_opening_petals"
       },
@@ -28,15 +28,15 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_end",
+      "start": "spring_week_6",
+      "end": "spring_week_9",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_bloom_petals_snow"
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_end",
+      "start": "spring_week_10",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_seed_petals",
         "cross": "equinox:block/plants/minecraft_red_tulip_seed_stem"
@@ -47,8 +47,8 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "late_winter_start",
+      "start": "summer_week_1",
+      "end": "winter_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_leaves_petals"
       },
@@ -57,8 +57,8 @@
       }
     },
     {
-      "start": "late_winter_end",
-      "end": "late_winter_end",
+      "start": "winter_week_13",
+      "end": "winter_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_red_tulip_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_red_tulip_bud_green_stem"

@@ -7,7 +7,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 
-/** Watches one level's season each tick and posts SeasonChangedEvent when the part (early/mid/late) changes. */
+/** Watches one level's season each tick and posts SeasonChangedEvent when the week changes. */
 public final class SeasonWatcher {
     private @Nullable SeasonState last;
 
@@ -18,9 +18,9 @@ public final class SeasonWatcher {
             return;
         }
         SeasonState before = last;
-        if (before != null && now.partsSinceStart() != before.partsSinceStart()) {
+        if (before != null && now.weeksSinceStart() != before.weeksSinceStart()) {
             // The client sets its clock from the server's time packets, sometimes a few ticks back: don't count
-            // that as going back a part (a real jump back is more than that).
+            // that as going back a week (a real jump back is more than that).
             long back = before.dayTime() - now.dayTime();
             if (back > 0 && back < SeasonState.DAY / 2) return;
             last = now;

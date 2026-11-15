@@ -58,9 +58,8 @@ public final class Config {
     public static final ModConfigSpec.IntValue DAYS_PER_SEASON = BUILDER
             .comment("Days in one season (a year is 4 seasons; 42 days: 168-day year). A multiple of 14: each season has 14",
                     "weeks (texture steps) of whole days (14: 1 day a week, 28: 2, 42: 3, 56: 4, 70: 5, 84: 6); other numbers",
-                    "are rounded to the nearest multiple of 14. Each season has an early, mid and late part. Day 1 is the spring",
-                    "equinox; the seasons start at the equinoxes and solstices, as on Earth. The season comes from the day count,",
-                    "so changing this moves the season.")
+                    "are rounded to the nearest multiple of 14. Day 1 is the spring equinox; the seasons start at the equinoxes",
+                    "and solstices, as on Earth. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 42, 14, 1008);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
             .comment("The climate: °C change of each climate zone at the start of mid spring, summer, autumn and winter, added",

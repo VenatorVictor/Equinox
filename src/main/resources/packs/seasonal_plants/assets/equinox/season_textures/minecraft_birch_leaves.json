@@ -6,8 +6,8 @@
   "snow_needs_snow_above": true,
   "slices": [
     {
-      "start": "late_autumn_start",
-      "end": "late_autumn_start",
+      "start": "autumn_week_10",
+      "end": "autumn_week_12",
       "textures": {
         "all": "equinox:block/trees/birch_twigs"
       },
@@ -34,8 +34,8 @@
       }
     },
     {
-      "start": "late_autumn_end",
-      "end": "late_winter_end",
+      "start": "autumn_week_13",
+      "end": "winter_week_14",
       "textures": {
         "all": "equinox:block/trees/birch_twigs"
       },
@@ -56,8 +56,8 @@
       }
     },
     {
-      "start": "early_spring_start",
-      "end": "early_spring_start",
+      "start": "spring_week_1",
+      "end": "spring_week_2",
       "textures": {
         "all": "equinox:block/trees/birch_twigs"
       },
@@ -78,8 +78,8 @@
       }
     },
     {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
+      "start": "spring_week_3",
+      "end": "spring_week_5",
       "textures": {
         "all": "equinox:leaf_fall/birch/stage_2"
       },
@@ -115,8 +115,8 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "spring_week_6",
+      "end": "spring_week_7",
       "over_textures": {
         "all": "equinox:block/trees/birch_catkins_full"
       },
@@ -143,8 +143,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
       "over_textures": {
         "all": "equinox:block/trees/birch_catkins_fade"
       },
@@ -171,8 +171,8 @@
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "mid_summer_end",
+      "start": "spring_week_10",
+      "end": "summer_week_9",
       "fruit_textures": {
         "all": "equinox:block/trees/birch_seeds_green"
       },
@@ -193,8 +193,8 @@
       }
     },
     {
-      "start": "late_summer_start",
-      "end": "late_summer_end",
+      "start": "summer_week_10",
+      "end": "summer_week_14",
       "over_textures": {
         "all": "equinox:block/trees/birch_catkins_new"
       },
@@ -221,8 +221,8 @@
       }
     },
     {
-      "start": "early_autumn_start",
-      "end": "early_autumn_start",
+      "start": "autumn_week_1",
+      "end": "autumn_week_2",
       "over_textures": {
         "all": "equinox:block/trees/birch_catkins_winter"
       },
@@ -249,8 +249,8 @@
       }
     },
     {
-      "start": "early_autumn_end",
-      "end": "early_autumn_end",
+      "start": "autumn_week_3",
+      "end": "autumn_week_5",
       "textures": {
         "all": "equinox:leaf_fall/birch/stage_1"
       },
@@ -286,8 +286,8 @@
       }
     },
     {
-      "start": "mid_autumn_start",
-      "end": "mid_autumn_start",
+      "start": "autumn_week_6",
+      "end": "autumn_week_7",
       "textures": {
         "all": "equinox:leaf_fall/birch/stage_2"
       },
@@ -323,8 +323,8 @@
       }
     },
     {
-      "start": "mid_autumn_end",
-      "end": "mid_autumn_end",
+      "start": "autumn_week_8",
+      "end": "autumn_week_9",
       "textures": {
         "all": "equinox:leaf_fall/birch/stage_3"
       },

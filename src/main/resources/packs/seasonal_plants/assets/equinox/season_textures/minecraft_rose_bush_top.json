@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "late_summer_end",
-      "end": "mid_spring_start",
+      "start": "summer_week_13",
+      "end": "spring_week_7",
       "textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
       "textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_start",
+      "start": "spring_week_10",
+      "end": "spring_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_rose_bush_top_bud_color_stem"
@@ -40,8 +40,8 @@
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "late_spring_end",
+      "start": "spring_week_13",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_opening_petals",
         "cross": "equinox:block/plants/minecraft_rose_bush_top_opening_stem"
@@ -52,15 +52,15 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "mid_summer_start",
+      "start": "summer_week_1",
+      "end": "summer_week_7",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_bloom_petals_snow"
       }
     },
     {
-      "start": "mid_summer_end",
-      "end": "late_summer_start",
+      "start": "summer_week_8",
+      "end": "summer_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_rose_bush_top_seed_petals",
         "cross": "equinox:block/plants/minecraft_rose_bush_top_seed_stem"

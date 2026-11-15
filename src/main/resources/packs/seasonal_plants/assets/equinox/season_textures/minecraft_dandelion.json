@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "early_spring_start",
-      "end": "early_spring_start",
+      "start": "spring_week_1",
+      "end": "spring_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bud_color_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "early_spring_end",
-      "end": "early_spring_end",
+      "start": "spring_week_3",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_opening_petals"
       },
@@ -26,15 +26,15 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "early_autumn_start",
+      "start": "spring_week_6",
+      "end": "autumn_week_2",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bloom_petals_snow"
       }
     },
     {
-      "start": "early_autumn_end",
-      "end": "mid_autumn_start",
+      "start": "autumn_week_3",
+      "end": "autumn_week_7",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_seed_petals"
       },
@@ -43,8 +43,8 @@
       }
     },
     {
-      "start": "mid_autumn_end",
-      "end": "late_winter_start",
+      "start": "autumn_week_8",
+      "end": "winter_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_leaves_petals"
       },
@@ -53,8 +53,8 @@
       }
     },
     {
-      "start": "late_winter_end",
-      "end": "late_winter_end",
+      "start": "winter_week_13",
+      "end": "winter_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_dandelion_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_dandelion_bud_green_stem"

@@ -5,8 +5,8 @@
   "biomes": "#equinox:seasonal_zones",
   "slices": [
     {
-      "start": "early_winter_start",
-      "end": "early_spring_end",
+      "start": "winter_week_1",
+      "end": "spring_week_5",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
       },
@@ -15,8 +15,8 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "spring_week_6",
+      "end": "spring_week_7",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_bud/stage_2"
       },
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_half_open/stage_1"
       },
@@ -41,17 +41,40 @@
       }
     },
     {
-      "start": "early_summer_end",
-      "end": "mid_autumn_start",
+      "start": "spring_week_13",
+      "end": "autumn_week_2",
       "textures": {
         "all": "minecraft:block/azalea_leaves"
       }
     },
     {
-      "start": "mid_autumn_end",
-      "end": "mid_autumn_end",
+      "start": "autumn_week_3",
+      "end": "autumn_week_5",
       "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_1"
+        "all": "equinox:block/trees/azalea_leaves_turning"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "autumn_week_6",
+      "end": "autumn_week_7",
+      "textures": {
+        "all": "equinox:block/trees/azalea_leaves_autumn"
+      },
+      "tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "autumn_week_8",
+      "end": "autumn_week_9",
+      "textures": {
+        "all": "equinox:leaf_fall/azalea_autumn/stage_1"
+      },
+      "tint": {
+        "all": -1
       },
       "under_textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
@@ -61,10 +84,13 @@
       }
     },
     {
-      "start": "late_autumn_start",
-      "end": "late_autumn_start",
+      "start": "autumn_week_10",
+      "end": "autumn_week_12",
       "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_2"
+        "all": "equinox:leaf_fall/azalea_autumn/stage_2"
+      },
+      "tint": {
+        "all": -1
       },
       "under_textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
@@ -74,10 +100,13 @@
       }
     },
     {
-      "start": "late_autumn_end",
-      "end": "late_autumn_end",
+      "start": "autumn_week_13",
+      "end": "autumn_week_14",
       "textures": {
-        "all": "equinox:leaf_fall/azalea/stage_3"
+        "all": "equinox:leaf_fall/azalea_autumn/stage_3"
+      },
+      "tint": {
+        "all": -1
       },
       "under_textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"

@@ -6,8 +6,8 @@
   "snow_needs_snow_above": true,
   "slices": [
     {
-      "start": "early_winter_start",
-      "end": "early_spring_end",
+      "start": "winter_week_1",
+      "end": "spring_week_5",
       "textures": {
         "all": "equinox:block/trees/oak_twigs"
       },
@@ -22,29 +22,10 @@
       }
     },
     {
-      "start": "mid_spring_start",
-      "end": "mid_spring_start",
+      "start": "spring_week_6",
+      "end": "spring_week_7",
       "textures": {
         "all": "equinox:leaf_fall/oak/stage_2"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/oak_twigs"
-      },
-      "under_tint": {
-        "all": -1
-      },
-      "snow_over_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_mid_spring_start"
-      },
-      "snow_over_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "mid_spring_end",
-      "end": "mid_spring_end",
-      "textures": {
-        "all": "equinox:leaf_fall/oak/stage_1"
       },
       "under_textures": {
         "all": "equinox:block/trees/oak_twigs"
@@ -59,15 +40,24 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_mid_spring_end"
+        "all": "equinox:block/trees/oak_leafsnow_mid_spring_start"
       },
       "snow_over_tint": {
         "all": -1
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_start",
+      "start": "spring_week_8",
+      "end": "spring_week_9",
+      "textures": {
+        "all": "equinox:leaf_fall/oak/stage_1"
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/oak_twigs"
+      },
+      "under_tint": {
+        "all": -1
+      },
       "over_textures": {
         "all": "equinox:block/trees/oak_catkins_opening"
       },
@@ -75,15 +65,15 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_late_spring_start"
+        "all": "equinox:block/trees/oak_leafsnow_mid_spring_end"
       },
       "snow_over_tint": {
         "all": -1
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "late_spring_end",
+      "start": "spring_week_10",
+      "end": "spring_week_12",
       "over_textures": {
         "all": "equinox:block/trees/oak_catkins_full"
       },
@@ -92,6 +82,34 @@
       },
       "fruit_textures": {
         "all": "equinox:block/trees/oak_fruit_flower"
+      },
+      "fruit_tint": {
+        "all": -1
+      },
+      "snow_over_textures": {
+        "all": "equinox:block/trees/oak_leafsnow_late_spring_start"
+      },
+      "snow_over_tint": {
+        "all": -1
+      },
+      "snow_fruit_textures": {
+        "all": "equinox:block/trees/oak_leafsnow_late_spring_start_fruit"
+      },
+      "snow_fruit_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "spring_week_13",
+      "end": "spring_week_14",
+      "over_textures": {
+        "all": "equinox:block/trees/oak_catkins_fading"
+      },
+      "over_tint": {
+        "all": -1
+      },
+      "fruit_textures": {
+        "all": "equinox:block/trees/oak_fruit_tiny"
       },
       "fruit_tint": {
         "all": -1
@@ -110,36 +128,8 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_start",
-      "over_textures": {
-        "all": "equinox:block/trees/oak_catkins_fading"
-      },
-      "over_tint": {
-        "all": -1
-      },
-      "fruit_textures": {
-        "all": "equinox:block/trees/oak_fruit_tiny"
-      },
-      "fruit_tint": {
-        "all": -1
-      },
-      "snow_over_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_early_summer_start"
-      },
-      "snow_over_tint": {
-        "all": -1
-      },
-      "snow_fruit_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_early_summer_start_fruit"
-      },
-      "snow_fruit_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "early_summer_end",
-      "end": "early_summer_end",
+      "start": "summer_week_1",
+      "end": "summer_week_5",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_small"
       },
@@ -147,21 +137,21 @@
         "all": -1
       },
       "snow_over_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_early_summer_end"
+        "all": "equinox:block/trees/oak_leafsnow_early_summer_start_early_summer_end"
       },
       "snow_over_tint": {
         "all": -1
       },
       "snow_fruit_textures": {
-        "all": "equinox:block/trees/oak_leafsnow_early_summer_end_fruit"
+        "all": "equinox:block/trees/oak_leafsnow_early_summer_start_early_summer_end_fruit"
       },
       "snow_fruit_tint": {
         "all": -1
       }
     },
     {
-      "start": "mid_summer_start",
-      "end": "mid_summer_start",
+      "start": "summer_week_6",
+      "end": "summer_week_7",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_green"
       },
@@ -182,8 +172,8 @@
       }
     },
     {
-      "start": "mid_summer_end",
-      "end": "late_summer_start",
+      "start": "summer_week_8",
+      "end": "summer_week_12",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_yellowing"
       },
@@ -204,8 +194,8 @@
       }
     },
     {
-      "start": "late_summer_end",
-      "end": "early_autumn_end",
+      "start": "summer_week_13",
+      "end": "autumn_week_5",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_ripe"
       },
@@ -226,8 +216,8 @@
       }
     },
     {
-      "start": "mid_autumn_end",
-      "end": "mid_autumn_end",
+      "start": "autumn_week_8",
+      "end": "autumn_week_9",
       "textures": {
         "all": "equinox:leaf_fall/oak/stage_1"
       },
@@ -245,8 +235,8 @@
       }
     },
     {
-      "start": "late_autumn_start",
-      "end": "late_autumn_start",
+      "start": "autumn_week_10",
+      "end": "autumn_week_12",
       "textures": {
         "all": "equinox:leaf_fall/oak/stage_2"
       },
@@ -264,8 +254,8 @@
       }
     },
     {
-      "start": "late_autumn_end",
-      "end": "late_autumn_end",
+      "start": "autumn_week_13",
+      "end": "autumn_week_14",
       "textures": {
         "all": "equinox:leaf_fall/oak/stage_3"
       },
@@ -283,8 +273,8 @@
       }
     },
     {
-      "start": "mid_autumn_start",
-      "end": "mid_autumn_start",
+      "start": "autumn_week_6",
+      "end": "autumn_week_7",
       "_leafy_snow_only": true,
       "snow_over_textures": {
         "all": "equinox:block/trees/oak_leafsnow_mid_autumn_start"

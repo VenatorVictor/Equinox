@@ -2,6 +2,7 @@ package dev.venatorvictor.equinox.trees;
 
 import com.mojang.serialization.Codec;
 import dev.venatorvictor.equinox.Equinox;
+import dev.venatorvictor.equinox.api.Season;
 import dev.venatorvictor.equinox.api.SeasonState;
 import dev.venatorvictor.equinox.api.Seasons;
 import dev.venatorvictor.equinox.climate.ClimateBiome;
@@ -63,17 +64,17 @@ public final class TreeFruit {
     public static final DeferredItem<Item> BIRCH_SEEDS = ITEMS.register("birch_seeds", () -> new SeedItem(Blocks.BIRCH_SAPLING, new Item.Properties()));
     public static final DeferredItem<Item> SPRUCE_CONE = ITEMS.register("spruce_cone", () -> new SeedItem(Blocks.SPRUCE_SAPLING, new Item.Properties()));
 
-    /** One kind of tree: its leaves, the share of them that bear, the ripe year steps (first..last), what a pick gives. */
+    /** One kind of tree: its leaves, the share of them that bear, the ripe weeks of the year (first..last), what a pick gives. */
     private record Kind(Block leaves, int percent, int ripeFrom, int ripeTo, Supplier<Item> item, int min, int max) {}
 
-    // Ripe, as in the season_textures files: acorns from the end of late summer to the end of early autumn (mid
-    // September to late October, minecraft_oak_leaves.json); birch seed catkins brown from the start of early autumn
-    // to the start of mid autumn (late September to early November, minecraft_birch_leaves.json); spruce cones brown
-    // from the end of late summer to the end of early autumn (minecraft_spruce_leaves.json; old cones stay over winter,
-    // but only the ripe ones can be picked).
-    private static final Kind[] KINDS = {new Kind(Blocks.OAK_LEAVES, 30, 11, 13, ACORN, 1, 3),
-            new Kind(Blocks.BIRCH_LEAVES, 30, 12, 14, BIRCH_SEEDS, 1, 3),
-            new Kind(Blocks.SPRUCE_LEAVES, 30, 11, 13, SPRUCE_CONE, 1, 2)};
+    // Ripe, as in the season_textures files: acorns summer week 13 to autumn week 5 (mid September to late October,
+    // minecraft_oak_leaves.json); birch seed catkins brown autumn weeks 1 to 7 (late September to early November,
+    // minecraft_birch_leaves.json); spruce cones brown summer week 13 to autumn week 5 (minecraft_spruce_leaves.json;
+    // old cones stay over winter, but only the ripe ones can be picked).
+    private static final Kind[] KINDS = {
+            new Kind(Blocks.OAK_LEAVES, 30, SeasonState.week(Season.SUMMER, 13), SeasonState.week(Season.AUTUMN, 5), ACORN, 1, 3),
+            new Kind(Blocks.BIRCH_LEAVES, 30, SeasonState.week(Season.AUTUMN, 1), SeasonState.week(Season.AUTUMN, 7), BIRCH_SEEDS, 1, 3),
+            new Kind(Blocks.SPRUCE_LEAVES, 30, SeasonState.week(Season.SUMMER, 13), SeasonState.week(Season.AUTUMN, 5), SPRUCE_CONE, 1, 2)};
 
     private static final DeferredRegister<com.mojang.serialization.MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
             DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Equinox.MOD_ID);
@@ -145,7 +146,7 @@ public final class TreeFruit {
         SeasonState season = Seasons.get(level);
         if (season == null) return false;
         int week = season.week(); // 0 = the first days of spring
-        if (week < SeasonState.stepStartWeek(kind.ripeFrom) || week > SeasonState.stepEndWeek(kind.ripeTo)) return false;
+        if (week < kind.ripeFrom || week > kind.ripeTo) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
         if (((ClimateBiome) (Object) biome.value()).equinox$climate() != ClimateBiome.SEASONAL) return false;
         return pickedYear(level, pos) != season.year();

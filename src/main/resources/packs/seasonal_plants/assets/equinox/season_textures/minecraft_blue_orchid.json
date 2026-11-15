@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "mid_autumn_start",
-      "end": "mid_spring_end",
+      "start": "autumn_week_6",
+      "end": "spring_week_9",
       "textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_leaves_petals",
         "cross": "equinox:block/plants/minecraft_blue_orchid_leaves_stem"
@@ -18,8 +18,8 @@
       }
     },
     {
-      "start": "late_spring_start",
-      "end": "late_spring_start",
+      "start": "spring_week_10",
+      "end": "spring_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_blue_orchid_bud_green_stem"
@@ -30,8 +30,8 @@
       }
     },
     {
-      "start": "late_spring_end",
-      "end": "late_spring_end",
+      "start": "spring_week_13",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_bud_color_petals"
       },
@@ -40,8 +40,8 @@
       }
     },
     {
-      "start": "early_summer_start",
-      "end": "early_summer_start",
+      "start": "summer_week_1",
+      "end": "summer_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_opening_petals"
       },
@@ -50,15 +50,15 @@
       }
     },
     {
-      "start": "early_summer_end",
-      "end": "late_summer_end",
+      "start": "summer_week_3",
+      "end": "summer_week_14",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_bloom_petals_snow"
       }
     },
     {
-      "start": "early_autumn_start",
-      "end": "early_autumn_end",
+      "start": "autumn_week_1",
+      "end": "autumn_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_blue_orchid_seed_petals"
       },

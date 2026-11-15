@@ -45,12 +45,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Reads seasonal texture files (assets/<ns>/season_textures/*.json), so
- * resource packs in that format work here. Each file swaps texture variables of block models per week
+ * Reads seasonal texture files (assets/<ns>/season_textures/*.json). Each file swaps texture variables of block models per week
  * (14 a season, 56 a year, whole days each, on the calendar: week 0 = the first days of spring), in the biomes it
- * names. Weeks are named <season>_week_<1..14>; the older step names <part>_<season>_<start|end>
- * (early_spring_start .. late_winter_end) cover 2 or 3 weeks each (YearSteps), and the format's own 24 names are
- * read by position (its first name = early_spring_start). Supported: target, biomes, slices with start/end, solar_term, season,
+ * names. Weeks are named <season>_week_<1..14> (YearSteps). Supported: target, biomes, slices with start/end, season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants
@@ -238,22 +235,19 @@ public final class SeasonalTextures {
 
     /** {first, last} year step (inclusive, may wrap past the end of the year), or null if unreadable. */
     private static int[] range(JsonObject slice) {
-        int start = term(slice, "start", true), end = term(slice, "end", false);
-        int singleStart = term(slice, "solar_term", true), singleEnd = term(slice, "solar_term", false);
+        int start = term(slice, "start"), end = term(slice, "end");
         int season = season(slice, "season"), startSeason = season(slice, "start_season"), endSeason = season(slice, "end_season");
-        if (start < 0) start = singleStart >= 0 ? singleStart : season >= 0 ? season * PER : startSeason >= 0 ? startSeason * PER : -1;
-        if (end < 0) end = singleEnd >= 0 ? singleEnd : season >= 0 ? season * PER + PER - 1 : endSeason >= 0 ? endSeason * PER + PER - 1 : -1;
+        if (start < 0) start = season >= 0 ? season * PER : startSeason >= 0 ? startSeason * PER : -1;
+        if (end < 0) end = season >= 0 ? season * PER + PER - 1 : endSeason >= 0 ? endSeason * PER + PER - 1 : -1;
         boolean noStart = start < 0, noEnd = end < 0;
         if (noStart && noEnd) return new int[]{0, WEEKS - 1};
         if (noStart || noEnd) return null;
         return new int[]{start, end};
     }
 
-    /** The first (or last) week a step name covers, -1 if missing or unknown. */
-    private static int term(JsonObject slice, String key, boolean first) {
-        if (!slice.has(key)) return -1;
-        String name = GsonHelper.getAsString(slice, key);
-        return first ? YearSteps.startWeek(name) : YearSteps.endWeek(name);
+    /** The week a slice's start or end names, -1 if missing or unknown. */
+    private static int term(JsonObject slice, String key) {
+        return slice.has(key) ? YearSteps.week(GsonHelper.getAsString(slice, key)) : -1;
     }
 
     private static int season(JsonObject slice, String key) {
