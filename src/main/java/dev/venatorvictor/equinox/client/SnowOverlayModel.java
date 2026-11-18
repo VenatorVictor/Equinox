@@ -28,7 +28,6 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.ChainBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.SlabBlock;
@@ -51,7 +50,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs, chains; not the snowy grass block,
+ * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs; not the snowy grass block,
  * whose own snowy side already shows it):
  * the block's own faces again, a hair in front, with one shared see-through texture: a snow cap on side faces (the
  * face's own texture coordinates, so it sits at the top of each face), vanilla's snow on top faces. Any block of
@@ -82,7 +81,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
 
     private static @Nullable Kind kind(Block block) {
         if (block instanceof StairBlock || block instanceof SlabBlock) return Kind.HALF;
-        if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock || block instanceof ChainBlock) return Kind.FULL;
+        if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock) return Kind.FULL;
         return null;
     }
 
