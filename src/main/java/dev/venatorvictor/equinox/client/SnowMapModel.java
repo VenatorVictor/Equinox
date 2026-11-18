@@ -28,7 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Draws a fence with the snow around it (SnowMap): the fence's own model plus vanilla's snow layer model. The layers
+ * Draws a fence with the snow around it (SnowMap): the fence's own model plus vanilla's snow layer model; a stair or
+ * slab with the snow on its steps (SnowTopQuads). The layers
  * come from the client's snow map when the chunk is drawn (getModelData gets the position, in vanilla and in
  * renderers that replace chunk drawing), so the fence needs no snow state.
  * The snow's faces are hidden by the snow's own rules, not the fence's: the game hides a block's culled faces by the
@@ -47,6 +48,7 @@ public final class SnowMapModel extends BakedModelWrapper<BakedModel> {
 
     /** Wraps every fence state's model, after the other wrappers (seasonal textures). */
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        SnowTopQuads.clear();
         for (Block block : BuiltInRegistries.BLOCK) {
             if (!SnowMap.uses(block.defaultBlockState())) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
@@ -72,6 +74,14 @@ public final class SnowMapModel extends BakedModelWrapper<BakedModel> {
         if (layers == 0) return data;
         int hidden = 0;
         BlockPos.MutableBlockPos next = new BlockPos.MutableBlockPos();
+        if (SnowMap.onTop(state)) {
+            // Stairs and slabs: only a full block next to it hides the snow's side there.
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                next.setWithOffset(pos, direction);
+                if (region.getBlockState(next).isSolidRender(region, next)) hidden |= 1 << direction.ordinal();
+            }
+            return data.derive().with(SNOW, layers | hidden << 4).build();
+        }
         for (Direction direction : DIRECTIONS) {
             if (direction == Direction.UP && layers < 8) continue; // a lower top is never covered
             next.setWithOffset(pos, direction);
@@ -96,6 +106,12 @@ public final class SnowMapModel extends BakedModelWrapper<BakedModel> {
         // All the snow's faces come with the unculled ones (side null), minus the hidden ones.
         if (packed == null || side != null || renderType != null && renderType != RenderType.solid()) return own;
         int layers = packed & 15, hidden = packed >> 4;
+        if (state != null && SnowMap.onTop(state)) {
+            List<BakedQuad> quads = new ArrayList<>(own);
+            for (SnowTopQuads.Face face : SnowTopQuads.of(state))
+                if (face.boundary() == null || (hidden & 1 << face.boundary().ordinal()) == 0) quads.add(face.quad());
+            return quads;
+        }
         BlockState snow = Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, layers);
         BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(snow);
         List<BakedQuad> quads = new ArrayList<>(own);

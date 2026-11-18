@@ -64,7 +64,9 @@ public abstract class SnowStateMixin {
             cir.setReturnValue(Shapes.or(SnowyPlants.unsnowed(asState()).getShape(level, pos, context), SnowyPlants.shape(equinox$snow)));
         else if (equinox$map) {
             int layers = SnowMap.get(level, pos);
-            if (layers > 0) cir.setReturnValue(Shapes.or(cir.getReturnValue(), SnowyPlants.shape(layers)));
+            // Stairs and slabs: the snow on each step (their shape raised by a layer); fences: around them on the ground.
+            if (layers > 0) cir.setReturnValue(Shapes.or(cir.getReturnValue(), SnowMap.onTop(asState())
+                    ? cir.getReturnValue().move(0, layers / 8.0, 0) : SnowyPlants.shape(layers)));
         }
     }
 

@@ -19,6 +19,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.PathNavigationRegion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.SnowyDirtBlock;
@@ -40,7 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Snow in blocks that keep it outside their block state: fences, fence gates and walls (0..6 layers, SnowyPlants.MAX_LAYERS). Each chunk keeps a small map of
+ * Snow in blocks that keep it outside their block state: fences, fence gates and walls (0..6 layers, SnowyPlants.MAX_LAYERS,
+ * on the ground around them), and bottom stairs and slabs (1 layer, on top of them: snow can't lie there in vanilla, the
+ * top isn't at the top of the block; no ground needed under them, so stair roofs get snow). Each chunk keeps a small map of
  * position -> layers in its own saved data (an attachment), sent to the clients with the chunk and on every change.
  * The fence stays the same block with the same states: no extra states, no block entity, removing the mod just
  * drops the snow. Shapes, collision, sound, breaking and melting read the map by position (SnowStateMixin,
@@ -83,20 +90,37 @@ public final class SnowMap {
         return new BlockPos(chunk.getMinBlockX() + (key & 15), (key >>> 8) - 2048, chunk.getMinBlockZ() + (key >>> 4 & 15));
     }
 
-    /** Blocks whose snow lives here: fences, not while waterlogged. */
+    /** Blocks whose snow lives here: fences, bottom stairs and bottom slabs, not while waterlogged. */
     public static boolean holds(BlockState state) {
-        return uses(state)
-                && !(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED));
+        if (!uses(state) || state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED)) return false;
+        if (state.getBlock() instanceof StairBlock) return state.getValue(StairBlock.HALF) == Half.BOTTOM;
+        if (state.getBlock() instanceof SlabBlock) return state.getValue(SlabBlock.TYPE) == SlabType.BOTTOM;
+        return true;
     }
 
-    /** Whether the block keeps its snow here (any state of it, waterlogged or not). */
+    /**
+     * Whether the block keeps its snow here (any state of it, waterlogged or not). Stairs and slabs with a block entity
+     * (other mods' covered or mimicking stairs) are left alone.
+     */
     public static boolean uses(BlockState state) {
         Block block = state.getBlock();
-        return block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock;
+        return block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock || onTop(state);
+    }
+
+    /** Snow on top of the block (stairs, slabs: a layer on each step), not on the ground around it (fences). */
+    public static boolean onTop(BlockState state) {
+        Block block = state.getBlock();
+        return (block instanceof StairBlock || block instanceof SlabBlock) && !(block instanceof EntityBlock);
+    }
+
+    /** Most layers the block holds: 1 on stairs and slabs (a thin cover), else SnowyPlants.MAX_LAYERS. */
+    public static int maxLayers(BlockState state) {
+        return onTop(state) ? 1 : SnowyPlants.MAX_LAYERS;
     }
 
     /** Layers at pos (0: none). Works from the level, path finding regions, and the client's chunk drawing. */
     public static int get(BlockGetter getter, BlockPos pos) {
+        if (getter == net.minecraft.world.level.EmptyBlockGetter.INSTANCE) return 0; // shapes without a world (SnowTopQuads)
         if (getter instanceof PathNavigationRegion region) getter = ((PathNavigationRegionAccessor) region).equinox$level();
         if (getter instanceof Level level) {
             if (level.isClientSide) return client(pos);
@@ -117,7 +141,8 @@ public final class SnowMap {
     public static boolean set(ServerLevel level, BlockPos pos, int layers) {
         LevelChunk chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         if (chunk == null) return false;
-        layers = Math.max(0, Math.min(layers, SnowyPlants.MAX_LAYERS));
+        BlockState state = chunk.getBlockState(pos);
+        layers = Math.max(0, Math.min(layers, maxLayers(state)));
         Data data = layers == 0 ? chunk.getExistingDataOrNull(TYPE) : chunk.getData(TYPE);
         if (data == null) return false;
         int key = key(pos);
@@ -128,7 +153,7 @@ public final class SnowMap {
         chunk.setUnsaved(true);
         PacketDistributor.sendToPlayersTrackingChunk(level, chunk.getPos(),
                 new Payload(chunk.getPos().toLong(), false, new int[] {key << 4 | layers}));
-        if ((old == 0) != (layers == 0)) snowyGround(level, pos.below(), layers > 0);
+        if ((old == 0) != (layers == 0) && !onTop(state)) snowyGround(level, pos.below(), layers > 0);
         return true;
     }
 

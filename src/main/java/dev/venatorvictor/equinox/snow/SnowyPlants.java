@@ -110,7 +110,7 @@ public final class SnowyPlants {
     /** Most layers the block holds (0: none). */
     public static int maxLayers(BlockState state) {
         if (state.getBlock() instanceof SnowyBlock) return state.getValue(SnowyBlock.THIN) ? 1 : MAX_LAYERS;
-        if (SnowMap.holds(state)) return MAX_LAYERS;
+        if (SnowMap.holds(state)) return SnowMap.maxLayers(state);
         return stateMaxLayers(state);
     }
 
@@ -176,9 +176,14 @@ public final class SnowyPlants {
         return !state.hasProperty(DoublePlantBlock.HALF) || state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER;
     }
 
+    /** Whether snow can lie in this block: on the ground under it, or on the block itself (stairs, slabs). */
+    public static boolean canLie(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        return SnowMap.onTop(state) && SnowMap.holds(state) || Blocks.SNOW.defaultBlockState().canSurvive(level, pos);
+    }
+
     /** Puts snow (layers, up to what the block holds) in the block at pos. False if it can't hold snow or snow can't lie there. */
     public static boolean cover(Level level, BlockPos pos, BlockState state, int layers, int flags) {
-        if (!enabled() || !holds(state) || !Blocks.SNOW.defaultBlockState().canSurvive(level, pos)) return false;
+        if (!enabled() || !holds(state) || !canLie(level, pos, state)) return false;
         return setLayers(level, pos, state, Math.max(layers, 1), flags);
     }
 
@@ -252,7 +257,7 @@ public final class SnowyPlants {
         }
         if (!holds(state)) return;
         int layers = layers(level, pos, state);
-        if (layers < maxLayers(state) && Blocks.SNOW.defaultBlockState().canSurvive(level, pos)) {
+        if (layers < maxLayers(state) && canLie(level, pos, state)) {
             if (!level.isClientSide) {
                 setLayers(level, pos, state, layers + 1, Block.UPDATE_ALL);
                 SoundType sound = Blocks.SNOW.defaultBlockState().getSoundType();

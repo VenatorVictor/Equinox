@@ -19,7 +19,7 @@ public abstract class SnowyDirtShapeMixin {
                                            BlockPos neighborPos, CallbackInfoReturnable<BlockState> cir) {
         BlockState result = cir.getReturnValue();
         if (direction == Direction.UP && result.getBlock() instanceof SnowyDirtBlock && !result.getValue(SnowyDirtBlock.SNOWY)
-                && SnowMap.holds(neighbor) && SnowMap.get(level, neighborPos) > 0)
+                && SnowMap.holds(neighbor) && !SnowMap.onTop(neighbor) && SnowMap.get(level, neighborPos) > 0)
             cir.setReturnValue(result.setValue(SnowyDirtBlock.SNOWY, true));
     }
 }

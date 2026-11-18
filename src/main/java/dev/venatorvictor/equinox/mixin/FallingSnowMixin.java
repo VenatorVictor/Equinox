@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Falling snow (SnowGravityMixin): it piles onto snow it lands on (layers added, up to a full 8), turns still water it
- * falls into to ice, goes into a fence, gate or wall it lands on (snowy fence), and is gone in flowing water or lava
+ * falls into to ice, goes into a fence, gate, wall, stair or slab it lands on, and is gone in flowing water or lava
  * (with a fizz). Other falling blocks as in vanilla.
  */
 @Mixin(FallingBlockEntity.class)
@@ -62,16 +62,22 @@ public abstract class FallingSnowMixin {
             return false; // landed: the entity goes, nothing drops (dropItem off)
         }
         if (snow.getBlock() instanceof SnowLayerBlock) {
-            // Landed on top of a fence, gate or wall: its snow goes in (up to what it holds, like snowfall), as a snowy fence.
+            // Landed on a stair or slab's step, or on top of a fence, gate, wall or stair: its snow goes in (up to what
+            // the block holds, like snowfall). The rest is gone.
             Level level = context.getLevel();
-            BlockPos below = context.getClickedPos().below();
-            BlockState fence = level.getBlockState(below);
-            if (SnowMap.holds(fence) && target.canBeReplaced()) {
-                int layers = Math.min(SnowyPlants.MAX_LAYERS, SnowyPlants.layers(level, below, fence) + snow.getValue(SnowLayerBlock.LAYERS));
-                if (SnowyPlants.cover(level, below, fence, layers, Block.UPDATE_ALL)) {
-                    level.playSound(null, below, SoundEvents.SNOW_FALL, SoundSource.BLOCKS, 1, 1);
+            BlockPos at = context.getClickedPos();
+            BlockState holder = target;
+            if (!(SnowMap.holds(holder) && SnowMap.onTop(holder))) {
+                at = at.below();
+                holder = level.getBlockState(at);
+                if (!SnowMap.holds(holder) || !target.canBeReplaced()) holder = null;
+            }
+            if (holder != null) {
+                int layers = Math.min(SnowMap.maxLayers(holder), SnowyPlants.layers(level, at, holder) + snow.getValue(SnowLayerBlock.LAYERS));
+                if (SnowyPlants.cover(level, at, holder, layers, Block.UPDATE_ALL)) {
+                    level.playSound(null, at, SoundEvents.SNOW_FALL, SoundSource.BLOCKS, 1, 1);
                 }
-                return false; // gone either way (snow can't lie on a fence top)
+                return false;
             }
         }
         return original.call(target, context);

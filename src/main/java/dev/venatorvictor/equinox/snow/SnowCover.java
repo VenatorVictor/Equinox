@@ -311,7 +311,7 @@ public final class SnowCover {
                                    boolean inFence, int now, int target) {
         if (target > now && !dark(level, inFence ? below : top)) return false;
         if (inFence) {
-            if (target > 0 && !Blocks.SNOW.defaultBlockState().canSurvive(level, below)) return false;
+            if (target > 0 && !SnowyPlants.canLie(level, below, belowState)) return false;
             return SnowyPlants.setLayers(level, below, belowState, target, Block.UPDATE_ALL);
         }
         if (topState.getBlock() instanceof SnowLayerBlock) {
