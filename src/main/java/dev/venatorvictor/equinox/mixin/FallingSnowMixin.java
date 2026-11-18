@@ -2,6 +2,8 @@ package dev.venatorvictor.equinox.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import dev.venatorvictor.equinox.snow.SnowMap;
+import dev.venatorvictor.equinox.snow.SnowyPlants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -22,7 +24,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Falling snow (SnowGravityMixin): it piles onto snow it lands on (layers added, up to a full 8), turns still water it
- * falls into to ice, and is gone in flowing water or lava (with a fizz). Other falling blocks as in vanilla.
+ * falls into to ice, goes into a fence, gate or wall it lands on (snowy fence), and is gone in flowing water or lava
+ * (with a fizz). Other falling blocks as in vanilla.
  */
 @Mixin(FallingBlockEntity.class)
 public abstract class FallingSnowMixin {
@@ -57,6 +60,19 @@ public abstract class FallingSnowMixin {
             level.setBlock(pos, target.setValue(SnowLayerBlock.LAYERS, layers), Block.UPDATE_ALL);
             level.playSound(null, pos, SoundEvents.SNOW_FALL, SoundSource.BLOCKS, 1, 1);
             return false; // landed: the entity goes, nothing drops (dropItem off)
+        }
+        if (snow.getBlock() instanceof SnowLayerBlock) {
+            // Landed on top of a fence, gate or wall: its snow goes in (up to what it holds, like snowfall), as a snowy fence.
+            Level level = context.getLevel();
+            BlockPos below = context.getClickedPos().below();
+            BlockState fence = level.getBlockState(below);
+            if (SnowMap.holds(fence) && target.canBeReplaced()) {
+                int layers = Math.min(SnowyPlants.MAX_LAYERS, SnowyPlants.layers(level, below, fence) + snow.getValue(SnowLayerBlock.LAYERS));
+                if (SnowyPlants.cover(level, below, fence, layers, Block.UPDATE_ALL)) {
+                    level.playSound(null, below, SoundEvents.SNOW_FALL, SoundSource.BLOCKS, 1, 1);
+                }
+                return false; // gone either way (snow can't lie on a fence top)
+            }
         }
         return original.call(target, context);
     }
