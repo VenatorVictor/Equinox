@@ -31,13 +31,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChainBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
-import net.minecraft.world.level.block.GrassBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
@@ -53,7 +51,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs, chains, the snowy grass block):
+ * Snow drawn over blocks where snow lies (fences, gates, walls, stairs, slabs, chains; not the snowy grass block,
+ * whose own snowy side already shows it):
  * the block's own faces again, a hair in front, with one shared see-through texture: a snow cap on side faces (the
  * face's own texture coordinates, so it sits at the top of each face), vanilla's snow on top faces. Any block of
  * those kinds works (modded ones too) with any texture pack, as the block's textures are never replaced.
@@ -69,7 +68,7 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     /** Distance in front of the face (blocks). */
     private static final float LIFT = 0.0015F;
 
-    private enum Kind { FULL, HALF, GRASS }
+    private enum Kind { FULL, HALF }
 
     private final Kind kind;
     /** Overlay quads per (base quad, step), made once. */
@@ -84,7 +83,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
     private static @Nullable Kind kind(Block block) {
         if (block instanceof StairBlock || block instanceof SlabBlock) return Kind.HALF;
         if (block instanceof FenceBlock || block instanceof FenceGateBlock || block instanceof WallBlock || block instanceof ChainBlock) return Kind.FULL;
-        if (block instanceof GrassBlock) return Kind.GRASS;
         return null;
     }
 
@@ -95,7 +93,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
             Kind kind = kind(block);
             if (kind == null) continue;
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                if (kind == Kind.GRASS && !state.getValue(BlockStateProperties.SNOWY)) continue;
                 ModelResourceLocation location = BlockModelShaper.stateToModelLocation(state);
                 BakedModel model = event.getModels().get(location);
                 if (model != null && !(model instanceof SnowOverlayModel)) event.getModels().put(location, new SnowOverlayModel(model, kind));
@@ -119,7 +116,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
 
     /** How snowy the block looks: 4 with real snow (a snow layer on it, or snow kept in a fence or wall), else 0. */
     private int step(BlockAndTintGetter region, BlockPos pos, BlockState state) {
-        if (kind == Kind.GRASS) return 4; // only its snowy states are wrapped: a snow layer is on it
         BlockState above = region.getBlockState(pos.above());
         if (above.getBlock() instanceof SnowLayerBlock || SnowMap.holds(state) && SnowMap.client(pos) > 0) return 4;
         return 0; // only real snow: nothing drawn where snow would lie but doesn't
@@ -185,7 +181,6 @@ public final class SnowOverlayModel extends BakedModelWrapper<BakedModel> {
         // Stairs and slabs: only the faces at the top of the block, under the snow lying on it (not the lower step,
         // not a bottom slab's top halfway up the block).
         if (kind == Kind.HALF && Math.max(Math.max(y[0], y[1]), Math.max(y[2], y[3])) < 0.999F) return null;
-        if (top && kind == Kind.GRASS) return null; // under the snow layer anyway
         // One cap for every side face: only faces reaching the top of the block get snow, so the cap sits at the
         // top of the texture (the half cap, with a second cap halfway down, drew a snow band across full-height faces).
         TextureAtlasSprite to = top ? snowTop : cap;
