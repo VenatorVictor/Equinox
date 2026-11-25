@@ -97,7 +97,7 @@ public final class SeasonalTextures {
         }
         any = !rules.isEmpty();
         loaded = List.copyOf(rules);
-        remap(dev.venatorvictor.equinox.api.SeasonState.weeksPerSeason(dev.venatorvictor.equinox.Config.daysPerSeason()));
+        remap(new dev.venatorvictor.equinox.api.SeasonState(0, dev.venatorvictor.equinox.Config.daysPerSeason(), dev.venatorvictor.equinox.Config.daysPerWeek()).weeksPerSeason());
         anySnow = rules.stream().anyMatch(rule -> rule.hasSnow);
         if (!any) return;
 

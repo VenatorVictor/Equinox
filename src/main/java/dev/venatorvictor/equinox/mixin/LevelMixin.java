@@ -33,7 +33,7 @@ public abstract class LevelMixin {
     public int getMoonPhase() {
         DimensionType type = dimensionType();
         if (!Config.hasSeasons(dimension())) return type.moonPhase(getDayTime());
-        return new dev.venatorvictor.equinox.api.SeasonState(getDayTime(), Config.daysPerSeason()).moonPhase();
+        return new dev.venatorvictor.equinox.api.SeasonState(getDayTime(), Config.daysPerSeason(), Config.daysPerWeek()).moonPhase();
     }
 
     public float getMoonBrightness() {

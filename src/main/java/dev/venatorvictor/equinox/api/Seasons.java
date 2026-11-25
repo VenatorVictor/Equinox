@@ -9,7 +9,7 @@ public final class Seasons {
     /** The level's season, or null where there are no seasons (dimensions not in the config). */
     public static @Nullable SeasonState get(Level level) {
         if (!Config.hasSeasons(level.dimension())) return null;
-        return new SeasonState(level.getDayTime(), Config.daysPerSeason());
+        return new SeasonState(level.getDayTime(), Config.daysPerSeason(), Config.daysPerWeek());
     }
 
     private Seasons() {}

@@ -59,10 +59,14 @@ public final class Config {
                     "moon's 8 phases (one cycle a month) are whole days: 24 (96-day year, 8-day months, 1 day a phase),",
                     "48 (192-day year, 16-day months, 2 days a phase), 72 (288, 24, 3), 96 (384-day year, the nearest to a real",
                     "one: 32-day months, 4 days a phase). Other numbers are rounded to the nearest multiple of 24. Each season",
-                    "has 4-day weeks: 2 a month at 24, 4 at 48, 6 at 72, 8 at 96.",
+                    "has weeks of days_per_week days.",
                     "Day 1 is the spring equinox; the seasons start at the equinoxes",
                     "and solstices, as on Earth. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 48, 24, 1008);
+    public static final ModConfigSpec.IntValue DAYS_PER_WEEK = BUILDER
+            .comment("Days in a week. Each season length offers the week lengths that fit its month: 24-day seasons 2 or 4,",
+                    "48 4 or 8, 72 4 or 6, 96 only 8. Another number uses the nearest offered one (the shorter on a tie).")
+            .defineInRange("days_per_week", 4, 2, 8);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
             .comment("The climate: °C change of each climate zone at the start of mid spring, summer, autumn and winter, added",
                     "to the biome's spring/autumn °C (data map equinox:celsius). One value = same at midnight and noon;",
@@ -187,6 +191,7 @@ public final class Config {
     /** Seasons are a multiple of this: 3 months of 8 moon phases. */
     public static final int DAYS_STEP = 24;
     private static volatile int daysPerSeason = 48;
+    private static volatile int daysPerWeek = 4;
     private static volatile int dayMinutes = 20;
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
@@ -207,6 +212,7 @@ public final class Config {
     public static void refresh() {
         // a multiple of 24 (whole-day months and moon phases), at least 24
         daysPerSeason = Math.max(1, Math.round(val(DAYS_PER_SEASON) / (float) DAYS_STEP)) * DAYS_STEP;
+        daysPerWeek = dev.venatorvictor.equinox.api.SeasonState.fitWeek(daysPerSeason, val(DAYS_PER_WEEK));
         celsiusChanges = toCelsiusMap(val(CELSIUS_CHANGES));
         seasonVariation = val(SEASON_VARIATION).floatValue();
         dailyVariation = val(DAILY_VARIATION).floatValue();
@@ -241,7 +247,7 @@ public final class Config {
 
     // ---- Sync: the file is global (config/), so NeoForge doesn't send it; a server sends its values to players.
 
-    private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, CELSIUS_CHANGES,
+    private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, DAYS_PER_WEEK, CELSIUS_CHANGES,
             SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
             IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES);
@@ -388,6 +394,11 @@ public final class Config {
 
     public static int daysPerSeason() {
         return daysPerSeason;
+    }
+
+    /** Days in a week, fitted to the season length. */
+    public static int daysPerWeek() {
+        return daysPerWeek;
     }
 
     /** Real minutes per Minecraft day (0: Equinox doesn't set the day speed). */

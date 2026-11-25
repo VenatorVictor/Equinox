@@ -66,6 +66,13 @@ final class Settings {
         all.add(server(Config.DAYS_PER_SEASON, "days_per_season").tab(SEASONS, "calendar")
                 .cost(Cost.NONE).range(24, 96, Config.DAYS_STEP)
                 .label((v, x) -> u("season_days", days(v), (int) v * 4)));
+        all.add(server(Config.DAYS_PER_WEEK, "days_per_week").tab(SEASONS, null)
+                .cost(Cost.NONE).range(2, 8, 2)
+                .label((v, x) -> {
+                    int fit = dev.venatorvictor.equinox.api.SeasonState.fitWeek(x.daysPerSeason(), (int) v);
+                    int month = x.daysPerSeason() / 3;
+                    return fit == (int) v ? u("week_days", days(v), month / fit) : u("week_days_fitted", days(v), days(fit), month / fit);
+                }));
         all.add(server(Config.LATITUDE, "latitude").tab(SEASONS, "day_length")
                 .cost(Cost.NONE).range(0, 60, 1)
                 .label((v, x) -> v == 0 ? u("off_vanilla") : u("latitude", (int) v,

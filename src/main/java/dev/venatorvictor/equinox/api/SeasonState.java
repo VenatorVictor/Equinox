@@ -3,14 +3,39 @@ package dev.venatorvictor.equinox.api;
 /**
  * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring,
  * the spring equinox; the seasons start at the equinoxes and solstices.
- * Weeks are 4 days: 2 a month at 24-day seasons, 4 at 48, 6 at 72, 8 at 96 (a month is a third of a season).
+ * Weeks are days_per_week long, from the choices that fit the month (a third of a season): 24-day seasons 2 or 4,
+ * 48: 4 or 8, 72: 4 or 6, 96: 8 (fitWeek).
  * Seasonal texture files and color tables use their own fixed grid of 12 "file weeks" a season (exact at 48 days);
  * fileWeek() places today on it by date.
  */
-public record SeasonState(long dayTime, int daysPerSeason) {
+public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
     public static final int DAY = 24000;
-    /** Days in a week, at every season length. */
-    public static final int DAYS_PER_WEEK = 4;
+    /** The week length asked for when none is given. */
+    public static final int DEFAULT_DAYS_PER_WEEK = 4;
+
+    /** With the default week length (fitted to the season length). */
+    public SeasonState(long dayTime, int daysPerSeason) {
+        this(dayTime, daysPerSeason, fitWeek(daysPerSeason, DEFAULT_DAYS_PER_WEEK));
+    }
+
+    /** The week lengths a season length offers (each divides its month). */
+    public static int[] weekChoices(int daysPerSeason) {
+        return switch (daysPerSeason) {
+            case 24 -> new int[]{2, 4};
+            case 48 -> new int[]{4, 8};
+            case 72 -> new int[]{4, 6};
+            case 96 -> new int[]{8};
+            default -> new int[]{4, 8};   // longer seasons typed in the file: months are a multiple of 8 days
+        };
+    }
+
+    /** The wanted week length if the season length offers it, else the nearest offered one (the shorter on a tie). */
+    public static int fitWeek(int daysPerSeason, int wanted) {
+        int best = -1;
+        for (int choice : weekChoices(daysPerSeason))
+            if (best < 0 || Math.abs(choice - wanted) < Math.abs(best - wanted)) best = choice;
+        return best;
+    }
     /** The grid of the season files and color tables: 12 weeks a season, 48 a year, by date. */
     public static final int FILE_WEEKS_PER_SEASON = 12;
     public static final int FILE_WEEKS = FILE_WEEKS_PER_SEASON * Season.COUNT;
@@ -38,13 +63,9 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (float) (ticksInYear() % seasonTicks()) / seasonTicks();
     }
 
-    /** Weeks in a season: days_per_season / 4 (6, 12, 18 or 24). */
+    /** Weeks in a season: days_per_season / days_per_week (12 with the defaults). */
     public int weeksPerSeason() {
-        return weeksPerSeason(daysPerSeason);
-    }
-
-    public static int weeksPerSeason(int daysPerSeason) {
-        return Math.max(1, daysPerSeason / DAYS_PER_WEEK);
+        return Math.max(1, daysPerSeason / Math.max(1, daysPerWeek));
     }
 
     /** Weeks in a year. */
@@ -54,7 +75,7 @@ public record SeasonState(long dayTime, int daysPerSeason) {
 
     /** 0 .. weeksPerSeason - 1: the week of the season. */
     public int weekOfSeason() {
-        return Math.min(dayOfSeason() / DAYS_PER_WEEK, weeksPerSeason() - 1);
+        return Math.min(dayOfSeason() / Math.max(1, daysPerWeek), weeksPerSeason() - 1);
     }
 
     /** Counts up through the years: the week of the year plus weeks() per year. Changes when the week changes. */
@@ -62,7 +83,7 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return year() * weeks() + week();
     }
 
-    /** 0 .. weeks() - 1: the week of the year (0 = the first 4 days of spring). */
+    /** 0 .. weeks() - 1: the week of the year (0 = the first week of spring). */
     public int week() {
         return season().ordinal() * weeksPerSeason() + weekOfSeason();
     }
@@ -123,7 +144,7 @@ public record SeasonState(long dayTime, int daysPerSeason) {
      * the land. A share, not days, so it scales with the season length.
      */
     public SeasonState lagged(double seasons) {
-        return seasons == 0 ? this : new SeasonState(dayTime - Math.round(seasons * seasonTicks()), daysPerSeason);
+        return seasons == 0 ? this : new SeasonState(dayTime - Math.round(seasons * seasonTicks()), daysPerSeason, daysPerWeek);
     }
 
     /** 0 for the first year. */
