@@ -24,7 +24,7 @@ import java.util.Locale;
  *   today at first): its moon (click: the moon page), the next equinox or solstice (click: the equinox/solstice page),
  *   its day length; and the days to the next season. Arrows: back and on through the months.
  * - Moon page: all 8 phases with their days this month.
- * - Equinox/solstice page: the year's 4, with date, day length and how far from today.
+ * - Events page: the year's equinoxes and solstices (January to December), with date, day length and how far from today.
  */
 public final class CalendarScreen extends Screen {
     private static final ResourceLocation LIST_BG = tex("moon"), MOONS = tex("moons"), HAND_X = tex("hand_x");
@@ -195,11 +195,11 @@ public final class CalendarScreen extends Screen {
 
     private static String daylight(SeasonState day) {
         double hours = DayLength.daylightHours(day.dayTime(), day.daysPerSeason());
-        return clock(12 - hours / 2) + " - " + clock(12 + hours / 2);
+        return clock(12 - hours / 2) + "-" + clock(12 + hours / 2);
     }
 
     private static String yearText(SeasonState s) {
-        return I18n.get("equinox.calendar.year", CalendarLook.season(s.season()), s.year() + 1);
+        return I18n.get("equinox.calendar.year", CalendarLook.season(s.season()), s.calendarYear());
     }
 
     /** The equinox or solstice starting this season: day 1 of the season's first month. */
@@ -312,20 +312,21 @@ public final class CalendarScreen extends Screen {
     private void renderMarksPage(GuiGraphics g, SeasonState now) {
         long first = firstDay(now), today = dayOf(now);
         SeasonState view = at(first, now);
-        int monthDays = view.monthDays();
-        long yearStart = first - (long) view.month() * monthDays;
+        int monthDays = view.monthDays(), month = view.month();
+        // January 1 of the calendar year on show (month 9 is January)
+        long january = first - (long) (month >= 9 ? month - 9 : month + 3) * monthDays;
         seasonBar(g, view.season(), I18n.get("equinox.calendar.marks_title"), yearText(view));
         int gx = left + L, x1 = left + W - RM, gy = top + TOP + 22;
-        // the next one from today is shaded
-        long next = Long.MAX_VALUE;
-        for (int s = 0; s < 4; s++) {
-            long d = markDay(yearStart, s, monthDays);
+        long next = Long.MAX_VALUE;                                // the next one from today is shaded
+        for (int k = 0; k < 4; k++) {
+            long d = january + (long) k * 3 * monthDays;
             if (d >= today && d < next) next = d;
         }
-        for (int s = 0; s < 4; s++) {
-            long d = markDay(yearStart, s, monthDays);
+        for (int k = 0; k < 4; k++) {
+            int s = (k + 3) % 4;                                   // winter solstice, spring equinox, summer, autumn
+            long d = january + (long) k * 3 * monthDays;
             SeasonState day = at(d, now);
-            int y = gy + s * MARK_RH;
+            int y = gy + k * MARK_RH;
             if (d == next) g.fill(gx, y - 3, x1, y + MARK_RH - 5, argb(CalendarLook.LIGHT[s]));
             swatch(g, gx + 2, y, s);
             text(g, I18n.get("equinox.calendar.mark." + Season.VALUES[s].id()), gx + 16, y, CalendarLook.SHADE[s]);

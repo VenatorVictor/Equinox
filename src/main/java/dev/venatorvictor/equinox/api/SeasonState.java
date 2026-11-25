@@ -148,6 +148,11 @@ public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
     }
 
     /** 0 for the first year. */
+    /** The year as the calendar shows it, from 1: it turns on January 1 (the world starts on April 1 of year 1). */
+    public long calendarYear() {
+        return year() + 1 + (month() >= 9 ? 1 : 0);
+    }
+
     public long year() {
         return Math.floorDiv(dayTime, seasonTicks() * Season.COUNT);
     }

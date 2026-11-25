@@ -407,7 +407,7 @@
   "equinox.calendar.mark_on": "%1$s: %2$s %3$s",
   "equinox.calendar.hud.top": "%s, %s, Year %s",
   "equinox.calendar.hud.day": "Day %s",
-  "equinox.calendar.marks_title": "Equinoxes and solstices",
+  "equinox.calendar.marks_title": "Events",
   "equinox.calendar.date": "%1$s %2$s",
   "equinox.calendar.today": "today",
   "equinox.calendar.in_day": "in %s day",

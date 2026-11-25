@@ -61,7 +61,7 @@ public final class SeasonCommand {
         Component title = Component.translatable("commands.equinox.season.title",
                 Component.translatable("equinox.season." + state.season().id()), state.weekOfSeason() + 1).withStyle(colour, ChatFormatting.BOLD);
         send(source, Component.translatable("commands.equinox.season.show", title, value(state.dayOfSeason() + 1),
-                value(state.daysPerSeason()), value(state.year() + 1)).withStyle(ChatFormatting.GRAY));
+                value(state.daysPerSeason()), value(state.calendarYear())).withStyle(ChatFormatting.GRAY));
         send(source, line("date", ChatFormatting.LIGHT_PURPLE, false,
                 Component.translatable("equinox.month." + state.month()).withStyle(ChatFormatting.WHITE), value(state.dayOfMonth() + 1),
                 value(state.monthDays()), Component.translatable("equinox.moon." + state.moonPhase()).withStyle(ChatFormatting.WHITE)));
