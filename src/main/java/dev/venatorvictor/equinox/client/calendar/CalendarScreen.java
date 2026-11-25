@@ -18,7 +18,8 @@ import net.minecraft.sounds.SoundEvents;
 import java.util.Locale;
 
 /**
- * The calendar's pages (preview calendar_page_v13).
+ * The calendar's pages (preview calendar_page_v13). Seasons start two-thirds into March, June, September and December; the moon's
+ * cycle is a little shorter than a month (SeasonState).
  * - Month page: season bar, the days by week, today framed in red, the chosen day shaded, past days crossed out, the
  *   new and full moons on their first day, an equinox or solstice band. Footer about the chosen day (click a day;
  *   today at first): its moon (click: the moon page), the next equinox or solstice (click: the equinox/solstice page),
@@ -110,7 +111,7 @@ public final class CalendarScreen extends Screen {
             return;
         }
         int ay = top + TOP + 20 + rows * CH + 4 + 6 + 48 + 8;
-        if (firstDay(now) - now.monthDays() >= 0)                 // nothing before the world's first month
+        if (firstDay(now) > 0)                                    // nothing before the world's first month
             addRenderableWidget(new PageButton(left + L + 2, ay, false, b -> turn(-1), true));
         addRenderableWidget(new PageButton(left + W - RM - 23 - 14, ay, true, b -> turn(1), true));
     }
@@ -202,9 +203,23 @@ public final class CalendarScreen extends Screen {
         return I18n.get("equinox.calendar.year", CalendarLook.season(s.season()), s.calendarYear());
     }
 
-    /** The equinox or solstice starting this season: day 1 of the season's first month. */
-    private static long markDay(long yearStart, int season, int monthDays) {
-        return yearStart + (long) season * 3 * monthDays;
+    /** The first equinox or solstice (a season's first day) on or after this day. */
+    private static long nextMark(long day, SeasonState like) {
+        return day + Math.floorMod(-at(day, like).dayOfSeason(), like.daysPerSeason());
+    }
+
+    /** Is this day a season's first? */
+    private static boolean isMark(long day, SeasonState like) {
+        return at(day, like).dayOfSeason() == 0;
+    }
+
+    private static int step(long day, SeasonState like) {
+        return at(day, like).moonStep();
+    }
+
+    /** A new (0) or full (4) moon starts on this day. */
+    private static boolean moonStarts(long day, SeasonState like, int step) {
+        return step(day, like) == step && step(day - 1, like) != step;
     }
 
     // ---------- the month page
@@ -218,13 +233,13 @@ public final class CalendarScreen extends Screen {
         int cols = cols(view), rows = rows(view), monthDays = view.monthDays();
         int bgRows = bgRows(rows), ch = rows <= bgRows ? CH : Math.max(9, bgRows * CH / rows);
         int cw = CONTENT / cols, gx = left + L, gy = top + TOP + 20;
-        int per = view.daysPerMoonPhase();
-        int markSeason = month % 3 == 0 ? month / 3 : -1;         // the first month of a season starts it
         for (int i = 0; i < monthDays; i++) {
             int r = i / cols, c = i % cols;
             long day = first + i;
-            cell(g, gx + c * cw, gy + r * ch, cw, ch, r == 0, c == 0, i + 1, day == today, day < today, day == pick,
-                    seasonIdx, i == 0 ? markSeason : -1, per);
+            int mark = isMark(day, now) ? at(day, now).season().ordinal() : -1;
+            int moon = moonStarts(day, now, 0) ? 4 : moonStarts(day, now, 4) ? 0 : -1;
+            cell(g, gx + c * cw, gy + r * ch, cw, ch, r == 0, c == 0, i + 1, day == today, day < today, day < 0,
+                    day == pick, seasonIdx, mark, moon);
         }
 
         // footer: about the chosen day
@@ -237,16 +252,12 @@ public final class CalendarScreen extends Screen {
         y += 12;
 
         // the next equinox or solstice from the chosen day (that day's own, if it is one)
-        long yearStart = first - (long) month * monthDays;
-        int markS = -1;
-        long markAt = 0;
-        for (int k = 0; k < 8 && markS < 0; k++) {
-            long d = markDay(yearStart, k % 4, monthDays) + (k / 4) * 12L * monthDays;
-            if (d >= pick) { markS = k % 4; markAt = d; }
-        }
+        long markAt = nextMark(pick, now);
+        SeasonState markDate = at(markAt, now);
+        int markS = markDate.season().ordinal();
         swatch(g, gx + 1, y, markS);
         String mark = I18n.get("equinox.calendar.mark." + Season.VALUES[markS].id());
-        link(g, I18n.get("equinox.calendar.mark_on", mark, CalendarLook.monthInText(at(markAt, now).month()), 1),
+        link(g, I18n.get("equinox.calendar.mark_on", mark, CalendarLook.monthInText(markDate.month()), markDate.dayOfMonth() + 1),
                 gx + 14, y, CalendarLook.SHADE[markS], markBox, gx, mouseX, mouseY);
         y += 12;
 
@@ -261,7 +272,7 @@ public final class CalendarScreen extends Screen {
     }
 
     private void cell(GuiGraphics g, int x0, int y0, int cw, int ch, boolean firstRow, boolean firstCol, int day,
-                      boolean today, boolean past, boolean picked, int season, int markSeason, int per) {
+                      boolean today, boolean past, boolean beforeWorld, boolean picked, int season, int markSeason, int moon) {
         int grid = argb(CalendarLook.GRID);
         g.fill(x0, y0 + ch - 1, x0 + cw, y0 + ch, grid);
         if (firstRow) g.fill(x0, y0, x0 + cw, y0 + 1, grid);
@@ -270,18 +281,16 @@ public final class CalendarScreen extends Screen {
         if (today) g.fill(x0 + 1, y0 + 1, x0 + cw - 1, y0 + ch - 1, argb(CalendarLook.RED));
         if (picked) g.fill(x0 + 2, y0 + 2, x0 + cw - 2, y0 + ch - 2, argb(CalendarLook.LIGHT[season]));
         else if (today) g.fill(x0 + 2, y0 + 2, x0 + cw - 2, y0 + ch - 2, argb(0xFFFBF0));
-        if (markSeason >= 0) {
+        if (markSeason >= 0) {                                     // equinox or solstice: the new season's band
             int inset = today ? 2 : 1;
             g.fill(x0 + inset, y0 + inset, x0 + cw - inset, y0 + 3, argb(CalendarLook.BAND[markSeason]));
             g.fill(x0 + inset, y0 + 3, x0 + cw - inset, y0 + 4, argb(CalendarLook.SHADE[markSeason]));
         }
         String n = String.valueOf(day);
         int nx = x0 + (cw - font.width(n)) / 2, ny = y0 + ch - 11;
-        text(g, n, nx, ny, CalendarLook.INK);
-        // the new and the full moon, on their first day
-        if (day == 1) moon(g, x0 + cw - 12, y0 + ch - 12, 4);
-        else if (day == 4 * per + 1) moon(g, x0 + cw - 12, y0 + ch - 12, 0);
-        if (past) {
+        text(g, n, nx, ny, beforeWorld ? CalendarLook.GRID : CalendarLook.INK);   // before the world began: faint
+        if (moon >= 0) moon(g, x0 + cw - 12, y0 + ch - 12, moon);  // the new and the full moon, on their first day
+        if (past && !beforeWorld) {
             int v = (day - 1) % 12;                                // each day its own cross
             g.blit(HAND_X, nx + font.width(n) / 2 - 10, ny + 3 - 8, v * 20, 0, 20, 16, 240, 16);
         }
@@ -293,17 +302,31 @@ public final class CalendarScreen extends Screen {
         long first = firstDay(now);
         SeasonState view = at(first, now);
         seasonBar(g, view.season(), I18n.get("equinox.calendar.moon_title", CalendarLook.monthInText(view.month())), yearText(view));
-        int per = view.daysPerMoonPhase();
+        int monthDays = view.monthDays();
+        // each phase's days this month (a phase can come twice, or be skipped with short months), in the order they come
+        java.util.List<Integer> order = new java.util.ArrayList<>();
+        StringBuilder[] days = new StringBuilder[8];
+        for (int i = 0; i < monthDays; i++) {
+            int st = step(first + i, now);
+            if (i > 0 && st == step(first + i - 1, now)) continue;
+            int end = i;
+            while (end + 1 < monthDays && step(first + end + 1, now) == st) end++;
+            String range = end > i ? I18n.get("equinox.calendar.days", i + 1, end + 1) : I18n.get("equinox.calendar.day", i + 1);
+            if (days[st] == null) { days[st] = new StringBuilder(range); order.add(st); }
+            else days[st].append(", ").append(range);
+        }
+        int start = order.isEmpty() ? 0 : order.get(0);           // phases skipped this month go last
+        for (int k = 0; k < 8; k++) if (!order.contains((start + k) % 8)) order.add((start + k) % 8);
         long pick = chosen(now);
-        int pickStep = pick >= first && pick < first + view.monthDays() ? Math.min((int) (pick - first) / per, 7) : -1;
+        int pickStep = pick >= first && pick < first + monthDays ? step(pick, now) : -1;
         int gx = left + L, x1 = left + W - RM, gy = top + TOP + 22;
         for (int k = 0; k < 8; k++) {
-            int phase = (k + 4) % 8, a = k * per + 1, b = k == 7 ? view.monthDays() : k * per + per, y = gy + k * RH;
-            if (k == pickStep) g.fill(gx, y - 2, x1, y + RH - 3, argb(CalendarLook.LIGHT[view.season().ordinal()]));
+            int st = order.get(k), phase = (st + 4) % 8, y = gy + k * RH;
+            if (st == pickStep) g.fill(gx, y - 2, x1, y + RH - 3, argb(CalendarLook.LIGHT[view.season().ordinal()]));
             moon(g, gx + 2, y - 1, phase);
             text(g, CalendarLook.moon(phase), gx + 16, y, CalendarLook.INK);
-            String d = b > a ? I18n.get("equinox.calendar.days", a, b) : I18n.get("equinox.calendar.day", a);
-            textRight(g, d, x1 - 2, y, k == pickStep ? CalendarLook.RED : CalendarLook.FADED);
+            String d = days[st] == null ? "-" : days[st].toString();
+            textRight(g, d, x1 - 2, y, st == pickStep ? CalendarLook.RED : CalendarLook.FADED);
         }
     }
 
@@ -312,25 +335,19 @@ public final class CalendarScreen extends Screen {
     private void renderMarksPage(GuiGraphics g, SeasonState now) {
         long first = firstDay(now), today = dayOf(now);
         SeasonState view = at(first, now);
-        int monthDays = view.monthDays(), month = view.month();
-        // January 1 of the calendar year on show (month 9 is January)
-        long january = first - (long) (month >= 9 ? month - 9 : month + 3) * monthDays;
+        int monthDays = view.monthDays();
+        long january = first - Math.floorMod(view.calendarDay(), 12L * monthDays);   // January 1 of the year on show
         seasonBar(g, view.season(), I18n.get("equinox.calendar.marks_title"), yearText(view));
         int gx = left + L, x1 = left + W - RM, gy = top + TOP + 22;
-        long next = Long.MAX_VALUE;                                // the next one from today is shaded
+        long firstMark = nextMark(january, now), next = nextMark(today, now);   // the next one from today is shaded
         for (int k = 0; k < 4; k++) {
-            long d = january + (long) k * 3 * monthDays;
-            if (d >= today && d < next) next = d;
-        }
-        for (int k = 0; k < 4; k++) {
-            int s = (k + 3) % 4;                                   // winter solstice, spring equinox, summer, autumn
-            long d = january + (long) k * 3 * monthDays;
+            long d = firstMark + (long) k * now.daysPerSeason();
             SeasonState day = at(d, now);
-            int y = gy + k * MARK_RH;
+            int s = day.season().ordinal(), y = gy + k * MARK_RH;
             if (d == next) g.fill(gx, y - 3, x1, y + MARK_RH - 5, argb(CalendarLook.LIGHT[s]));
             swatch(g, gx + 2, y, s);
             text(g, I18n.get("equinox.calendar.mark." + Season.VALUES[s].id()), gx + 16, y, CalendarLook.SHADE[s]);
-            textRight(g, I18n.get("equinox.calendar.date", CalendarLook.monthInText(day.month()), 1), x1 - 2, y, CalendarLook.INK);
+            textRight(g, I18n.get("equinox.calendar.date", CalendarLook.monthInText(day.month()), day.dayOfMonth() + 1), x1 - 2, y, CalendarLook.INK);
             text(g, I18n.get("equinox.calendar.day_length") + " " + daylight(day), gx + 16, y + 11, CalendarLook.FADED);
             long gap = d - today;
             String when = gap == 0 ? I18n.get("equinox.calendar.today")

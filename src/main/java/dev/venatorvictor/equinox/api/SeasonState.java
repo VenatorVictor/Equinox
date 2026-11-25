@@ -105,33 +105,62 @@ public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
         return season.ordinal() * FILE_WEEKS_PER_SEASON + week - 1;
     }
 
-    /** Days in a month: a third of a season (8, 16, 24 or 32), one moon cycle. */
+    /** Days in a month: a third of a season (8, 16, 24 or 32). */
     public int monthDays() {
         return Math.max(1, daysPerSeason / 3);
     }
 
-    /** 0 .. 11: the month of the year, 0 = the first month of spring (April on the calendar). */
+    /**
+     * 0-based day of March, June, September and December on which a season starts (the equinoxes and solstices), as
+     * late in the month as the real ones (about March 20 of 31): day 6, 11, 16 or 21. The world starts on the spring
+     * equinox, March 11 with 16-day months.
+     */
+    public int equinoxDayOfMonth() {
+        return monthDays() * 20 / 31;
+    }
+
+    /** Days since January 1 of the calendar's year 1 (the world starts on March 11 of year 1, 16-day months). */
+    public long calendarDay() {
+        return Math.floorDiv(dayTime, DAY) + 2L * monthDays() + equinoxDayOfMonth();
+    }
+
+    /** 0 .. 11: the month of the calendar, 0 = April .. 8 = December, 9 = January .. 11 = March. */
     public int month() {
-        return season().ordinal() * 3 + Math.min(dayOfSeason() / monthDays(), 2);
+        int fromJanuary = (int) Math.floorMod(Math.floorDiv(calendarDay(), monthDays()), 12L);
+        return (fromJanuary + 9) % 12;
     }
 
     /** 0 for the first day of the month. */
     public int dayOfMonth() {
-        return dayOfSeason() - Math.min(dayOfSeason() / monthDays(), 2) * monthDays();
+        return (int) Math.floorMod(calendarDay(), (long) monthDays());
     }
 
-    /** Days each of the moon's 8 phases lasts: a month / 8 (1, 2, 3 or 4). */
-    public int daysPerMoonPhase() {
-        return Math.max(1, monthDays() / 8);
+    /** The year as the calendar shows it, from 1: it turns on January 1. */
+    public long calendarYear() {
+        return Math.floorDiv(calendarDay(), 12L * monthDays()) + 1;
+    }
+
+    /** Real mean lunar month and calendar month, in days: the moon's cycle keeps their ratio. */
+    public static final double REAL_MOON = 29.530589, REAL_MONTH = 365.2425 / 12;
+
+    /** Days in the moon's cycle: a little shorter than a month, with decimals (15.52 with 16-day months). */
+    public double moonCycle() {
+        return monthDays() * REAL_MOON / REAL_MONTH;
     }
 
     /**
-     * Vanilla's moon phase index (0 full, 4 new) following the month: every month starts with a new moon, each phase
-     * lasts daysPerMoonPhase days, the full moon is in the middle of the month.
+     * 0 new moon, 1 waxing crescent .. 4 full .. 7 waning crescent: the phase at midday. The world starts at a new
+     * moon; with the cycle shorter than a month, the new moon comes a little earlier every month.
      */
+    public int moonStep() {
+        double days = Math.floorDiv(dayTime, DAY) + 0.5;
+        double into = days / moonCycle();
+        return Math.min((int) Math.floor((into - Math.floor(into)) * 8), 7);
+    }
+
+    /** Vanilla's moon phase index (0 full, 4 new). */
     public int moonPhase() {
-        int step = Math.min(dayOfMonth() / daysPerMoonPhase(), 7);   // 0 new, 1 waxing crescent .. 4 full .. 7 waning crescent
-        return (step + 4) % 8;
+        return (moonStep() + 4) % 8;
     }
 
     /** 0 for the first day of the season. */
@@ -147,12 +176,7 @@ public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
         return seasons == 0 ? this : new SeasonState(dayTime - Math.round(seasons * seasonTicks()), daysPerSeason, daysPerWeek);
     }
 
-    /** 0 for the first year. */
-    /** The year as the calendar shows it, from 1: it turns on January 1 (the world starts on April 1 of year 1). */
-    public long calendarYear() {
-        return year() + 1 + (month() >= 9 ? 1 : 0);
-    }
-
+    /** 0 for the first year (years of the seasons, starting at the spring equinox). */
     public long year() {
         return Math.floorDiv(dayTime, seasonTicks() * Season.COUNT);
     }

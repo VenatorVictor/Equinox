@@ -144,7 +144,7 @@
   "equinox.configuration.zone_warm_start": "Zone warm start",
   "equinox.settings.days_per_season.name": "Season length",
   "equinox.settings.heading.calendar": "Calendar",
-  "equinox.settings.days_per_season.desc": "Days in one season: 24, 48, 72 or 96. A season is 3 months and a month is one moon cycle, so every choice keeps months and moon phases in whole days: 24 = 96-day year (8-day months), 48 = 192 (16), 72 = 288 (24), 96 = 384, the nearest to a real year (32-day months).\nThe season is counted from the world's day, so changing this moves today's date.",
+  "equinox.settings.days_per_season.desc": "Days in one season: 24, 48, 72 or 96. A season is 3 months: 24 = 96-day year (8-day months), 48 = 192 (16), 72 = 288 (24), 96 = 384, the nearest to a real year (32-day months). Each season starts two-thirds into March, June, September or December, like the real equinoxes and solstices. The moon's cycle is a little shorter than a month, as in real life, so the new moon moves through the months.\nThe season is counted from the world's day, so changing this moves today's date.",
   "equinox.settings.days_per_week.name": "Week length",
   "equinox.settings.days_per_week.desc": "Days in a week. Each season length offers the lengths that fit its month: 24-day seasons 2 or 4 days, 48 4 or 8, 72 4 or 6, 96 only 8. Another choice uses the nearest one that fits.",
   "equinox.settings.latitude.name": "Latitude",

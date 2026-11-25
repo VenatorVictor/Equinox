@@ -24,7 +24,7 @@
   "equinox.moon.6": "Quarto crescente",
   "equinox.moon.7": "Crescente gibosa",
   "equinox.settings.heading.calendar": "Calendário",
-  "equinox.settings.days_per_season.desc": "Dias em uma estação: 24, 48, 72 ou 96. Uma estação tem 3 meses e um mês é um ciclo da lua, então toda escolha mantém meses e fases da lua em dias inteiros: 24 = ano de 96 dias (meses de 8 dias), 48 = 192 (16), 72 = 288 (24), 96 = 384, o mais perto de um ano real (meses de 32 dias).\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
+  "equinox.settings.days_per_season.desc": "Dias em uma estação: 24, 48, 72 ou 96. Uma estação tem 3 meses: 24 = ano de 96 dias (meses de 8 dias), 48 = 192 (16), 72 = 288 (24), 96 = 384, o mais perto de um ano real (meses de 32 dias). Cada estação começa a dois terços de março, junho, setembro ou dezembro, como os equinócios e solstícios reais. O ciclo da lua é um pouco menor que um mês, como na vida real, então a lua nova anda pelos meses.\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
   "equinox.settings.days_per_week.name": "Duração da semana",
   "equinox.settings.days_per_week.desc": "Dias em uma semana. Cada duração de estação oferece as que cabem no mês: estações de 24 dias 2 ou 4 dias, 48 4 ou 8, 72 4 ou 6, 96 só 8. Outra escolha usa a mais próxima que cabe.",
   "equinox.settings.latitude.name": "Latitude",
