@@ -14,10 +14,9 @@ import java.time.temporal.ChronoUnit;
 /**
  * Real time mode (config real_time): the world follows the real clock and date.
  *
- * The rest of Equinox reads the season from the world's day time with 96-day seasons. Here that day time is made
- * from the real date: each real season (from one equinox or solstice to the next, 89 to 94 days, uneven as on Earth)
- * is spread over the 96 days of a game season, so the season changes on the day of the real equinox or solstice. The
- * time of day is the real clock (day time 0 = 6:00, as in vanilla); Equinox's day turns at midnight.
+ * The world's day time is the real clock, one game day per real day. The rest of Equinox reads equal 96-day seasons:
+ * internal() stretches each real season (from one equinox or solstice to the next, 89 to 94 days, uneven as on Earth)
+ * over them, so the season changes at midnight on the day of the real equinox or solstice.
  *
  * The equinoxes and solstices come from the standard astronomical formula (Meeus, Astronomical Algorithms, ch. 27,
  * good to a few minutes); the moon from the mean lunar month from a known new moon.
@@ -133,27 +132,49 @@ public final class RealTime {
 
     // ---------- the world's day time
 
-    /** The game day a date is (96 a season: the real season stretched over them). */
-    public static long gameDay(LocalDate date) {
-        Span span = span(date);
-        long into = (long) Math.floor(span.dayOfSeason(date) * (double) SEASON / span.length());
-        return span.seasonYear() * 4L * SEASON + (long) span.season().ordinal() * SEASON + into;
+    private static final LocalDate BASE = LocalDate.of(BASE_YEAR, 1, 1);
+
+    /** Equinox's day number of a date: one per real day, counted from 2000-01-01. */
+    public static long worldDay(LocalDate date) {
+        return date.toEpochDay() - BASE.toEpochDay();
     }
 
     /**
-     * The world's day time for a moment. Equinox's day starts at midnight (GameYear.day), as the real date does, so
-     * the season changes at midnight on the day of the equinox or solstice. When a game day is skipped the clock jumps
-     * by whole days, so the time of day never moves.
+     * The world's day time for a moment: the real clock (day time 0 = 6:00, as in vanilla), one game day per real day,
+     * Equinox's day starting at midnight (GameYear.day) as the real date does.
      */
     public static long dayTime(ZonedDateTime time) {
         long ticks = Math.round(time.toLocalTime().toNanoOfDay() / 1e9 * SeasonState.DAY / 86400);
-        return Math.max(0, gameDay(time.toLocalDate()) * SeasonState.DAY - dev.venatorvictor.equinox.api.GameYear.MIDNIGHT
+        return Math.max(0, worldDay(time.toLocalDate()) * SeasonState.DAY - dev.venatorvictor.equinox.api.GameYear.MIDNIGHT
                 + Math.min(ticks, SeasonState.DAY - 1));
     }
 
-    /** A date's midday as the world's day time (day length, season of a calendar day). */
+    /** A date's noon on the world's clock (day length, season of a calendar day). */
     public static long middayTime(LocalDate date) {
-        return Math.max(0, gameDay(date) * SeasonState.DAY + 6000);
+        return worldDay(date) * SeasonState.DAY + 6000;
+    }
+
+    /** The last day worked out: the season is read many times a tick for the same day. */
+    private record DayCache(long day, java.time.ZoneId zone, boolean south, long seasonStart, int dayOfSeason, int length) {}
+    private static volatile DayCache lastDay = new DayCache(Long.MIN_VALUE, null, false, 0, 0, 1);
+
+    /**
+     * Equal 96-day seasons from a day time counted from midnight (GameYear.seasonTime): each real season (89 to 94
+     * days, from its equinox or solstice) stretched smoothly over 96 game days, so the season changes at midnight on
+     * the day of the real equinox or solstice and no day is skipped.
+     */
+    public static long internal(long fromMidnight) {
+        long day = Math.floorDiv(fromMidnight, SeasonState.DAY);
+        DayCache c = lastDay;
+        if (c.day != day || c.zone != Config.timeZone() || c.south != Config.south()) {
+            LocalDate date = BASE.plusDays(day);
+            Span span = span(date);
+            long start = (span.seasonYear() * 4L + span.season().ordinal()) * SEASON;
+            c = new DayCache(day, Config.timeZone(), Config.south(), start, span.dayOfSeason(date), span.length());
+            lastDay = c;
+        }
+        double into = (c.dayOfSeason + Math.floorMod(fromMidnight, SeasonState.DAY) / (double) SeasonState.DAY) / c.length;
+        return c.seasonStart * SeasonState.DAY + Math.round(into * SEASON * SeasonState.DAY);
     }
 
     // ---------- the moon

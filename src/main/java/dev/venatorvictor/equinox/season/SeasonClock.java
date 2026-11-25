@@ -46,7 +46,8 @@ public final class SeasonClock {
     private static void followRealClock(ServerLevel overworld) {
         if (!dev.venatorvictor.equinox.realtime.RealTime.on() || overworld.getGameTime() % 20 != 0) return;
         long target = dev.venatorvictor.equinox.realtime.RealTime.dayTime(dev.venatorvictor.equinox.realtime.RealTime.now());
-        if (Math.abs(overworld.getDayTime() - target) >= 1) setDayTime(overworld.getServer(), target);
+        // the day runs at real speed between; only a real drift (5 ticks = 18 s) or a jump is set
+        if (Math.abs(overworld.getDayTime() - target) >= 5) setDayTime(overworld.getServer(), target);
     }
 
     /** Sets the day time of every dimension, as /time set does (they share the overworld's clock). */

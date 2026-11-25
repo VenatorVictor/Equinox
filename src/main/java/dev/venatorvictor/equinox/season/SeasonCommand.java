@@ -50,10 +50,16 @@ public final class SeasonCommand {
     /** Real time: /time set and /time add would be undone by the clock a second later, so they're refused. */
     public static void blockTimeInRealTime(net.neoforged.neoforge.event.CommandEvent event) {
         if (!dev.venatorvictor.equinox.realtime.RealTime.on()) return;
-        var nodes = event.getParseResults().getContext().getNodes();
-        if (nodes.size() < 2 || !nodes.get(0).getNode().getName().equals("time")) return;
-        String action = nodes.get(1).getNode().getName();
-        if (!action.equals("set") && !action.equals("add")) return;
+        boolean timeChange = false;
+        // /time set, and the same after /execute ... run (a child context)
+        for (var context = event.getParseResults().getContext(); context != null && !timeChange; context = context.getChild()) {
+            var nodes = context.getNodes();
+            for (int i = 0; i + 1 < nodes.size() && !timeChange; i++) {
+                String name = nodes.get(i).getNode().getName(), action = nodes.get(i + 1).getNode().getName();
+                timeChange = name.equals("time") && (action.equals("set") || action.equals("add"));
+            }
+        }
+        if (!timeChange) return;
         event.setCanceled(true);
         event.getParseResults().getContext().getSource().sendFailure(Component.translatable("commands.equinox.real_time.blocked"));
     }
@@ -79,7 +85,7 @@ public final class SeasonCommand {
         var dates = dev.venatorvictor.equinox.calendar.CalendarDates.of(source.getLevel());
         long date = dates.today();
         Component title = Component.translatable("commands.equinox.season.title",
-                Component.translatable("equinox.season." + state.season().id()), dates.weekOfSeason(date) + 1).withStyle(colour, ChatFormatting.BOLD);
+                Component.translatable("equinox.season." + state.season().id()), state.weekOfSeason() + 1).withStyle(colour, ChatFormatting.BOLD);
         send(source, Component.translatable("commands.equinox.season.show", title, value(dates.dayOfSeason(date) + 1),
                 value(dates.seasonLength(date)), value(dates.year(date))).withStyle(ChatFormatting.GRAY));
         send(source, line("date", ChatFormatting.LIGHT_PURPLE, false,

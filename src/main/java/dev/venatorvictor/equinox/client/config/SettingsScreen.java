@@ -78,10 +78,15 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     }
 
     /** Why this setting can't be changed here, or null. */
+    /** On someone else's server: their file decides, so nothing here is saved. */
+    private boolean remoteLocked(Setting s) {
+        if (s.side == Side.CLIENT || minecraft == null) return false;
+        return minecraft.getConnection() != null && !minecraft.hasSingleplayerServer();
+    }
+
     String locked(Setting s) {
         if (s.side == Side.CLIENT || minecraft == null) return null;
-        boolean remote = minecraft.getConnection() != null && !minecraft.hasSingleplayerServer();
-        if (remote) return t("locked.remote");
+        if (remoteLocked(s)) return t("locked.remote");
         // Real time sets the season length, the weeks and the day speed
         boolean realTime = Boolean.TRUE.equals(pending.getOrDefault(Config.REAL_TIME, Config.REAL_TIME.get()));
         if (realTime && (s.value == Config.DAYS_PER_SEASON || s.value == Config.DAYS_PER_WEEK || s.value == Config.DAY_MINUTES))
@@ -396,7 +401,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         Set<ModConfigSpec> specs = new HashSet<>();
         boolean redraw = false, textures = false;
         for (Setting s : Settings.ALL) {
-            if (!pending.containsKey(s.value) || locked(s) != null) continue;
+            if (!pending.containsKey(s.value) || remoteLocked(s)) continue;   // Real time's locks still save, for when it's off
             @SuppressWarnings("unchecked") ModConfigSpec.ConfigValue<Object> value = (ModConfigSpec.ConfigValue<Object>) s.value;
             value.set(pending.get(s.value));
             specs.add(switch (s.side) {

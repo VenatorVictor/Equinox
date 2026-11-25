@@ -26,17 +26,13 @@ public final class CalendarClient {
                 ItemProperties.register(Calendar.ITEM.get(), SEASON, (stack, level, entity, seed) -> {
                     Minecraft mc = Minecraft.getInstance();
                     if (mc.level == null) return 0;
-                    return state(mc).season().ordinal() / 4F;      // 0 spring, .25 summer, .5 autumn, .75 winter
+                    var dates = dev.venatorvictor.equinox.calendar.CalendarDates.of(mc.level);   // as the text line
+                    return dates.season(dates.today()).ordinal() / 4F;   // 0 spring, .25 summer, .5 autumn, .75 winter
                 })));
         modBus.addListener(EntityRenderersEvent.RegisterRenderers.class, event ->
                 event.registerBlockEntityRenderer(Calendar.BLOCK_ENTITY.get(), context -> new CalendarRenderer()));
         modBus.addListener(RegisterGuiLayersEvent.class, event ->
                 event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath("equinox", "calendar"), CalendarClient::hud));
-    }
-
-    private static SeasonState state(Minecraft mc) {
-        SeasonState s = dev.venatorvictor.equinox.api.Seasons.get(mc.level);
-        return s != null ? s : new SeasonState(0, Config.daysPerSeason(), Config.daysPerWeek());
     }
 
     /** Held in either hand: the calendar icon, month, season and year on top, the day below (top left). */

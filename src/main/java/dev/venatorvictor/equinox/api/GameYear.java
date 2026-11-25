@@ -92,11 +92,11 @@ public final class GameYear {
     }
 
     /**
-     * Equal seasons from a day time counted from midnight: each season stretched over days_per_season days, smoothly.
-     * Real time makes its day time this way already, so it is left as it is.
+     * Equal seasons from a day time counted from midnight: each season stretched over days_per_season days, smoothly
+     * (real time: each real season, RealTime.internal).
      */
     private static long internal(long dayTime, int daysPerSeason) {
-        if (Config.realTime()) return dayTime;
+        if (Config.realTime()) return dev.venatorvictor.equinox.realtime.RealTime.internal(dayTime);
         long year = 4L * daysPerSeason;
         long day = Math.floorDiv(dayTime, SeasonState.DAY);
         long yearIndex = Math.floorDiv(day, year);
