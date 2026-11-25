@@ -17,6 +17,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import it.unimi.dsi.fastutil.HashCommon;
 
@@ -78,8 +79,10 @@ public final class ClimateBlend {
 
     /** Ignored below this weight (a biome barely touching the edge). */
     private static final float MIN_WEIGHT = 0.02F;
-    /** Kept this many chunks at most per side; cleared past it, mixes come back on load. */
-    private static final int MAX_CHUNKS = 200_000;
+    /** Kept this many mixes at most per map; past it the oldest go first (the server keeps loaded chunks' mixes). */
+    private static final int MAX_CHUNKS = 50_000;
+    /** Biome samples kept at most (shared grid points). */
+    private static final int MAX_GRID = 200_000;
 
     /** Each side's mixes (single player runs both, with separate biome objects). */
     private static final Map<Long, Mix> SERVER = new ConcurrentHashMap<>(), CLIENT = new ConcurrentHashMap<>();
@@ -89,6 +92,19 @@ public final class ClimateBlend {
     /** Biomes sampled on the grid (server), shared by neighbouring chunks. */
     private static final Map<Long, Holder<Biome>> GRID = new ConcurrentHashMap<>();
     private static volatile int gridStep;
+    /** Keys in the order they were added to each map, for dropping the oldest. */
+    private static final ConcurrentLinkedQueue<Long> SERVER_ORDER = new ConcurrentLinkedQueue<>(), CLIENT_ORDER = new ConcurrentLinkedQueue<>(),
+            FAR_ORDER = new ConcurrentLinkedQueue<>(), GRID_ORDER = new ConcurrentLinkedQueue<>();
+
+    /** Drops the oldest keys until the map is under max (a tenth below, so this runs rarely); keep(key) puts one back at the end. */
+    private static void trim(Map<Long, ?> map, ConcurrentLinkedQueue<Long> order, int max, java.util.function.LongPredicate keep) {
+        if (map.size() <= max) return;
+        int target = max - max / 10, tries = map.size();
+        for (Long key; map.size() > target && tries-- > 0 && (key = order.poll()) != null; ) {
+            if (keep != null && map.containsKey(key) && keep.test(key)) order.add(key);
+            else map.remove(key);
+        }
+    }
 
     /** Scratch for around(): blended temperature and cooling. */
     private static final ThreadLocal<float[]> AROUND = ThreadLocal.withInitial(() -> new float[2]);
@@ -296,18 +312,20 @@ public final class ClimateBlend {
 
     /** Client: the server sent a chunk's mix. */
     public static void put(long chunk, Mix mix) {
-        if (CLIENT.size() > MAX_CHUNKS) CLIENT.clear();
-        CLIENT.put(chunk, mix);
+        if (CLIENT.put(chunk, mix) == null) CLIENT_ORDER.add(chunk);
+        trim(CLIENT, CLIENT_ORDER, MAX_CHUNKS, null);
         changed();
     }
 
     /** Client: the server sent far mixes (cells of cell blocks; a new size replaces the old ones). */
     public static void putFar(int cell, long key, Mix mix) {
-        if (cell != farCell || FAR.size() > MAX_CHUNKS) {
+        if (cell != farCell) {
             FAR.clear();
+            FAR_ORDER.clear();
             farCell = cell;
         }
-        FAR.put(key, mix);
+        if (FAR.put(key, mix) == null) FAR_ORDER.add(key);
+        trim(FAR, FAR_ORDER, MAX_CHUNKS, null);
         changed();
     }
 
@@ -315,6 +333,8 @@ public final class ClimateBlend {
     public static void clearClient() {
         CLIENT.clear();
         FAR.clear();
+        CLIENT_ORDER.clear();
+        FAR_ORDER.clear();
         farCell = 0;
         changed();
     }
@@ -323,6 +343,8 @@ public final class ClimateBlend {
     public static void clearServer() {
         SERVER.clear();
         GRID.clear();
+        SERVER_ORDER.clear();
+        GRID_ORDER.clear();
         gridStep = 0;
         changed();
     }
@@ -334,8 +356,8 @@ public final class ClimateBlend {
         if (known != null) return known;
         Mix mix = mixAt(level, chunk.getMiddleBlockX(), chunk.getMiddleBlockZ());
         if (mix == null) return null;
-        if (SERVER.size() > MAX_CHUNKS) SERVER.clear();
-        SERVER.put(key, mix);
+        if (SERVER.put(key, mix) == null) SERVER_ORDER.add(key);
+        trim(SERVER, SERVER_ORDER, MAX_CHUNKS, k -> level.getChunkSource().getChunkNow(ChunkPos.getX(k), ChunkPos.getZ(k)) != null);
         changed();
         return mix;
     }
@@ -348,10 +370,12 @@ public final class ClimateBlend {
         if (radius <= 0) return coolingOnly;
         // About 50 samples in the circle, on a grid aligned to the world so neighbours share them.
         int step = Math.max(8, radius / 4);
-        if (step != gridStep || GRID.size() > MAX_CHUNKS * 4) {
+        if (step != gridStep) {
             GRID.clear();
+            GRID_ORDER.clear();
             gridStep = step;
         }
+        trim(GRID, GRID_ORDER, MAX_GRID, null);
         BiomeSource source = level.getChunkSource().getGenerator().getBiomeSource();
         var sampler = level.getChunkSource().randomState().sampler();
         Map<Biome, Float> weights = new IdentityHashMap<>();
@@ -362,7 +386,10 @@ public final class ClimateBlend {
                 if (distance >= radius) continue;
                 int sx = x, sz = z;
                 Holder<Biome> holder = GRID.computeIfAbsent(ChunkPos.asLong(x / step, z / step) ^ ((long) step << 58),
-                        k -> source.getNoiseBiome(QuartPos.fromBlock(sx), QuartPos.fromBlock(level.getSeaLevel()), QuartPos.fromBlock(sz), sampler));
+                        k -> {
+                            GRID_ORDER.add(k);
+                            return source.getNoiseBiome(QuartPos.fromBlock(sx), QuartPos.fromBlock(level.getSeaLevel()), QuartPos.fromBlock(sz), sampler);
+                        });
                 Biome biome = holder.value();
                 if (((ClimateBiome) (Object) biome).equinox$blendKind() == ClimateBiome.BLEND_NONE) continue;
                 float w = (float) (1 - distance / radius);

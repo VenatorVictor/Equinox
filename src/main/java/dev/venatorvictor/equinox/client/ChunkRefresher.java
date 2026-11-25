@@ -14,6 +14,12 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * surface (the top block, and the ground under leaves), instead of a full renderer reload.
  */
 public final class ChunkRefresher {
+    /** Chunks whose surface is still to redraw (packed ChunkPos), nearest at the end; a share per tick. */
+    private static final it.unimi.dsi.fastutil.longs.LongArrayList SURFACE = new it.unimi.dsi.fastutil.longs.LongArrayList();
+    private static int surfacePerTick;
+    /** The surface redraw is spread over this many ticks, so a color step doesn't scan every chunk in one tick. */
+    private static final int SURFACE_TICKS = 20;
+
     public static void refreshVisible() {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
@@ -23,21 +29,33 @@ public final class ChunkRefresher {
         int cx = SectionPos.blockToSectionCoord(camera.getBlockX());
         int cz = SectionPos.blockToSectionCoord(camera.getBlockZ());
         int radius = mc.options.getEffectiveRenderDistance();
-        for (int z = cz - radius; z <= cz + radius; z++) {
-            for (int x = cx - radius; x <= cx + radius; x++) {
-                LevelChunk chunk = level.getChunkSource().getChunk(x, z, false);
-                if (chunk == null) continue;
-                IntArraySet sections = new IntArraySet();
-                for (int lx = 0; lx < 16; lx++) {
-                    for (int lz = 0; lz < 16; lz++) {
-                        int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, lx, lz);
-                        int ground = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz);
-                        sections.add(SectionPos.blockToSectionCoord(top));
-                        sections.add(SectionPos.blockToSectionCoord(ground)); // grass and plants under trees
-                    }
+        SURFACE.clear();
+        for (int z = cz - radius; z <= cz + radius; z++)
+            for (int x = cx - radius; x <= cx + radius; x++) SURFACE.add(net.minecraft.world.level.ChunkPos.asLong(x, z));
+        SURFACE.sort((a, b) -> Integer.compare(chunkDistance(b, cx, cz), chunkDistance(a, cx, cz))); // farthest first: taken from the end
+        surfacePerTick = Math.max(1, Mth.ceil(SURFACE.size() / (double) SURFACE_TICKS));
+    }
+
+    private static int chunkDistance(long chunk, int cx, int cz) {
+        int dx = net.minecraft.world.level.ChunkPos.getX(chunk) - cx, dz = net.minecraft.world.level.ChunkPos.getZ(chunk) - cz;
+        return dx * dx + dz * dz;
+    }
+
+    /** The next share of the surface redraw: the sections holding each column's top block and the ground under leaves. */
+    private static void redrawSurface(Minecraft mc, ClientLevel level) {
+        for (int i = 0; i < surfacePerTick && !SURFACE.isEmpty(); i++) {
+            long pos = SURFACE.removeLong(SURFACE.size() - 1);
+            int x = net.minecraft.world.level.ChunkPos.getX(pos), z = net.minecraft.world.level.ChunkPos.getZ(pos);
+            LevelChunk chunk = level.getChunkSource().getChunk(x, z, false);
+            if (chunk == null) continue;
+            IntArraySet sections = new IntArraySet();
+            for (int lx = 0; lx < 16; lx++) {
+                for (int lz = 0; lz < 16; lz++) {
+                    sections.add(SectionPos.blockToSectionCoord(chunk.getHeight(Heightmap.Types.WORLD_SURFACE, lx, lz)));
+                    sections.add(SectionPos.blockToSectionCoord(chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz))); // grass and plants under trees
                 }
-                for (int y : sections) mc.levelRenderer.setSectionDirty(x, y, z);
             }
+            for (int y : sections) mc.levelRenderer.setSectionDirty(x, y, z);
         }
     }
 
@@ -85,12 +103,14 @@ public final class ChunkRefresher {
     /** Client tick: redraw the next share of the queued sections. */
     public static void tick() {
         redrawArrived();
-        if (QUEUE.isEmpty()) return;
+        if (QUEUE.isEmpty() && SURFACE.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             QUEUE.clear();
+            SURFACE.clear();
             return;
         }
+        redrawSurface(mc, mc.level);
         for (int i = 0; i < perTick && !QUEUE.isEmpty(); i++) {
             long section = QUEUE.removeLong(QUEUE.size() - 1);
             mc.levelRenderer.setSectionDirty(SectionPos.x(section), SectionPos.y(section), SectionPos.z(section));

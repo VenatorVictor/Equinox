@@ -118,11 +118,12 @@ public final class SnowCover {
     }
 
     private static void tick(ServerLevel level) {
-        if (!SnowConfig.SNOW_COVER.get() || !Config.hasSeasons(level.dimension())) return;
         for (Long pos; (pos = UNLOADED.poll()) != null; ) {
             ACTIVE.remove((long) pos);
             QUEUE.remove((long) pos);
             orderDirty = true;
+            // Its stamp was saved with the chunk (ChunkDataEvent.Save) and comes back when it loads; unless it loaded again meanwhile.
+            if (level.getChunkSource().getChunkNow(ChunkPos.getX(pos), ChunkPos.getZ(pos)) == null) STAMPS.remove(pos);
         }
         // A loaded chunk may be the neighbour another chunk was waiting for, so its neighbours go too.
         for (Long pos; (pos = LOADED.poll()) != null; ) {
@@ -133,6 +134,8 @@ public final class SnowCover {
             for (long next : new long[]{ChunkPos.asLong(x + 1, z), ChunkPos.asLong(x - 1, z), ChunkPos.asLong(x, z + 1), ChunkPos.asLong(x, z - 1)})
                 if (STAMPS.containsKey(next)) QUEUE.add(next);
         }
+        // The load and unload queues are kept short even while the snow cover is off.
+        if (!SnowConfig.SNOW_COVER.get() || !Config.hasSeasons(level.dimension())) return;
         // Players move, so the queue is put back in nearest-first order every 5 seconds.
         if (level.getGameTime() % 100 == 0) sortQueue(level);
 

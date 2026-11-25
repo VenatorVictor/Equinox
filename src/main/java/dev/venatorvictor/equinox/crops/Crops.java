@@ -201,8 +201,8 @@ public final class Crops {
     }
 
     /** RandomTickMixin, before every random tick of a block: kills a farmland crop past its limits. True = it died. */
+    /** A crop's random tick (RandomTickMixin only calls it for mortal blocks). */
     public static boolean onRandomTick(BlockState state, ServerLevel level, BlockPos pos) {
-        if (!mortal(state.getBlock())) return false;
         if (state.hasProperty(SnowyCrops.SNOWY)) { // snow settles or melts; this tick does nothing else
             boolean snowy = SnowyCrops.snowy(state, level, pos);
             if (snowy != state.getValue(SnowyCrops.SNOWY)) {

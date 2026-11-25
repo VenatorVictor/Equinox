@@ -45,6 +45,10 @@ public final class FarBlend {
 
     /** Server thread only. */
     private static final Map<UUID, Watcher> WATCHERS = new HashMap<>();
+    /** The player served first goes round, so every player gets the tick's time in turn. */
+    private static int first;
+    /** Cells remembered as sent per player, below the client's own limit (ClimateBlend keeps 50 000), so a cell the client forgot is sent again. */
+    private static final int MAX_SENT = 40_000;
 
     private static final class Watcher {
         final int distance;
@@ -123,8 +127,17 @@ public final class FarBlend {
         int radius = ClimateBlend.radius(level);
         if (radius <= 0 && !Config.climateZones()) return;
         int cell = Math.max(32, radius / 2);
-        long deadline = System.nanoTime() + BUDGET_NANOS;
-        for (ServerPlayer player : level.players()) {
+        long end = System.nanoTime() + BUDGET_NANOS;
+        List<ServerPlayer> players = level.players();
+        int count = players.size();
+        if (count == 0) return;
+        first = Math.floorMod(first + 1, count);
+        for (int n = 0; n < count; n++) {
+            ServerPlayer player = players.get((first + n) % count);
+            // Each player still waiting gets an equal share of the time left; time one doesn't use goes to the next.
+            long now = System.nanoTime();
+            if (now >= end) return;
+            long deadline = now + (end - now) / (count - n);
             Watcher watcher = WATCHERS.get(player.getUUID());
             if (watcher == null) continue;
             int px = Math.floorDiv(player.getBlockX(), cell), pz = Math.floorDiv(player.getBlockZ(), cell);
@@ -141,9 +154,9 @@ public final class FarBlend {
                 watcher.index = 0;
                 watcher.done = false;
                 // Far behind the player: forgotten, sent again if they come back (the client keeps a limited number too).
-                if (watcher.sent.size() > 200_000) watcher.sent.clear();
+                if (watcher.sent.size() > MAX_SENT) watcher.sent.clear();
             }
-            if (!watcher.done && send(level, player, watcher, deadline)) return;
+            if (!watcher.done) send(level, player, watcher, deadline);
         }
     }
 
