@@ -121,7 +121,7 @@
   "equinox.configuration.zone_warm_start": "Zone warm start",
   "equinox.settings.days_per_season.name": "Season length",
   "equinox.settings.heading.calendar": "Calendar",
-  "equinox.settings.days_per_season.desc": "Days in one season, in steps of 16: a season has 16 weeks of whole days (48 days: 3 days a week, 3 months of 16 days). A year is 4 seasons.\nThe season is counted from the world's day, so changing this moves today's date.",
+  "equinox.settings.days_per_season.desc": "Days in one season: 24, 48, 72 or 96. A season is 3 months and a month is one moon cycle, so every choice keeps months and moon phases in whole days: 24 = 96-day year (8-day months), 48 = 192 (16), 72 = 288 (24), 96 = 384, the nearest to a real year (32-day months).\nThe season is counted from the world's day, so changing this moves today's date.",
   "equinox.settings.latitude.name": "Latitude",
   "equinox.settings.heading.day_length": "Day length",
   "equinox.settings.latitude.desc": "The sun is up longer in summer and shorter in winter, as at this latitude on Earth. Equinox days stay vanilla's (13.6 hours). Mobs, beds and daylight sensors follow the sun.\nThe slider shows the hours of sun on the longest day (first day of summer) / the shortest (first day of winter). 0: vanilla days all year.",

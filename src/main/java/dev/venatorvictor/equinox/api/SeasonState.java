@@ -46,7 +46,7 @@ public record SeasonState(long dayTime, int daysPerSeason) {
 
     /**
      * 0 .. 63: the week of the year (0 = the first days of spring). Whole days: with days_per_season a multiple of 16
-     * every week has the same number of days (48: 3 days); otherwise a few weeks are a day longer.
+     * (48, 96) every week has the same number of days (48: 3 days); otherwise (24, 72) some weeks are a day longer.
      */
     public int week() {
         long day = ticksInYear() / DAY;
