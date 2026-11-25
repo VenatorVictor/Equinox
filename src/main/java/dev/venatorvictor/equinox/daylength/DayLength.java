@@ -71,7 +71,8 @@ public final class DayLength {
     }
 
     private static double solveHalfDay(long dayTime, int daysPerSeason, double degrees) {
-        return solveHalfDay(degrees, new SeasonState(dayTime, daysPerSeason).yearProgress());
+        long internal = dev.venatorvictor.equinox.api.GameYear.internal(dayTime, daysPerSeason);   // the world's day time in
+        return solveHalfDay(degrees, new SeasonState(internal, daysPerSeason).yearProgress());
     }
 
     private static double solveHalfDay(double degrees, double year) {

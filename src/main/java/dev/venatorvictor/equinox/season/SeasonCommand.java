@@ -90,7 +90,7 @@ public final class SeasonCommand {
         send(source, line("weather", ChatFormatting.GOLD, false,
                 value(String.format("%.1f", Temperatures.air(source.getLevel(), pos))), value(String.format("%.1f", today.low())),
                 value(String.format("%.1f", today.high())), value(String.format("%.1f", Temperatures.water(source.getLevel(), pos))),
-                value(String.format("%.1f", DayLength.daylightHours(state.dayTime(), state.daysPerSeason())))));
+                value(String.format("%.1f", DayLength.daylightHours(source.getLevel().getDayTime(), state.daysPerSeason())))));
         // Snow: whether it lies here, the biome's snow days a year, its warmest since the last snowfall (snow lies below 0.15).
         var holder = source.getLevel().getBiome(pos);
         var snowDays = holder.getData(dev.venatorvictor.equinox.climate.BiomeSnow.TYPE);
@@ -158,7 +158,7 @@ public final class SeasonCommand {
             source.sendFailure(Component.translatable("commands.equinox.season.unknown", seasonId));
             return 0;
         }
-        SeasonClock.setDayTime(source.getServer(), SeasonClock.startOf(state, season.ordinal(), week - 1));
+        SeasonClock.setDayTime(source.getServer(), SeasonClock.startOf(state, season.ordinal(), week - 1, source.getLevel().getDayTime()));
         return show(source);
     }
 
@@ -166,7 +166,7 @@ public final class SeasonCommand {
         if (refusedInRealTime(source)) return 0;
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
-        SeasonClock.setDayTime(source.getServer(), state.dayTime() + (long) days * SeasonState.DAY);
+        SeasonClock.setDayTime(source.getServer(), source.getLevel().getDayTime() + (long) days * SeasonState.DAY);
         return show(source);
     }
 

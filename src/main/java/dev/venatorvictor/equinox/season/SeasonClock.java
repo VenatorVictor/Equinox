@@ -62,11 +62,15 @@ public final class SeasonClock {
         }
     }
 
-    /** The day time of the start of a season's week (0 .. weeksPerSeason - 1, days_per_week each) this year, keeping the time of day. */
-    static long startOf(SeasonState state, int seasonIndex, int week) {
-        long yearStart = state.year() * state.seasonTicks() * 4;
+    /**
+     * The world's day time at the start of a season's week (0 .. weeksPerSeason - 1, days_per_week each) this year,
+     * keeping the time of day: the internal day (equal seasons) turned back into the world's (GameYear).
+     */
+    static long startOf(SeasonState state, int seasonIndex, int week, long worldDayTime) {
+        long yearStart = state.year() * state.daysPerSeason() * 4L;
         long day = (long) seasonIndex * state.daysPerSeason() + (long) Math.min(week, state.weeksPerSeason() - 1) * state.daysPerWeek();
-        return yearStart + day * SeasonState.DAY + Math.floorMod(state.dayTime(), SeasonState.DAY);
+        long worldDay = dev.venatorvictor.equinox.api.GameYear.worldDay(yearStart + day, state.daysPerSeason());
+        return worldDay * SeasonState.DAY + Math.floorMod(worldDayTime, SeasonState.DAY);
     }
 
     private SeasonClock() {}

@@ -9,7 +9,8 @@ public final class Seasons {
     /** The level's season, or null where there are no seasons (dimensions not in the config). */
     public static @Nullable SeasonState get(Level level) {
         if (!Config.hasSeasons(level.dimension())) return null;
-        return new SeasonState(level.getDayTime(), Config.daysPerSeason(), Config.daysPerWeek());
+        // equal seasons inside, the calendar's uneven ones stretched over them (GameYear)
+        return new SeasonState(GameYear.internal(level.getDayTime(), Config.daysPerSeason()), Config.daysPerSeason(), Config.daysPerWeek());
     }
 
     private Seasons() {}

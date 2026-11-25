@@ -35,7 +35,8 @@ public final class CalendarClient {
     }
 
     private static SeasonState state(Minecraft mc) {
-        return new SeasonState(mc.level.getDayTime(), Config.daysPerSeason(), Config.daysPerWeek());
+        SeasonState s = dev.venatorvictor.equinox.api.Seasons.get(mc.level);
+        return s != null ? s : new SeasonState(0, Config.daysPerSeason(), Config.daysPerWeek());
     }
 
     /** Held in either hand: the calendar icon, month, season and year on top, the day below (top left). */

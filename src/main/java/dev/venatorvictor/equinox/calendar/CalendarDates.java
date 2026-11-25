@@ -83,25 +83,31 @@ public interface CalendarDates {
         return RealTime.on() ? new Real() : new Game(new SeasonState(dayTime, Config.daysPerSeason(), Config.daysPerWeek()));
     }
 
-    /** Game time: 3 equal months a season, the seasons starting two-thirds into March, June, September and December. */
+    /**
+     * Game time: 12 equal months; the seasons uneven as on Earth (GameYear), starting on the equinoxes and solstices
+     * (16-day months: March 10, June 11, September 12, December 11). A day is the world's day count.
+     */
     record Game(SeasonState now) implements CalendarDates {
-        private SeasonState at(long day) {
-            return new SeasonState(day * SeasonState.DAY + 6000, now.daysPerSeason(), now.daysPerWeek());
-        }
+        private int dps() { return now.daysPerSeason(); }
+        private int md() { return now.monthDays(); }
+        private long cal(long day) { return dev.venatorvictor.equinox.api.GameYear.calendarDay(day, dps()); }
+        private dev.venatorvictor.equinox.api.GameYear.Place place(long day) { return dev.venatorvictor.equinox.api.GameYear.place(day, dps()); }
 
         @Override public long today() { return Math.floorDiv(now.dayTime(), SeasonState.DAY); }
-        @Override public int month(long day) { return at(day).month(); }
-        @Override public int dayOfMonth(long day) { return at(day).dayOfMonth(); }
-        @Override public int monthLength(long day) { return now.monthDays(); }
-        @Override public long plusMonths(long first, int n) { return first + (long) n * now.monthDays(); }
-        @Override public long firstOfYear(long day) { return day - Math.floorMod(at(day).calendarDay(), 12L * now.monthDays()); }
-        @Override public long year(long day) { return at(day).calendarYear(); }
-        @Override public Season season(long day) { return at(day).season(); }
-        @Override public int dayOfSeason(long day) { return at(day).dayOfSeason(); }
-        @Override public int seasonLength(long day) { return now.daysPerSeason(); }
-        @Override public int moonStep(long day) { return at(day).moonStep(); }
-        @Override public double daylightHours(long day) { return DayLength.daylightHours(at(day).dayTime(), now.daysPerSeason()); }
-        @Override public int weekLength() { return Math.max(1, Math.min(now.daysPerWeek(), now.monthDays())); }
+        @Override public int month(long day) { return (int) ((Math.floorMod(Math.floorDiv(cal(day), md()), 12L) + 9) % 12); }
+        @Override public int dayOfMonth(long day) { return (int) Math.floorMod(cal(day), (long) md()); }
+        @Override public int monthLength(long day) { return md(); }
+        @Override public long plusMonths(long first, int n) { return first + (long) n * md(); }
+        @Override public long firstOfYear(long day) { return day - Math.floorMod(cal(day), 12L * md()); }
+        @Override public long year(long day) { return Math.floorDiv(cal(day), 12L * md()) + 1; }
+        @Override public Season season(long day) { return place(day).season(); }
+        @Override public int dayOfSeason(long day) { return place(day).day(); }
+        @Override public int seasonLength(long day) { return place(day).length(); }
+        @Override public int moonStep(long day) {
+            return new SeasonState(day * SeasonState.DAY + 6000, dps(), now.daysPerWeek()).moonStep();
+        }
+        @Override public double daylightHours(long day) { return DayLength.daylightHours(day * SeasonState.DAY + 6000, dps()); }
+        @Override public int weekLength() { return Math.max(1, Math.min(now.daysPerWeek(), md())); }
         @Override public int firstColumn(long first) { return 0; }
         @Override public boolean weekdayNames() { return false; }
         @Override public long earliest() { return 0; }

@@ -105,39 +105,9 @@ public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
         return season.ordinal() * FILE_WEEKS_PER_SEASON + week - 1;
     }
 
-    /** Days in a month: a third of a season (8, 16, 24 or 32). */
+    /** Days in a month: a third of a season (8, 16, 24 or 32). The calendar's dates are in GameYear / CalendarDates. */
     public int monthDays() {
         return Math.max(1, daysPerSeason / 3);
-    }
-
-    /**
-     * 0-based day of March, June, September and December on which a season starts (the equinoxes and solstices), as
-     * late in the month as the real ones (about March 20 of 31): day 6, 11, 16 or 21. The world starts on the spring
-     * equinox, March 11 with 16-day months.
-     */
-    public int equinoxDayOfMonth() {
-        return monthDays() * 20 / 31;
-    }
-
-    /** Days since January 1 of the calendar's year 1 (the world starts on March 11 of year 1, 16-day months). */
-    public long calendarDay() {
-        return Math.floorDiv(dayTime, DAY) + 2L * monthDays() + equinoxDayOfMonth();
-    }
-
-    /** 0 .. 11: the month of the calendar, 0 = April .. 8 = December, 9 = January .. 11 = March. */
-    public int month() {
-        int fromJanuary = (int) Math.floorMod(Math.floorDiv(calendarDay(), monthDays()), 12L);
-        return (fromJanuary + 9) % 12;
-    }
-
-    /** 0 for the first day of the month. */
-    public int dayOfMonth() {
-        return (int) Math.floorMod(calendarDay(), (long) monthDays());
-    }
-
-    /** The year as the calendar shows it, from 1: it turns on January 1. */
-    public long calendarYear() {
-        return Math.floorDiv(calendarDay(), 12L * monthDays()) + 1;
     }
 
     /** Real mean lunar month and calendar month, in days: the moon's cycle keeps their ratio. */
