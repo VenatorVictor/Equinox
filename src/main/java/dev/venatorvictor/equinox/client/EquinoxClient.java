@@ -1,6 +1,5 @@
 package dev.venatorvictor.equinox.client;
 
-import dev.venatorvictor.equinox.api.SeasonState;
 import dev.venatorvictor.equinox.climate.FarBlend;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -107,8 +106,9 @@ public final class EquinoxClient {
         // week, e.g. a command, or joining: the first chunks were meshed before the season was known), and can be
         // anywhere; snowy textures follow the daily temperature, so with those every color update redraws
         // everything; colors only need the surface.
-        boolean newTextures = step != lastStep && (lastStep < 0 || step < 0
-                || step != (lastStep + 1) % SeasonState.WEEKS || SeasonalTextures.CHANGES[step]);
+        boolean[] changes = SeasonalTextures.CHANGES;
+        boolean newTextures = SeasonalTextures.takeRemapped() || step != lastStep && (lastStep < 0 || step < 0
+                || step != (lastStep + 1) % changes.length || step >= changes.length || changes[step]);
         if (SeasonalTextures.any && newTextures || SeasonalTextures.anySnow && changed) ChunkRefresher.refreshAll();
         else if (changed) ChunkRefresher.refreshVisible();
         lastStep = step;

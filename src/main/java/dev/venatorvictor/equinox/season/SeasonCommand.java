@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * /season, /season get: show the season. /season set <season> [week 1-16]: jump to the start of it this year.
+ * /season, /season get: show the season. /season set <season> [week 1-24] (4-day weeks; up to the season's own count): jump to the start of it this year.
  * /season add <days>. Setting moves the day count (the season is the day count), keeping the time of day.
  */
 public final class SeasonCommand {
@@ -35,7 +35,7 @@ public final class SeasonCommand {
         set.then(Commands.argument("season", StringArgumentType.word())
                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(Arrays.stream(Season.VALUES).map(Season::id), builder))
                 .executes(context -> set(context.getSource(), StringArgumentType.getString(context, "season"), 1))
-                .then(Commands.argument("week", IntegerArgumentType.integer(1, SeasonState.WEEKS_PER_SEASON))
+                .then(Commands.argument("week", IntegerArgumentType.integer(1, 24))
                         .executes(context -> set(context.getSource(), StringArgumentType.getString(context, "season"),
                                 IntegerArgumentType.getInteger(context, "week")))));
         event.getDispatcher().register(Commands.literal("season")

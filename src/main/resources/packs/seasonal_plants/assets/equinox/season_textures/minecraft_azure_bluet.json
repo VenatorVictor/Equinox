@@ -17,7 +17,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_6",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_opening_petals"
       },
@@ -26,7 +26,7 @@
       }
     },
     {
-      "start": "spring_week_7",
+      "start": "spring_week_6",
       "end": "summer_week_2",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_bloom_petals_snow"
@@ -34,7 +34,7 @@
     },
     {
       "start": "summer_week_3",
-      "end": "summer_week_8",
+      "end": "summer_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_seed_petals"
       },
@@ -43,8 +43,8 @@
       }
     },
     {
-      "start": "summer_week_9",
-      "end": "winter_week_14",
+      "start": "summer_week_7",
+      "end": "winter_week_11",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_leaves_petals",
         "cross": "equinox:block/plants/minecraft_azure_bluet_leaves_stem"
@@ -55,8 +55,8 @@
       }
     },
     {
-      "start": "winter_week_15",
-      "end": "winter_week_16",
+      "start": "winter_week_12",
+      "end": "winter_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_azure_bluet_bud_green_petals"
       },

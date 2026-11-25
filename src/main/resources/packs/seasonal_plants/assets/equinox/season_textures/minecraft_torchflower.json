@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "autumn_week_9",
-      "end": "spring_week_14",
+      "start": "autumn_week_7",
+      "end": "spring_week_11",
       "textures": {
         "flower": "equinox:block/plants/minecraft_torchflower_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "spring_week_15",
-      "end": "spring_week_16",
+      "start": "spring_week_12",
+      "end": "spring_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_torchflower_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_torchflower_bud_green_stem"
@@ -39,7 +39,7 @@
     },
     {
       "start": "summer_week_3",
-      "end": "summer_week_6",
+      "end": "summer_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_torchflower_opening_petals"
       },
@@ -48,7 +48,7 @@
       }
     },
     {
-      "start": "summer_week_7",
+      "start": "summer_week_6",
       "end": "autumn_week_2",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_torchflower_bloom_petals_snow"
@@ -56,7 +56,7 @@
     },
     {
       "start": "autumn_week_3",
-      "end": "autumn_week_8",
+      "end": "autumn_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_torchflower_seed_petals"
       },

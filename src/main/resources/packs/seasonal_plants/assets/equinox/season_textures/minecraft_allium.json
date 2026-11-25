@@ -6,7 +6,7 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "summer_week_7",
+      "start": "summer_week_6",
       "end": "spring_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_allium_leaves_petals"
@@ -17,7 +17,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_6",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_allium_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_allium_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "spring_week_7",
-      "end": "spring_week_8",
+      "start": "spring_week_6",
+      "end": "spring_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_allium_bud_color_petals"
       },
@@ -38,8 +38,8 @@
       }
     },
     {
-      "start": "spring_week_9",
-      "end": "spring_week_10",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "flower": "equinox:block/plants/minecraft_allium_opening_petals"
       },
@@ -48,15 +48,15 @@
       }
     },
     {
-      "start": "spring_week_11",
-      "end": "spring_week_16",
+      "start": "spring_week_9",
+      "end": "spring_week_12",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_allium_bloom_petals_snow"
       }
     },
     {
       "start": "summer_week_1",
-      "end": "summer_week_6",
+      "end": "summer_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_allium_seed_petals"
       },

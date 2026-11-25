@@ -5,7 +5,7 @@
   "biomes": "#equinox:seasonal_zones",
   "slices": [
     {
-      "start": "winter_week_16",
+      "start": "winter_week_12",
       "end": "spring_week_1",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_1"
@@ -52,6 +52,101 @@
     },
     {
       "start": "spring_week_3",
+      "end": "spring_week_4",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
+      },
+      "tint": {
+        "all": -1
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "fall": 4,
+      "held_over_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
+      },
+      "held_over_tint": {
+        "all": -1
+      }
+    },
+    {
+      "start": "spring_week_7",
+      "end": "autumn_week_2",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves"
+      },
+      "tint": {
+        "all": 0
+      }
+    },
+    {
+      "start": "autumn_week_3",
+      "end": "autumn_week_5",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_1"
+      },
+      "tint": {
+        "all": 0
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "fall": 1
+    },
+    {
+      "start": "autumn_week_6",
+      "end": "autumn_week_6",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_2"
+      },
+      "tint": {
+        "all": 0
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "fall": 2
+    },
+    {
+      "start": "autumn_week_7",
+      "end": "autumn_week_8",
+      "textures": {
+        "all": "equinox:leaf_fall/cherry/stage_3"
+      },
+      "tint": {
+        "all": 0
+      },
+      "under_textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "under_tint": {
+        "all": -1
+      },
+      "fall": 3
+    },
+    {
+      "start": "autumn_week_9",
+      "end": "winter_week_11",
+      "textures": {
+        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
+      },
+      "tint": {
+        "all": -1
+      },
+      "fall": 4
+    },
+    {
+      "start": "spring_week_3",
       "end": "spring_week_3",
       "textures": {
         "all": "equinox:block/trees/cherry_leaves_bloom_twigs_3"
@@ -72,101 +167,6 @@
       "held_over_tint": {
         "all": -1
       }
-    },
-    {
-      "start": "spring_week_4",
-      "end": "spring_week_5",
-      "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
-      },
-      "tint": {
-        "all": -1
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
-      },
-      "under_tint": {
-        "all": -1
-      },
-      "fall": 4,
-      "held_over_textures": {
-        "all": "equinox:block/trees/cherry_leaves_bloom_twigs_4"
-      },
-      "held_over_tint": {
-        "all": -1
-      }
-    },
-    {
-      "start": "spring_week_9",
-      "end": "autumn_week_2",
-      "textures": {
-        "all": "equinox:block/trees/cherry_leaves"
-      },
-      "tint": {
-        "all": 0
-      }
-    },
-    {
-      "start": "autumn_week_3",
-      "end": "autumn_week_6",
-      "textures": {
-        "all": "equinox:leaf_fall/cherry/stage_1"
-      },
-      "tint": {
-        "all": 0
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
-      },
-      "under_tint": {
-        "all": -1
-      },
-      "fall": 1
-    },
-    {
-      "start": "autumn_week_7",
-      "end": "autumn_week_8",
-      "textures": {
-        "all": "equinox:leaf_fall/cherry/stage_2"
-      },
-      "tint": {
-        "all": 0
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
-      },
-      "under_tint": {
-        "all": -1
-      },
-      "fall": 2
-    },
-    {
-      "start": "autumn_week_9",
-      "end": "autumn_week_10",
-      "textures": {
-        "all": "equinox:leaf_fall/cherry/stage_3"
-      },
-      "tint": {
-        "all": 0
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
-      },
-      "under_tint": {
-        "all": -1
-      },
-      "fall": 3
-    },
-    {
-      "start": "autumn_week_11",
-      "end": "winter_week_15",
-      "textures": {
-        "all": "equinox:block/trees/cherry_leaves_bare_v3_5"
-      },
-      "tint": {
-        "all": -1
-      },
-      "fall": 4
     }
   ]
 }

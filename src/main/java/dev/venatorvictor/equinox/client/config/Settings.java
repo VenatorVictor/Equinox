@@ -200,7 +200,7 @@ final class Settings {
         all.add(client(ClientConfig.UPDATES_PER_STEP, "updates_per_step").tab(PERFORMANCE, "this_computer_redraws")
                 .cost(Cost.MEDIUM)
                 .range(1, 48, 1).label((v, x) -> {
-                    double hours = x.daysPerSeason() / (double) dev.venatorvictor.equinox.api.SeasonState.WEEKS_PER_SEASON / v * 24;
+                    double hours = x.daysPerSeason() / (double) dev.venatorvictor.equinox.api.SeasonState.FILE_WEEKS_PER_SEASON / v * 24;
                     return u("every", (int) v, hours >= 24 ? days(Math.round(hours / 2.4) / 10.0) : Math.round(hours) + " h");
                 }));
         all.add(client(ClientConfig.REDRAW_SECONDS, "redraw_seconds").tab(PERFORMANCE, null)

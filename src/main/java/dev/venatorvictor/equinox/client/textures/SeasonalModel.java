@@ -94,7 +94,7 @@ public final class SeasonalModel extends BakedModelWrapper<BakedModel> {
         Holder<Biome> biome = null;
         float warm = Float.NaN;
         for (SeasonalTextures.Rule rule : rules) {
-            int week = ColorClock.week;
+            int week = rule.fileWeek(ColorClock.week);
             SeasonalTextures.Variant[] variants = rule.byWeek()[week];
             if (rule.fallWeeks() != null) {   // near warm zones the leaves fall less (blended like the colors)
                 if (warm != warm) warm = dev.venatorvictor.equinox.climate.ClimateBlend.warmShare(pos.getX(), pos.getZ());

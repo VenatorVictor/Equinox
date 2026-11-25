@@ -59,7 +59,7 @@ public final class Config {
                     "moon's 8 phases (one cycle a month) are whole days: 24 (96-day year, 8-day months, 1 day a phase),",
                     "48 (192-day year, 16-day months, 2 days a phase), 72 (288, 24, 3), 96 (384-day year, the nearest to a real",
                     "one: 32-day months, 4 days a phase). Other numbers are rounded to the nearest multiple of 24. Each season",
-                    "has 16 texture steps; with 48 and 96 they are whole days (3, 6), with 24 and 72 they alternate (1-2, 4-5).",
+                    "has 4-day weeks: 2 a month at 24, 4 at 48, 6 at 72, 8 at 96.",
                     "Day 1 is the spring equinox; the seasons start at the equinoxes",
                     "and solstices, as on Earth. The season comes from the day count, so changing this moves the season.")
             .defineInRange("days_per_season", 48, 24, 1008);

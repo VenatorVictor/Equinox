@@ -17,7 +17,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_5",
+      "end": "spring_week_4",
       "over_textures": {
         "all": "equinox:block/trees/oak_catkins_opening"
       },
@@ -27,8 +27,8 @@
       "over_percent": 60
     },
     {
-      "start": "spring_week_6",
-      "end": "spring_week_8",
+      "start": "spring_week_5",
+      "end": "spring_week_6",
       "over_textures": {
         "all": "equinox:block/trees/oak_catkins_full"
       },
@@ -44,8 +44,8 @@
       }
     },
     {
-      "start": "spring_week_9",
-      "end": "spring_week_10",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "over_textures": {
         "all": "equinox:block/trees/oak_catkins_fading"
       },
@@ -61,8 +61,8 @@
       }
     },
     {
-      "start": "spring_week_11",
-      "end": "summer_week_3",
+      "start": "spring_week_9",
+      "end": "summer_week_2",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_small"
       },
@@ -71,8 +71,8 @@
       }
     },
     {
-      "start": "summer_week_4",
-      "end": "summer_week_8",
+      "start": "summer_week_3",
+      "end": "summer_week_6",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_green"
       },
@@ -81,8 +81,8 @@
       }
     },
     {
-      "start": "summer_week_9",
-      "end": "summer_week_14",
+      "start": "summer_week_7",
+      "end": "summer_week_11",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_yellowing"
       },
@@ -91,8 +91,8 @@
       }
     },
     {
-      "start": "summer_week_15",
-      "end": "autumn_week_6",
+      "start": "summer_week_12",
+      "end": "autumn_week_5",
       "fruit_textures": {
         "all": "equinox:block/trees/oak_acorns_ripe"
       },

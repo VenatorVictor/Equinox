@@ -284,7 +284,7 @@
   "equinox.settings.biome_cell.cost": "2x2 checks 4 times fewer biomes, 4x4 16 times fewer.",
   "equinox.settings.updates_per_step.name": "Color updates",
   "equinox.settings.heading.this_computer_redraws": "This computer: redraws",
-  "equinox.settings.updates_per_step.desc": "How many times per week (1/64 of the year) the smooth color blend is updated. Each update redraws the chunks you see (and LODs).",
+  "equinox.settings.updates_per_step.desc": "How many times per week (1/48 of the year, 4 days with 48-day seasons) the smooth color blend is updated. Each update redraws the chunks you see (and LODs).",
   "equinox.settings.updates_per_step.cost": "Each update redraws all visible chunks.",
   "equinox.settings.redraw_seconds.name": "Spread redraws",
   "equinox.settings.redraw_seconds.desc": "When snowy textures or colors change, nearby chunks are redrawn nearest first over this long instead of all at once.",

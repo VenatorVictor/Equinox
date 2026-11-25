@@ -6,7 +6,7 @@
   "slices": [
     {
       "start": "winter_week_1",
-      "end": "spring_week_6",
+      "end": "spring_week_5",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
       },
@@ -16,8 +16,8 @@
       "fall": 4
     },
     {
-      "start": "spring_week_7",
-      "end": "spring_week_8",
+      "start": "spring_week_6",
+      "end": "spring_week_6",
       "textures": {
         "all": "equinox:leaf_fall/azalea/stage_2"
       },
@@ -30,8 +30,8 @@
       "fall": 2
     },
     {
-      "start": "spring_week_9",
-      "end": "spring_week_10",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "all": "equinox:leaf_fall/azalea/stage_1"
       },
@@ -45,7 +45,7 @@
     },
     {
       "start": "autumn_week_3",
-      "end": "autumn_week_6",
+      "end": "autumn_week_5",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_turning"
       },
@@ -54,8 +54,8 @@
       }
     },
     {
-      "start": "autumn_week_7",
-      "end": "autumn_week_8",
+      "start": "autumn_week_6",
+      "end": "autumn_week_6",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_autumn"
       },
@@ -64,8 +64,8 @@
       }
     },
     {
-      "start": "autumn_week_9",
-      "end": "autumn_week_10",
+      "start": "autumn_week_7",
+      "end": "autumn_week_8",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_1"
       },
@@ -81,8 +81,8 @@
       "fall": 1
     },
     {
-      "start": "autumn_week_11",
-      "end": "autumn_week_14",
+      "start": "autumn_week_9",
+      "end": "autumn_week_11",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_2"
       },
@@ -98,8 +98,8 @@
       "fall": 2
     },
     {
-      "start": "autumn_week_15",
-      "end": "autumn_week_16",
+      "start": "autumn_week_12",
+      "end": "autumn_week_12",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_3"
       },

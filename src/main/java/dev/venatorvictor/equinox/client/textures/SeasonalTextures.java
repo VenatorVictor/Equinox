@@ -46,8 +46,9 @@ import java.util.function.Predicate;
 
 /**
  * Reads seasonal texture files (assets/<ns>/season_textures/*.json). Each file swaps texture variables of block models per week
- * (16 a season, 64 a year, whole days each, on the calendar: week 0 = the first days of spring), in the biomes it
- * names. Weeks are named <season>_week_<1..16> (YearSteps). Supported: target, biomes, slices with start/end, season,
+ * (12 file weeks a season, 48 a year, by date: week 0 = the first days of spring; the world's 4-day weeks are mapped
+ * onto them, see remap), in the biomes it
+ * names. Weeks are named <season>_week_<1..12> (YearSteps). Supported: target, biomes, slices with start/end, season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants
@@ -64,10 +65,15 @@ import java.util.function.Predicate;
  * Not supported: climate, transition_textures.
  */
 public final class SeasonalTextures {
-    private static final int WEEKS = dev.venatorvictor.equinox.api.SeasonState.WEEKS;
-    private static final int PER = dev.venatorvictor.equinox.api.SeasonState.WEEKS_PER_SEASON;
-    /** Weeks when some loaded file changes its textures from the week before (a texture redraw is only needed then). */
-    public static final boolean[] CHANGES = new boolean[WEEKS];
+    /** The files' week grid (12 a season, 48 a year, by date); the world's weeks are mapped onto it (remap). */
+    private static final int WEEKS = dev.venatorvictor.equinox.api.SeasonState.FILE_WEEKS;
+    private static final int PER = dev.venatorvictor.equinox.api.SeasonState.FILE_WEEKS_PER_SEASON;
+    /** World weeks when some loaded file changes its textures from the week before (a texture redraw is only needed then). */
+    public static volatile boolean[] CHANGES = new boolean[WEEKS];
+    /** The world weeks per season the files are mapped to now (-1: not yet). */
+    public static volatile int mappedWeeksPerSeason = -1;
+    private static volatile boolean remapped = false;
+    private static volatile List<Rule> loaded = List.of();
     private static final String DIRECTORY = "season_textures";
     private static final List<String> SEASONS = List.of("spring", "summer", "autumn", "winter");
 
@@ -90,16 +96,8 @@ public final class SeasonalTextures {
             }
         }
         any = !rules.isEmpty();
-        java.util.Arrays.fill(CHANGES, false);
-        for (Rule rule : rules) {
-            for (int w = 0; w < WEEKS; w++) {
-                int prev = (w + WEEKS - 1) % WEEKS;
-                if (rule.byWeek()[w] != rule.byWeek()[prev] || rule.snowByWeek()[w] != rule.snowByWeek()[prev]) CHANGES[w] = true;
-                // Where leaf fall is held back (near warm zones) the week shown instead can change on its own.
-                if (rule.fallWeeks() != null) for (int c = 0; c < rule.fallWeeks().length; c++)
-                    if (rule.fallWeeks()[c][w] != rule.fallWeeks()[c][prev] || rule.held()[c][w] != rule.held()[c][prev]) CHANGES[w] = true;
-            }
-        }
+        loaded = List.copyOf(rules);
+        remap(dev.venatorvictor.equinox.api.SeasonState.weeksPerSeason(dev.venatorvictor.equinox.Config.daysPerSeason()));
         anySnow = rules.stream().anyMatch(rule -> rule.hasSnow);
         if (!any) return;
 
@@ -230,6 +228,62 @@ public final class SeasonalTextures {
                 : GsonHelper.getAsBoolean(json, "snow_needs_sky", false) ? SnowMode.SKY : SnowMode.COLD;
         int[][] fallWeeks = fallWeeks(fall);
         return new Rule(biomes(json.get("biomes")), byWeek, snowByWeek, used, snowMode, fallWeeks, held(fallWeeks, byWeek, heldOver));
+    }
+
+    /**
+     * Maps the world's weeks (weeksPerSeason a season: 6 at 24-day seasons .. 24 at 96) onto each file's 12-week grid.
+     * As many or more weeks than the files: the file week holding the middle of the world week (every look shows,
+     * some for more than one week). Fewer (24-day seasons, two file weeks in one world week): each world week shows
+     * the first of its file weeks whose look hasn't been shown yet, so short looks (a one-week leaf fall stage) are
+     * never skipped. Cheap: runs when the files load and when the season length changes.
+     */
+    public static synchronized void remap(int weeksPerSeason) {
+        int worldWeeks = weeksPerSeason * 4;
+        boolean[] changes = new boolean[worldWeeks];
+        for (Rule rule : loaded) {
+            int[] map = new int[worldWeeks];
+            // looks: a new id wherever the file's textures change from the week before
+            int[] look = new int[WEEKS];
+            for (int f = 1; f < WEEKS; f++)
+                look[f] = look[f - 1] + (rule.byWeek()[f] != rule.byWeek()[f - 1] || rule.snowByWeek()[f] != rule.snowByWeek()[f - 1] ? 1 : 0);
+            Set<Integer> shown = new HashSet<>();
+            for (int w = 0; w < worldWeeks; w++) {
+                int middle = dev.venatorvictor.equinox.api.SeasonState.fileWeekOf(w, weeksPerSeason);
+                int pick = middle;
+                if (weeksPerSeason < PER) {
+                    int season = w / weeksPerSeason, in = w % weeksPerSeason;
+                    int lo = season * PER + in * PER / weeksPerSeason;
+                    int hi = season * PER + Math.min(PER, ((in + 1) * PER + weeksPerSeason - 1) / weeksPerSeason) - 1;
+                    for (int f = lo; f <= hi; f++) {
+                        if (!shown.contains(look[f])) {
+                            pick = f;
+                            break;
+                        }
+                    }
+                }
+                shown.add(look[pick]);
+                map[w] = pick;
+            }
+            rule.show()[0] = map;
+            for (int w = 0; w < worldWeeks; w++) {
+                int f = map[w], p = map[(w + worldWeeks - 1) % worldWeeks];
+                if (f == p) continue;
+                if (rule.byWeek()[f] != rule.byWeek()[p] || rule.snowByWeek()[f] != rule.snowByWeek()[p]) changes[w] = true;
+                // Where leaf fall is held back (near warm zones) the week shown instead can change on its own.
+                if (rule.fallWeeks() != null) for (int c = 0; c < rule.fallWeeks().length; c++)
+                    if (rule.fallWeeks()[c][f] != rule.fallWeeks()[c][p] || rule.held()[c][f] != rule.held()[c][p]) changes[w] = true;
+            }
+        }
+        CHANGES = changes;
+        mappedWeeksPerSeason = weeksPerSeason;
+        remapped = true;
+    }
+
+    /** True once after remap: the textures shown may have changed without a new week. */
+    public static boolean takeRemapped() {
+        boolean was = remapped;
+        remapped = false;
+        return was;
     }
 
     private static Variant[] variants(JsonElement texturesJson, JsonElement tintJson, List<BlockModel> models,
@@ -420,11 +474,25 @@ public final class SeasonalTextures {
 
     /** One file. snowByWeek: textures used instead where snow lies (empty = none). */
     /** fallWeeks: see fallWeeks(), null without leaf fall; held: see held(), by limit and week. */
+    /** show[0]: world week -> file week (remap). */
     record Rule(Predicate<Holder<Biome>> biomes, Variant[][] byWeek, Variant[][] snowByWeek, Set<TextureAtlasSprite> sprites,
-                SnowMode snowMode, boolean hasSnow, int[][] fallWeeks, Variant[][][] held) {
+                SnowMode snowMode, boolean hasSnow, int[][] fallWeeks, Variant[][][] held, int[][] show) {
         Rule(Predicate<Holder<Biome>> biomes, Variant[][] byWeek, Variant[][] snowByWeek, Set<TextureAtlasSprite> sprites, SnowMode snowMode,
              int[][] fallWeeks, Variant[][][] held) {
-            this(biomes, byWeek, snowByWeek, sprites, snowMode, java.util.Arrays.stream(snowByWeek).anyMatch(v -> v != null && v.length > 0), fallWeeks, held);
+            this(biomes, byWeek, snowByWeek, sprites, snowMode, java.util.Arrays.stream(snowByWeek).anyMatch(v -> v != null && v.length > 0), fallWeeks, held,
+                    new int[][]{identity()});
+        }
+
+        private static int[] identity() {
+            int[] map = new int[WEEKS];
+            for (int w = 0; w < WEEKS; w++) map[w] = w;
+            return map;
+        }
+
+        /** The file week shown in a world week. */
+        int fileWeek(int worldWeek) {
+            int[] map = show[0];
+            return map[Math.min(Math.max(worldWeek, 0), map.length - 1)];
         }
 
         /** The file's highest fall (bare), 0 without leaf fall. */

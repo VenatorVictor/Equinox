@@ -19,7 +19,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_6",
+      "end": "spring_week_5",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_lily_of_the_valley_bud_color_stem"
@@ -30,8 +30,8 @@
       }
     },
     {
-      "start": "spring_week_7",
-      "end": "spring_week_8",
+      "start": "spring_week_6",
+      "end": "spring_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_opening_petals"
       },
@@ -40,14 +40,14 @@
       }
     },
     {
-      "start": "spring_week_9",
-      "end": "spring_week_14",
+      "start": "spring_week_7",
+      "end": "spring_week_11",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_bloom_petals_snow"
       }
     },
     {
-      "start": "spring_week_15",
+      "start": "spring_week_12",
       "end": "summer_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_seed_petals"
@@ -58,7 +58,7 @@
     },
     {
       "start": "summer_week_3",
-      "end": "winter_week_16",
+      "end": "winter_week_12",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lily_of_the_valley_leaves_petals"
       },

@@ -6,7 +6,7 @@ import dev.venatorvictor.equinox.client.ClientConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
 
 /**
- * Where the client is in the color tables: 64 weeks a year (16 a season, 0 = the spring equinox), and how far
+ * Where the client is in the color tables: 48 color weeks a year (12 a season, 0 = the spring equinox), and how far
  * through the week, rounded down to the configured updates. On the calendar. Read from chunk-meshing threads, written
  * on the client tick.
  */
@@ -15,7 +15,7 @@ public final class ColorClock {
     public static volatile int step = 0;
     /** 0..1 through the current step, rounded down to the configured updates. */
     public static volatile float progress = 0F;
-    /** The week of the year for seasonal textures (0 .. 63, 16 a season, whole days; SeasonState.week). */
+    /** The week of the year for seasonal textures (SeasonState.week: 4 days, 6 to 24 a season). */
     public static volatile int week = 0;
 
     private static int lastUpdate = -1;
@@ -31,7 +31,10 @@ public final class ColorClock {
         int updates = ClientConfig.UPDATES_PER_STEP.get();
         int update = quantize(calendar.yearProgress() * ColorTables.STEPS, updates);
         step = update / updates;
-        week = calendar.week(); // same as step (whole-day weeks); kept for the texture code
+        week = calendar.week(); // the world's 4-day week, mapped onto the season files by SeasonalTextures
+        if (calendar.weeksPerSeason() != dev.venatorvictor.equinox.client.textures.SeasonalTextures.mappedWeeksPerSeason
+                && dev.venatorvictor.equinox.client.textures.SeasonalTextures.mappedWeeksPerSeason >= 0)
+            dev.venatorvictor.equinox.client.textures.SeasonalTextures.remap(calendar.weeksPerSeason());
         progress = (float) (update % updates) / updates;
         active = true;
 

@@ -68,14 +68,14 @@ public final class TreeFruit {
     /** One kind of tree: its leaves, the share of them that bear, the ripe weeks of the year (first..last), what a pick gives. */
     private record Kind(Block leaves, int percent, int ripeFrom, int ripeTo, Supplier<Item> item, int min, int max) {}
 
-    // Ripe, as in the season_textures files: acorns summer week 15 to autumn week 6 (mid September to late October,
-    // minecraft_oak_leaves.json); birch seed catkins brown autumn weeks 1 to 8 (late September to early November,
-    // minecraft_birch_leaves.json); spruce cones brown summer week 15 to autumn week 6 (minecraft_spruce_leaves.json;
+    // Ripe, as in the season_textures files: acorns summer file week 12 to autumn file week 5 (mid September to late October,
+    // minecraft_oak_leaves.json); birch seed catkins brown autumn file weeks 1 to 6 (late September to early November,
+    // minecraft_birch_leaves.json); spruce cones brown summer file week 12 to autumn file week 5 (minecraft_spruce_leaves.json;
     // old cones stay over winter, but only the ripe ones can be picked).
     private static final Kind[] KINDS = {
-            new Kind(Blocks.OAK_LEAVES, 30, SeasonState.week(Season.SUMMER, 15), SeasonState.week(Season.AUTUMN, 6), ACORN, 1, 3),
-            new Kind(Blocks.BIRCH_LEAVES, 30, SeasonState.week(Season.AUTUMN, 1), SeasonState.week(Season.AUTUMN, 8), BIRCH_SEEDS, 1, 3),
-            new Kind(Blocks.SPRUCE_LEAVES, 30, SeasonState.week(Season.SUMMER, 15), SeasonState.week(Season.AUTUMN, 6), SPRUCE_CONE, 1, 2)};
+            new Kind(Blocks.OAK_LEAVES, 30, SeasonState.fileWeek(Season.SUMMER, 12), SeasonState.fileWeek(Season.AUTUMN, 5), ACORN, 1, 3),
+            new Kind(Blocks.BIRCH_LEAVES, 30, SeasonState.fileWeek(Season.AUTUMN, 1), SeasonState.fileWeek(Season.AUTUMN, 6), BIRCH_SEEDS, 1, 3),
+            new Kind(Blocks.SPRUCE_LEAVES, 30, SeasonState.fileWeek(Season.SUMMER, 12), SeasonState.fileWeek(Season.AUTUMN, 5), SPRUCE_CONE, 1, 2)};
 
     private static final DeferredRegister<com.mojang.serialization.MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
             DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Equinox.MOD_ID);
@@ -157,7 +157,7 @@ public final class TreeFruit {
         if (kind == null || !bears(state, pos)) return false;
         SeasonState season = Seasons.get(level);
         if (season == null) return false;
-        int week = season.week(); // 0 = the first days of spring
+        int week = season.fileWeek(); // on the season files' grid, by date (0 = the first days of spring)
         if (week < kind.ripeFrom || week > kind.ripeTo) return false;
         var biome = level.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ()));
         ClimateBiome climate = (ClimateBiome) (Object) biome.value();

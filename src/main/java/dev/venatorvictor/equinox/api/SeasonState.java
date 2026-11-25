@@ -3,13 +3,17 @@ package dev.venatorvictor.equinox.api;
 /**
  * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring,
  * the spring equinox; the seasons start at the equinoxes and solstices.
- * Each season has 16 weeks of whole days; progress values allow finer steps where needed (colors).
+ * Weeks are 4 days: 2 a month at 24-day seasons, 4 at 48, 6 at 72, 8 at 96 (a month is a third of a season).
+ * Seasonal texture files and color tables use their own fixed grid of 12 "file weeks" a season (exact at 48 days);
+ * fileWeek() places today on it by date.
  */
 public record SeasonState(long dayTime, int daysPerSeason) {
     public static final int DAY = 24000;
-    /** Texture steps: 16 a season ("weeks", about 5.7 calendar days), 64 a year, each a whole number of days. */
-    public static final int WEEKS_PER_SEASON = 16;
-    public static final int WEEKS = WEEKS_PER_SEASON * Season.COUNT;
+    /** Days in a week, at every season length. */
+    public static final int DAYS_PER_WEEK = 4;
+    /** The grid of the season files and color tables: 12 weeks a season, 48 a year, by date. */
+    public static final int FILE_WEEKS_PER_SEASON = 12;
+    public static final int FILE_WEEKS = FILE_WEEKS_PER_SEASON * Season.COUNT;
 
     public long seasonTicks() {
         return (long) daysPerSeason * DAY;
@@ -34,28 +38,50 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (float) (ticksInYear() % seasonTicks()) / seasonTicks();
     }
 
-    /** 0 .. 15: the week of the season. */
+    /** Weeks in a season: days_per_season / 4 (6, 12, 18 or 24). */
+    public int weeksPerSeason() {
+        return weeksPerSeason(daysPerSeason);
+    }
+
+    public static int weeksPerSeason(int daysPerSeason) {
+        return Math.max(1, daysPerSeason / DAYS_PER_WEEK);
+    }
+
+    /** Weeks in a year. */
+    public int weeks() {
+        return weeksPerSeason() * Season.COUNT;
+    }
+
+    /** 0 .. weeksPerSeason - 1: the week of the season. */
     public int weekOfSeason() {
-        return week() % WEEKS_PER_SEASON;
+        return Math.min(dayOfSeason() / DAYS_PER_WEEK, weeksPerSeason() - 1);
     }
 
-    /** Counts up through the years: the week of the year plus 64 per year. Changes when the week changes. */
+    /** Counts up through the years: the week of the year plus weeks() per year. Changes when the week changes. */
     public long weeksSinceStart() {
-        return year() * WEEKS + week();
+        return year() * weeks() + week();
     }
 
-    /**
-     * 0 .. 63: the week of the year (0 = the first days of spring). Whole days: with days_per_season a multiple of 16
-     * (48, 96) every week has the same number of days (48: 3 days); otherwise (24, 72) some weeks are a day longer.
-     */
+    /** 0 .. weeks() - 1: the week of the year (0 = the first 4 days of spring). */
     public int week() {
-        long day = ticksInYear() / DAY;
-        return (int) Math.min(day * WEEKS_PER_SEASON / daysPerSeason, WEEKS - 1);
+        return season().ordinal() * weeksPerSeason() + weekOfSeason();
     }
 
-    /** The week of the year (0 .. 63) of a season's week 1 .. 16. */
-    public static int week(Season season, int week) {
-        return season.ordinal() * WEEKS_PER_SEASON + week - 1;
+    /** The file week (0 .. 47, 12 a season) holding the middle of the current week, by date. */
+    public int fileWeek() {
+        return fileWeekOf(week(), weeksPerSeason());
+    }
+
+    /** The file week (0 .. 47) holding the middle of a world week, with that many weeks a season. */
+    public static int fileWeekOf(int week, int weeksPerSeason) {
+        int season = week / weeksPerSeason, inSeason = week % weeksPerSeason;
+        return season * FILE_WEEKS_PER_SEASON
+                + Math.min((int) ((inSeason + 0.5) * FILE_WEEKS_PER_SEASON / weeksPerSeason), FILE_WEEKS_PER_SEASON - 1);
+    }
+
+    /** The file week of the year (0 .. 47) of a season's file week 1 .. 12. */
+    public static int fileWeek(Season season, int week) {
+        return season.ordinal() * FILE_WEEKS_PER_SEASON + week - 1;
     }
 
     /** 0 for the first day of the season. */

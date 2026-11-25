@@ -42,7 +42,7 @@ public final class ClientConfig {
 
     static {
         BUILDER.comment(
-                "Seasonal colors, by week (64 a year).",
+                "Seasonal colors, by color week (48 a year, by date).",
                 "Biome color profiles can be forced with biome tags equinox:color/<stable|slightly|monsoonal|seasonal|seasonal/hot|seasonal/cold>",
                 "Biomes in equinox:no_seasons keep their colors.")
                 .push("colors");
@@ -58,10 +58,10 @@ public final class ClientConfig {
                 .define("climate_color_strength", true);
         SMOOTH = BUILDER.comment("Blend each week's color into the next over its days. false = colors jump once per week.")
                 .define("smooth_transition", true);
-        UPDATES_PER_STEP = BUILDER.comment("How many times per week the color blend is updated and nearby chunks re-colored.",
-                        "A week is 1/64 of the year: 3 days with 48-day seasons, so 3 = once per in-game day.",
+        UPDATES_PER_STEP = BUILDER.comment("How many times per color week the color blend is updated and nearby chunks re-colored.",
+                        "A color week is 1/48 of the year: 4 days with 48-day seasons, so 4 = once per in-game day.",
                         "Each update re-colors visible chunks (and Distant Horizons LODs), so higher = smoother but more rebuilds.")
-                .defineInRange("updates_per_week", 3, 1, 48);
+                .defineInRange("updates_per_week", 4, 1, 48);
         BUILDER.pop().push("leaves");
         TREE_COLORS = BUILDER.comment("Tree colors through the year. Each tree has its own timing and autumn color (oak brown-gold, dark oak",
                         "copper, birch yellow); biomes whose own foliage color is an autumn one use it in autumn and are green before.",

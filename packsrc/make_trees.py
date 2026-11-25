@@ -201,7 +201,7 @@ def main():
         # in seasonal biomes only (jungles, savannas, deserts... keep their leaves). Snowy only under a snow layer
         # (the leaf blocks snow lies on), the ones below stay bare branches.
         rule = season_file(f"minecraft:block/{wood}_leaves", [{
-            "start": "autumn_week_15",
+            "start": "autumn_week_12",
             "end": "spring_week_2",
             "textures": plain,
             "tint": {"all": -1},
