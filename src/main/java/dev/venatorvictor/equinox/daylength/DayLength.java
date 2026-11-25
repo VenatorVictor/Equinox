@@ -75,7 +75,8 @@ public final class DayLength {
     }
 
     private static double solveHalfDay(double degrees, double year) {
-        double latitude = Math.toRadians(degrees);
+        // the south has its own seasons (summer is still the first day of summer), so only how far from the equator counts
+        double latitude = Math.toRadians(Math.abs(degrees));
         if (latitude == 0) return SUN_UP;
         double declination = TILT * Math.sin(2 * Math.PI * year); // 0 at the spring equinox, highest at the start of summer (0.25)
         double cosHour = Mth.clamp(-Math.tan(latitude) * Math.tan(declination), -1, 1);

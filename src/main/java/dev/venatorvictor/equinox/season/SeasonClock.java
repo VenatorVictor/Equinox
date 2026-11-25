@@ -24,6 +24,7 @@ public final class SeasonClock {
 
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (event.getLevel() instanceof ServerLevel level) {
+            if (level.dimension() == Level.OVERWORLD) followRealClock(level);
             WATCHERS.computeIfAbsent(level.dimension(), key -> new SeasonWatcher()).tick(level);
             Climate.update(level);
         }
@@ -36,6 +37,16 @@ public final class SeasonClock {
 
     public static void onServerStopped(ServerStoppedEvent event) {
         WATCHERS.clear();
+    }
+
+    /**
+     * Real time: once a second, sets the day time from the real clock and date (RealTime) if it has drifted. Between
+     * times the day runs at real speed (DaySpeed: a day of 24 real hours), so the sun moves smoothly.
+     */
+    private static void followRealClock(ServerLevel overworld) {
+        if (!dev.venatorvictor.equinox.realtime.RealTime.on() || overworld.getGameTime() % 20 != 0) return;
+        long target = dev.venatorvictor.equinox.realtime.RealTime.dayTime(dev.venatorvictor.equinox.realtime.RealTime.now());
+        if (Math.abs(overworld.getDayTime() - target) >= 1) setDayTime(overworld.getServer(), target);
     }
 
     /** Sets the day time of every dimension, as /time set does (they share the overworld's clock). */

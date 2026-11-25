@@ -46,9 +46,10 @@ public final class CalendarClient {
         ItemStack held = player.getMainHandItem().is(Calendar.ITEM.get()) ? player.getMainHandItem()
                 : player.getOffhandItem().is(Calendar.ITEM.get()) ? player.getOffhandItem() : null;
         if (held == null) return;
-        SeasonState s = state(mc);
-        String a = I18n.get("equinox.calendar.hud.top", CalendarLook.month(s.month()), CalendarLook.season(s.season()), s.calendarYear());
-        String b = I18n.get("equinox.calendar.hud.day", s.dayOfMonth() + 1);
+        var d = dev.venatorvictor.equinox.calendar.CalendarDates.of(mc.level);
+        long today = d.today();
+        String a = I18n.get("equinox.calendar.hud.top", CalendarLook.month(d.month(today)), CalendarLook.season(d.season(today)), d.year(today));
+        String b = I18n.get("equinox.calendar.hud.day", d.dayOfMonth(today) + 1);
         int w = 4 + 16 + 4 + Math.max(mc.font.width(a), mc.font.width(b)) + 5;
         int x = 2, y = 2;
         g.fill(x, y, x + w, y + 24, 0x96000000);

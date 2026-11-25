@@ -47,6 +47,23 @@ public final class SeasonCommand {
                                 .executes(context -> add(context.getSource(), IntegerArgumentType.getInteger(context, "days"))))));
     }
 
+    /** Real time: /time set and /time add would be undone by the clock a second later, so they're refused. */
+    public static void blockTimeInRealTime(net.neoforged.neoforge.event.CommandEvent event) {
+        if (!dev.venatorvictor.equinox.realtime.RealTime.on()) return;
+        var nodes = event.getParseResults().getContext().getNodes();
+        if (nodes.size() < 2 || !nodes.get(0).getNode().getName().equals("time")) return;
+        String action = nodes.get(1).getNode().getName();
+        if (!action.equals("set") && !action.equals("add")) return;
+        event.setCanceled(true);
+        event.getParseResults().getContext().getSource().sendFailure(Component.translatable("commands.equinox.real_time.blocked"));
+    }
+
+    private static boolean refusedInRealTime(CommandSourceStack source) {
+        if (!dev.venatorvictor.equinox.realtime.RealTime.on()) return false;
+        source.sendFailure(Component.translatable("commands.equinox.real_time.blocked"));
+        return true;
+    }
+
     private static int show(CommandSourceStack source) {
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
@@ -58,13 +75,16 @@ public final class SeasonCommand {
             case AUTUMN -> ChatFormatting.GOLD;
             case WINTER -> ChatFormatting.AQUA;
         };
+        // the date as the calendar has it (game time, or the real date in real time)
+        var dates = dev.venatorvictor.equinox.calendar.CalendarDates.of(source.getLevel());
+        long date = dates.today();
         Component title = Component.translatable("commands.equinox.season.title",
-                Component.translatable("equinox.season." + state.season().id()), state.weekOfSeason() + 1).withStyle(colour, ChatFormatting.BOLD);
-        send(source, Component.translatable("commands.equinox.season.show", title, value(state.dayOfSeason() + 1),
-                value(state.daysPerSeason()), value(state.calendarYear())).withStyle(ChatFormatting.GRAY));
+                Component.translatable("equinox.season." + state.season().id()), dates.weekOfSeason(date) + 1).withStyle(colour, ChatFormatting.BOLD);
+        send(source, Component.translatable("commands.equinox.season.show", title, value(dates.dayOfSeason(date) + 1),
+                value(dates.seasonLength(date)), value(dates.year(date))).withStyle(ChatFormatting.GRAY));
         send(source, line("date", ChatFormatting.LIGHT_PURPLE, false,
-                Component.translatable("equinox.month." + state.month()).withStyle(ChatFormatting.WHITE), value(state.dayOfMonth() + 1),
-                value(state.monthDays()), Component.translatable("equinox.moon." + state.moonPhase()).withStyle(ChatFormatting.WHITE)));
+                Component.translatable("equinox.month." + dates.month(date)).withStyle(ChatFormatting.WHITE), value(dates.dayOfMonth(date) + 1),
+                value(dates.monthLength(date)), Component.translatable("equinox.moon." + source.getLevel().getMoonPhase()).withStyle(ChatFormatting.WHITE)));
         BlockPos pos = BlockPos.containing(source.getPosition());
         Temperatures.DayRange today = Temperatures.airToday(source.getLevel(), pos);
         send(source, line("weather", ChatFormatting.GOLD, false,
@@ -130,6 +150,7 @@ public final class SeasonCommand {
     }
 
     private static int set(CommandSourceStack source, String seasonId, int week) {
+        if (refusedInRealTime(source)) return 0;
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
         Season season = Season.byId(seasonId);
@@ -142,6 +163,7 @@ public final class SeasonCommand {
     }
 
     private static int add(CommandSourceStack source, int days) {
+        if (refusedInRealTime(source)) return 0;
         SeasonState state = Seasons.get(source.getLevel());
         if (state == null) return noSeasons(source);
         SeasonClock.setDayTime(source.getServer(), state.dayTime() + (long) days * SeasonState.DAY);

@@ -81,7 +81,12 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     String locked(Setting s) {
         if (s.side == Side.CLIENT || minecraft == null) return null;
         boolean remote = minecraft.getConnection() != null && !minecraft.hasSingleplayerServer();
-        return remote ? t("locked.remote") : null;
+        if (remote) return t("locked.remote");
+        // Real time sets the season length, the weeks and the day speed
+        boolean realTime = Boolean.TRUE.equals(pending.getOrDefault(Config.REAL_TIME, Config.REAL_TIME.get()));
+        if (realTime && (s.value == Config.DAYS_PER_SEASON || s.value == Config.DAYS_PER_WEEK || s.value == Config.DAY_MINUTES))
+            return t("locked.real_time");
+        return null;
     }
 
     private static boolean same(Object a, Object b) {
@@ -251,7 +256,10 @@ public final class SettingsScreen extends Screen implements Setting.Values {
                 box.setValue(String.valueOf(value));
                 box.setResponder(text -> {
                     try {
-                        edit(s, Long.parseLong(text.trim()));
+                        if (s.value.getDefault() instanceof String) {
+                            if (!Config.validTimeZone(text.trim())) throw new NumberFormatException();
+                            edit(s, text.trim());
+                        } else edit(s, Long.parseLong(text.trim()));
                         box.setTextColor(0xFFE0E0E0);
                     } catch (NumberFormatException e) {
                         box.setTextColor(0xFFFF5555);

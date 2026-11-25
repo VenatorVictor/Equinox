@@ -29,7 +29,8 @@
     "BiomeFoliageAccessor",
     "SugarCaneBlockMixin",
     "SnowGravityMixin",
-    "FallingSnowMixin"
+    "FallingSnowMixin",
+    "SleepStatusMixin"
   ],
   "client": [
     "client.BiomeColorMixin",

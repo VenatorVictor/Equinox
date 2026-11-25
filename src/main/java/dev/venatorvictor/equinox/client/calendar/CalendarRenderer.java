@@ -26,8 +26,9 @@ public final class CalendarRenderer implements BlockEntityRenderer<CalendarBlock
     @Override
     public void render(CalendarBlockEntity calendar, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (calendar.getLevel() == null) return;
-        SeasonState s = new SeasonState(calendar.getLevel().getDayTime(), Config.daysPerSeason(), Config.daysPerWeek());
-        int season = s.season().ordinal();
+        var dates = dev.venatorvictor.equinox.calendar.CalendarDates.of(calendar.getLevel());
+        long day = dates.today();
+        int season = dates.season(day).ordinal();
         pose.pushPose();
         float yRot = switch (calendar.getBlockState().getValue(CalendarBlock.FACING)) {
             case EAST -> 90;
@@ -42,7 +43,7 @@ public final class CalendarRenderer implements BlockEntityRenderer<CalendarBlock
         PoseStack.Pose p = pose.last();
         int band = CalendarLook.BAND[season];
         quad(vc, p, 2, 3, 12, 2, band, light);                      // season strip: x 2-13, rows 3-4
-        int today = s.dayOfMonth() * DOTS.length / Math.max(1, s.monthDays());
+        int today = dates.dayOfMonth(day) * DOTS.length / Math.max(1, dates.monthLength(day));
         for (int i = 0; i < DOTS.length; i++) {
             int col = i < today ? CalendarLook.DOT_PAST : i == today ? band : CalendarLook.DOT_LATER;
             quad(vc, p, DOTS[i][0], DOTS[i][1], 1, 1, col, light);

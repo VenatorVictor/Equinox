@@ -175,8 +175,9 @@ public final class Config {
             .comment("Latitude for the seasonal day length: the sun is up longer in summer and shorter in winter, as at",
                     "this latitude on Earth (equinox days stay vanilla's). 40: about 16.4 hours of sun on the longest day (the",
                     "first day of summer), 10.7 on the shortest (the first day of winter) (60: 17.8 and 8.2) (vanilla 13.6).",
-                    "0: vanilla days all year. Mobs, beds, daylight sensors follow.")
-            .defineInRange("latitude", 40.0, 0.0, 60.0);
+                    "0: vanilla days all year. Mobs, beds, daylight sensors follow. Negative: the south (with real_time, the",
+                    "seasons are the south's: summer from the December solstice).")
+            .defineInRange("latitude", 40.0, -60.0, 60.0);
 
     public static final ModConfigSpec.IntValue DAY_MINUTES = BUILDER
             .comment("Real minutes in one Minecraft day (day and night together). 20 = vanilla; 30 makes days 1.5x longer.",
@@ -185,11 +186,38 @@ public final class Config {
                     "(for example one set with /neoforge day length).")
             .defineInRange("day_minutes", 20, 0, 1440);
 
+    public static final ModConfigSpec.BooleanValue REAL_TIME = BUILDER
+            .comment("Real time: the world follows the real clock and date. Night in real life is night in game (a day lasts",
+                    "24 real hours), the seasons start at the real equinoxes and solstices (uneven lengths, as on Earth), the",
+                    "moon is the real one and the calendar shows the real date. Beds only set the spawn point (no skipping the",
+                    "night), and /time set and /season set are blocked. days_per_season, days_per_week and day_minutes are",
+                    "ignored while this is on.")
+            .define("real_time", false);
+
+    public static final ModConfigSpec.ConfigValue<String> TIME_ZONE = BUILDER
+            .comment("Real time: the time zone of the clock, e.g. Europe/Lisbon or America/Sao_Paulo. Empty: the server's own.")
+            .define("time_zone", "", v -> v instanceof String text && validTimeZone(text));
+
     public static final ModConfigSpec SPEC = BUILDER.build();
+
+    /** Real time mode: a season of 96 days and 8-day weeks under the hood (the date comes from the real calendar). */
+    public static final int REAL_DAYS_PER_SEASON = 96, REAL_DAYS_PER_WEEK = 8;
+
+    public static boolean validTimeZone(String text) {
+        if (text.isBlank()) return true;
+        try {
+            java.time.ZoneId.of(text.trim());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     // Copies for hot paths and for before the config loads: set when it (re)loads.
     /** Seasons are a multiple of this: 3 months of 8 moon phases. */
     public static final int DAYS_STEP = 24;
+    private static volatile boolean realTime;
+    private static volatile java.time.ZoneId timeZone = java.time.ZoneId.systemDefault();
     private static volatile int daysPerSeason = 48;
     private static volatile int daysPerWeek = 4;
     private static volatile int dayMinutes = 20;
@@ -213,6 +241,13 @@ public final class Config {
         // a multiple of 24 (whole-day months and moon phases), at least 24
         daysPerSeason = Math.max(1, Math.round(val(DAYS_PER_SEASON) / (float) DAYS_STEP)) * DAYS_STEP;
         daysPerWeek = dev.venatorvictor.equinox.api.SeasonState.fitWeek(daysPerSeason, val(DAYS_PER_WEEK));
+        realTime = val(REAL_TIME);
+        String zone = val(TIME_ZONE).trim();
+        timeZone = zone.isEmpty() || !validTimeZone(zone) ? java.time.ZoneId.systemDefault() : java.time.ZoneId.of(zone);
+        if (realTime) {
+            daysPerSeason = REAL_DAYS_PER_SEASON;
+            daysPerWeek = REAL_DAYS_PER_WEEK;
+        }
         celsiusChanges = toCelsiusMap(val(CELSIUS_CHANGES));
         seasonVariation = val(SEASON_VARIATION).floatValue();
         dailyVariation = val(DAILY_VARIATION).floatValue();
@@ -250,7 +285,7 @@ public final class Config {
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, DAYS_PER_WEEK, CELSIUS_CHANGES,
             SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
-            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES);
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
     private static volatile Map<String, Object> remote = Map.of();
     private static volatile long worldSeed = 1;
@@ -266,11 +301,13 @@ public final class Config {
         CompoundTag tag = new CompoundTag();
         for (ModConfigSpec.ConfigValue<?> value : SYNCED) {
             String key = String.join(".", value.getPath());
-            Object v = value == VARIATION_SEED ? (Object) variationSeed : value.get();
+            // the variation seed as worked out; the time zone as this server resolves it (empty: its own)
+            Object v = value == VARIATION_SEED ? (Object) variationSeed : value == TIME_ZONE ? timeZone.getId() : value.get();
             if (v instanceof Boolean b) tag.putBoolean(key, b);
             else if (v instanceof Integer i) tag.putInt(key, i);
             else if (v instanceof Long l) tag.putLong(key, l);
             else if (v instanceof Double d) tag.putDouble(key, d);
+            else if (v instanceof String text) tag.putString(key, text);
             else if (v instanceof List<?> list) {
                 ListTag entries = new ListTag();
                 for (Object entry : list) entries.add(StringTag.valueOf(String.valueOf(entry)));
@@ -291,6 +328,7 @@ public final class Config {
             else if (def instanceof Integer) values.put(key, tag.getInt(key));
             else if (def instanceof Long) values.put(key, tag.getLong(key));
             else if (def instanceof Double) values.put(key, tag.getDouble(key));
+            else if (def instanceof String) values.put(key, tag.getString(key));
             else if (def instanceof List) {
                 List<String> list = new ArrayList<>();
                 for (Tag entry : tag.getList(key, Tag.TAG_STRING)) list.add(entry.getAsString());
@@ -403,7 +441,7 @@ public final class Config {
 
     /** Real minutes per Minecraft day (0: Equinox doesn't set the day speed). */
     public static int dayMinutes() {
-        return dayMinutes;
+        return realTime ? 24 * 60 : dayMinutes;
     }
 
     /** A zone's °C change: midnight and noon at mid spring, summer, autumn, winter (8 values), or null for none. */
@@ -485,6 +523,19 @@ public final class Config {
 
     public static float farmlandHeat() {
         return farmlandHeat;
+    }
+
+    public static boolean realTime() {
+        return realTime;
+    }
+
+    public static java.time.ZoneId timeZone() {
+        return timeZone;
+    }
+
+    /** South of the equator (negative latitude). */
+    public static boolean south() {
+        return latitude < 0;
     }
 
     public static double latitude() {

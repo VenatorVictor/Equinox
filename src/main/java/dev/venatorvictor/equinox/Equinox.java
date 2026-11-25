@@ -79,6 +79,7 @@ public final class Equinox {
         NeoForge.EVENT_BUS.addListener(BonemealEvent.class, Crops::onBonemeal);
         NeoForge.EVENT_BUS.addListener(SleepFinishedTimeEvent.class, DayLength::onSleepFinished);
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, SeasonCommand::register);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.CommandEvent.class, SeasonCommand::blockTimeInRealTime);
 
         // Snowpack (sent to clients for LOD snow and snowy textures) and snow cover.
         modBus.addListener(RegisterPayloadHandlersEvent.class, SnowpackPayload::register);

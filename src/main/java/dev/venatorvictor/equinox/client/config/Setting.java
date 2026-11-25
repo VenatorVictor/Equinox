@@ -76,7 +76,7 @@ public final class Setting {
             kind = Kind.CHOICE;
             for (Object constant : e.getDefault().getDeclaringClass().getEnumConstants()) choices.put(constant, constant.toString());
         } else if (value.getDefault() instanceof List) kind = Kind.LIST;
-        else if (value instanceof ModConfigSpec.LongValue) kind = Kind.TEXT;
+        else if (value instanceof ModConfigSpec.LongValue || value.getDefault() instanceof String) kind = Kind.TEXT;
         else kind = Kind.SLIDER;
     }
 

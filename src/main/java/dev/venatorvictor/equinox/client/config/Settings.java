@@ -73,9 +73,13 @@ final class Settings {
                     int month = x.daysPerSeason() / 3;
                     return fit == (int) v ? u("week_days", days(v), month / fit) : u("week_days_fitted", days(v), days(fit), month / fit);
                 }));
+        all.add(server(Config.REAL_TIME, "real_time").tab(SEASONS, "real_time")
+                .cost(Cost.NONE));
+        all.add(server(Config.TIME_ZONE, "time_zone").tab(SEASONS, null)
+                .cost(Cost.NONE));
         all.add(server(Config.LATITUDE, "latitude").tab(SEASONS, "day_length")
-                .cost(Cost.NONE).range(0, 60, 1)
-                .label((v, x) -> v == 0 ? u("off_vanilla") : u("latitude", (int) v,
+                .cost(Cost.NONE).range(-60, 60, 1)
+                .label((v, x) -> v == 0 ? u("off_vanilla") : u(v < 0 ? "latitude_south" : "latitude", (int) Math.abs(v),
                         String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.25)), String.format(Locale.ROOT, "%.1f", DayLength.daylightHours(v, 0.75)))));
         all.add(server(Config.DAY_MINUTES, "day_minutes").tab(SEASONS, null)
                 .cost(Cost.NONE).range(0, 120, 1)
