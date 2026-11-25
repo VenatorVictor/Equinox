@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["N N", "SSS", "PLP"],
+  "key": {
+    "N": { "item": "minecraft:iron_nugget" },
+    "S": { "item": "minecraft:stick" },
+    "P": { "item": "minecraft:paper" },
+    "L": { "item": "minecraft:leather" }
+  },
+  "result": { "id": "equinox:calendar", "count": 1 }
+}

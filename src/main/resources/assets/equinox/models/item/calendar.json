@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": { "layer0": "equinox:item/calendar_spring" },
+  "overrides": [
+    { "predicate": { "equinox:season": 0.25 }, "model": "equinox:item/calendar_summer" },
+    { "predicate": { "equinox:season": 0.5 }, "model": "equinox:item/calendar_autumn" },
+    { "predicate": { "equinox:season": 0.75 }, "model": "equinox:item/calendar_winter" }
+  ]
+}

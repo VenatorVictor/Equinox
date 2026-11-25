@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "equinox:block/calendar" },
+    "facing=east": { "model": "equinox:block/calendar", "y": 90 },
+    "facing=south": { "model": "equinox:block/calendar", "y": 180 },
+    "facing=west": { "model": "equinox:block/calendar", "y": 270 }
+  }
+}

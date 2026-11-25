@@ -35,6 +35,7 @@ public final class EquinoxClient {
 
     public static void init(ModContainer container, IEventBus modBus) {
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
+        dev.venatorvictor.equinox.client.calendar.CalendarClient.init(modBus);
         // In-game config screen (Mods list > Equinox > Config): tabs, real units, costs; NeoForge's plain list behind a button.
         container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, dev.venatorvictor.equinox.client.config.SettingsScreen::new);
         dhLoaded = ModList.get().isLoaded("distanthorizons");

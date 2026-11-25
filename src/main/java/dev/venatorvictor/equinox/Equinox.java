@@ -100,6 +100,7 @@ public final class Equinox {
         dev.venatorvictor.equinox.crops.PlantedCrops.init(modBus);
         dev.venatorvictor.equinox.trees.TreeFruit.init(modBus);
         dev.venatorvictor.equinox.snow.SnowBlocks.register(modBus);
+        dev.venatorvictor.equinox.calendar.Calendar.register(modBus);
         NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, Crops::onDataMapsUpdated);
         // Biome data maps (°C year, snow days) can arrive after the tags, on the client too: sort the biomes again then.
         NeoForge.EVENT_BUS.addListener(DataMapsUpdatedEvent.class, event -> {
