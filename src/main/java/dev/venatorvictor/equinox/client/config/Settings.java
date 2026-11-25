@@ -73,9 +73,6 @@ final class Settings {
                     int month = x.daysPerSeason() / 3;
                     return fit == (int) v ? u("week_days", days(v), month / fit) : u("week_days_fitted", days(v), days(fit), month / fit);
                 }));
-        all.add(server(Config.MOON_CYCLE, "moon_cycle").tab(SEASONS, null)
-                .cost(Cost.NONE)
-                .choice(Config.MoonCycle.REAL, "moon_real").choice(Config.MoonCycle.MONTHLY, "moon_monthly"));
         all.add(server(Config.REAL_TIME, "real_time").tab(SEASONS, "real_time")
                 .cost(Cost.NONE));
         all.add(server(Config.TIME_ZONE, "time_zone").tab(SEASONS, null)

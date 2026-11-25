@@ -144,7 +144,7 @@
   "equinox.configuration.zone_warm_start": "Zone warm start",
   "equinox.settings.days_per_season.name": "Season length",
   "equinox.settings.heading.calendar": "Calendar",
-  "equinox.settings.days_per_season.desc": "Days in one season on average: 24, 48, 72 or 96. A year is 4 seasons of 3 months: 24 = 96-day year (8-day months), 48 = 192 (16), 72 = 288 (24), 96 = 384, the nearest to a real year (32-day months).\nAs on Earth the seasons are uneven: spring and summer a little longer than autumn and winter (in the south, with a negative latitude, the other way round, and spring starts in September). They start on the equinoxes and solstices, which fall on different days of March, June, September and December (48: March 10, June 11, September 12, December 11).\nThe season is counted from the world's day, so changing this moves today's date.",
+  "equinox.settings.days_per_season.desc": "Days in one season on average: 24, 48, 72 or 96. A year is 4 seasons of 3 months: 24 = 96-day year (8-day months), 48 = 192 (16), 72 = 288 (24), 96 = 384, the nearest to a real year (32-day months).\nAs on Earth the seasons are uneven: spring and summer a little longer than autumn and winter (in the south, with a negative latitude, the other way round, and spring starts in September). They start on the equinoxes and solstices, which fall on different days of March, June, September and December (48: March 10, June 11, September 12, December 11). The moon's cycle is a little shorter than a month, as in real life, so the new moon moves through the months; its phase changes at noon, never in the night sky.\nThe season is counted from the world's day, so changing this moves today's date.",
   "equinox.settings.days_per_week.name": "Week length",
   "equinox.settings.days_per_week.desc": "Days in a week. Each season length offers the lengths that fit its month: 24-day seasons 2 or 4 days, 48 4 or 8, 72 4 or 6, 96 only 8. Another choice uses the nearest one that fits.",
   "equinox.settings.latitude.name": "Latitude",
@@ -428,9 +428,5 @@
   "equinox.settings.time_zone.name": "Time zone",
   "equinox.settings.time_zone.desc": "Real time: the time zone of the clock, for example Europe/Lisbon or America/Sao_Paulo. Empty: the server's own.",
   "equinox.settings.locked.real_time": "Set by Real time.",
-  "equinox.settings.unit.latitude_south": "%s° S (%sh / %sh)",
-  "equinox.settings.moon_cycle.name": "Moon",
-  "equinox.settings.moon_cycle.desc": "Real cycle: the moon's cycle is a little shorter than a month, as in real life, so the new moon moves through the months (sometimes two in one month).\nOne cycle a month: the new moon on the 1st of every month, each phase a whole number of days.\nEither way the phase changes at noon, when the moon isn't up. Real time always has the real moon.",
-  "equinox.settings.choice.moon_real": "Real cycle",
-  "equinox.settings.choice.moon_monthly": "One cycle a month"
+  "equinox.settings.unit.latitude_south": "%s° S (%sh / %sh)"
 }
