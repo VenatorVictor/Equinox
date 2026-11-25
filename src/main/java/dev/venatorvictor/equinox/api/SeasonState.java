@@ -119,12 +119,25 @@ public record SeasonState(long dayTime, int daysPerSeason, int daysPerWeek) {
     }
 
     /**
-     * 0 new moon, 1 waxing crescent .. 4 full .. 7 waning crescent: the phase at midday. The world starts at a new
-     * moon; with the cycle shorter than a month, the new moon comes a little earlier every month.
+     * The moon's day: it turns at noon (day time 6000), when the moon isn't up, so the phase never changes in the sky.
+     * A night belongs to the day it starts on.
+     */
+    public long moonDay() {
+        return Math.floorDiv(dayTime - 6000, DAY);
+    }
+
+    /**
+     * 0 new moon, 1 waxing crescent .. 4 full .. 7 waning crescent. The world starts at a new moon.
+     * REAL: the cycle a little shorter than a month (moonCycle), so the new moon moves through the months.
+     * MONTHLY: one cycle a month, the new moon on the 1st, each phase a month / 8 days (the last one takes what's left).
      */
     public int moonStep() {
-        double days = Math.floorDiv(dayTime, DAY) + 0.5;
-        double into = days / moonCycle();
+        long day = moonDay();
+        if (dev.venatorvictor.equinox.Config.moonCycle() == dev.venatorvictor.equinox.Config.MoonCycle.MONTHLY) {
+            int ofMonth = (int) Math.floorMod(GameYear.calendarDay(day, daysPerSeason), (long) monthDays());
+            return Math.min(ofMonth / Math.max(1, monthDays() / 8), 7);
+        }
+        double into = (day + 0.5) / moonCycle();
         return Math.min((int) Math.floor((into - Math.floor(into)) * 8), 7);
     }
 

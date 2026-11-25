@@ -84,7 +84,8 @@ public final class SettingsScreen extends Screen implements Setting.Values {
         if (remote) return t("locked.remote");
         // Real time sets the season length, the weeks and the day speed
         boolean realTime = Boolean.TRUE.equals(pending.getOrDefault(Config.REAL_TIME, Config.REAL_TIME.get()));
-        if (realTime && (s.value == Config.DAYS_PER_SEASON || s.value == Config.DAYS_PER_WEEK || s.value == Config.DAY_MINUTES))
+        if (realTime && (s.value == Config.DAYS_PER_SEASON || s.value == Config.DAYS_PER_WEEK || s.value == Config.DAY_MINUTES
+                || s.value == Config.MOON_CYCLE))
             return t("locked.real_time");
         return null;
     }

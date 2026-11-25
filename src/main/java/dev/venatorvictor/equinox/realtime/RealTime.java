@@ -169,9 +169,12 @@ public final class RealTime {
         return moonStep(date.atTime(12, 0).atZone(Config.timeZone()).toInstant());
     }
 
-    /** Vanilla's moon phase index (0 full, 4 new) now. */
+    /**
+     * Vanilla's moon phase index (0 full, 4 new) now: the phase at noon of the day whose noon last passed, so it
+     * changes at noon, when the moon isn't up, never during the night.
+     */
     public static int moonPhase() {
-        return (moonStep(Instant.now()) + 4) % 8;
+        return (moonStep(now().minusHours(12).toLocalDate()) + 4) % 8;
     }
 
     private RealTime() {}

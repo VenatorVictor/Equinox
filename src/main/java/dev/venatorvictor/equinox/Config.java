@@ -186,6 +186,15 @@ public final class Config {
                     "(for example one set with /neoforge day length).")
             .defineInRange("day_minutes", 20, 0, 1440);
 
+    public enum MoonCycle { REAL, MONTHLY }
+
+    public static final ModConfigSpec.EnumValue<MoonCycle> MOON_CYCLE = BUILDER
+            .comment("Game time's moon. REAL: its cycle is a little shorter than a month, as in real life (the real ratio),",
+                    "so the new moon moves through the months. MONTHLY: one cycle a month, the new moon on the 1st, each phase",
+                    "a whole number of days. Either way the phase changes at noon, when the moon isn't up. Real time always",
+                    "has the real moon.")
+            .defineEnum("moon_cycle", MoonCycle.REAL);
+
     public static final ModConfigSpec.BooleanValue REAL_TIME = BUILDER
             .comment("Real time: the world follows the real clock and date. Night in real life is night in game (a day lasts",
                     "24 real hours), the seasons start at the real equinoxes and solstices (uneven lengths, as on Earth), the",
@@ -217,6 +226,7 @@ public final class Config {
     /** Seasons are a multiple of this: 3 months of 8 moon phases. */
     public static final int DAYS_STEP = 24;
     private static volatile boolean realTime;
+    private static volatile MoonCycle moonCycle = MoonCycle.REAL;
     private static volatile java.time.ZoneId timeZone = java.time.ZoneId.systemDefault();
     private static volatile int daysPerSeason = 48;
     private static volatile int daysPerWeek = 4;
@@ -242,6 +252,7 @@ public final class Config {
         daysPerSeason = Math.max(1, Math.round(val(DAYS_PER_SEASON) / (float) DAYS_STEP)) * DAYS_STEP;
         daysPerWeek = dev.venatorvictor.equinox.api.SeasonState.fitWeek(daysPerSeason, val(DAYS_PER_WEEK));
         realTime = val(REAL_TIME);
+        moonCycle = val(MOON_CYCLE);
         String zone = val(TIME_ZONE).trim();
         timeZone = zone.isEmpty() || !validTimeZone(zone) ? java.time.ZoneId.systemDefault() : java.time.ZoneId.of(zone);
         if (realTime) {
@@ -285,7 +296,7 @@ public final class Config {
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, DAYS_PER_WEEK, CELSIUS_CHANGES,
             SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
-            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE);
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, MOON_CYCLE, REAL_TIME, TIME_ZONE);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
     private static volatile Map<String, Object> remote = Map.of();
     private static volatile long worldSeed = 1;
@@ -308,6 +319,7 @@ public final class Config {
             else if (v instanceof Long l) tag.putLong(key, l);
             else if (v instanceof Double d) tag.putDouble(key, d);
             else if (v instanceof String text) tag.putString(key, text);
+            else if (v instanceof Enum<?> e) tag.putString(key, e.name());
             else if (v instanceof List<?> list) {
                 ListTag entries = new ListTag();
                 for (Object entry : list) entries.add(StringTag.valueOf(String.valueOf(entry)));
@@ -329,6 +341,10 @@ public final class Config {
             else if (def instanceof Long) values.put(key, tag.getLong(key));
             else if (def instanceof Double) values.put(key, tag.getDouble(key));
             else if (def instanceof String) values.put(key, tag.getString(key));
+            else if (def instanceof Enum<?> e) {
+                for (Object constant : e.getDeclaringClass().getEnumConstants())
+                    if (((Enum<?>) constant).name().equals(tag.getString(key))) values.put(key, constant);
+            }
             else if (def instanceof List) {
                 List<String> list = new ArrayList<>();
                 for (Tag entry : tag.getList(key, Tag.TAG_STRING)) list.add(entry.getAsString());
@@ -523,6 +539,10 @@ public final class Config {
 
     public static float farmlandHeat() {
         return farmlandHeat;
+    }
+
+    public static MoonCycle moonCycle() {
+        return moonCycle;
     }
 
     public static boolean realTime() {
