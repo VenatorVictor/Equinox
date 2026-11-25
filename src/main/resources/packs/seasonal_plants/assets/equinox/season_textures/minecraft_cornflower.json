@@ -7,7 +7,7 @@
   "slices": [
     {
       "start": "autumn_week_1",
-      "end": "spring_week_5",
+      "end": "spring_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "spring_week_6",
-      "end": "spring_week_7",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_bud_green_petals"
       },
@@ -26,8 +26,8 @@
       }
     },
     {
-      "start": "spring_week_8",
-      "end": "spring_week_9",
+      "start": "spring_week_9",
+      "end": "spring_week_10",
       "textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_bud_color_petals"
       },
@@ -36,8 +36,8 @@
       }
     },
     {
-      "start": "spring_week_10",
-      "end": "spring_week_12",
+      "start": "spring_week_11",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_opening_petals"
       },
@@ -46,15 +46,15 @@
       }
     },
     {
-      "start": "spring_week_13",
-      "end": "summer_week_9",
+      "start": "spring_week_15",
+      "end": "summer_week_10",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_bloom_petals_snow"
       }
     },
     {
-      "start": "summer_week_10",
-      "end": "summer_week_14",
+      "start": "summer_week_11",
+      "end": "summer_week_16",
       "textures": {
         "flower": "equinox:block/plants/minecraft_cornflower_seed_petals"
       },

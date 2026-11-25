@@ -4,7 +4,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
 
 /**
- * Posted on the NeoForge event bus when a dimension enters a new week (14 a season), on the server,
+ * Posted on the NeoForge event bus when a dimension enters a new week (16 a season), on the server,
  * and on the client for the level the player is in. Compare the seasons to see whether the season itself changed.
  */
 public class SeasonChangedEvent extends Event {

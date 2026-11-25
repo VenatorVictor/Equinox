@@ -28,7 +28,7 @@ public final class TreeColors {
 
     private static final int SUMMER_GREEN = 0x3F8A1C;
 
-    /** A tree: its autumn, winter and extra color, and 56 weeks of {kind, mix} (the color reached at the end of each week). */
+    /** A tree: its autumn, winter and extra color, and 64 weeks of {kind, mix} (the color reached at the end of each week). */
     public record Tree(int autumn, int winter, int extra, float[][] table) {}
 
     // Retuned 2026-11-14 to real dates (central Europe; step 0 = Mar 20, ~15 days a step: 2 = Apr 19, 12 = Sep 19,
@@ -37,80 +37,80 @@ public final class TreeColors {
 
     /** Leaf-out Apr 19; turns Oct 19, gold-brown by the first leaf fall (Nov 3), brown as the last ones go (Dec 4). */
     public static final Tree OAK = new Tree(0xB8862B, 0x7C5A32, 0, new float[][]{
-            {W, .4F}, {W, .1F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-7
-            {O, 0F}, {O, 0F}, {G, .043F}, {G, .107F}, {G, .157F}, {G, .179F}, {G, .2F},   // spring 8-14
-            {G, .221F}, {G, .243F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F},   // summer 1-7
-            {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F},   // summer 8-14
-            {A, .1F}, {A, .2F}, {A, .3F}, {A, .4F}, {A, .5F}, {A, .6F}, {A, .65F},   // autumn 1-7: turns from autumn week 1, softly
-            {A, .707F}, {A, .814F}, {A, .85F}, {H, .85F}, {H, .85F}, {W, .75F}, {W, .75F},   // autumn 8-14
-            {W, .729F}, {W, .707F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // winter 1-7
-            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}   // winter 8-14
+            {W, .438F}, {W, .175F}, {W, .038F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-8
+            {O, 0F}, {O, 0F}, {G, .027F}, {G, .075F}, {G, .126F}, {G, .163F}, {G, .182F}, {G, .2F},   // spring 9-16
+            {G, .218F}, {G, .237F}, {G, .247F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F},   // summer 1-8
+            {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F}, {G, .25F},   // summer 9-16
+            {A, .1F}, {A, .175F}, {A, .263F}, {A, .35F}, {A, .438F}, {A, .525F}, {A, .606F}, {A, .65F},   // autumn 1-8: turns from autumn week 1, softly
+            {A, .7F}, {A, .787F}, {A, .837F}, {H, .85F}, {H, .85F}, {H, .85F}, {W, .75F}, {W, .75F},   // autumn 9-16
+            {W, .732F}, {W, .712F}, {W, .703F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // winter 1-8
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}   // winter 9-16
     });
 
     /** Like a beech: turns Oct 19, copper Nov 3, then dry brown (darker, no green) kept until the new leaves (Apr 19). */
     public static final Tree DARK_OAK = new Tree(0xC0642A, 0x8B5A33, 0, new float[][]{
-            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .729F}, {W, .364F}, {O, 0F},   // spring 1-7
-            {O, 0F}, {O, 0F}, {G, .029F}, {G, .071F}, {G, .114F}, {G, .157F}, {G, .2F},   // spring 8-14
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 1-7
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 8-14
-            {G, .2F}, {G, .2F}, {G, .186F}, {G, .164F}, {G, .15F}, {A, .5F}, {A, .5F},   // autumn 1-7
-            {A, .65F}, {A, .8F}, {A, .85F}, {H, .85F}, {H, .85F}, {W, .85F}, {W, .85F},   // autumn 8-14
-            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F},   // winter 1-7
-            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}   // winter 8-14
+            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .805F}, {W, .638F}, {W, .319F}, {O, 0F},   // spring 1-8
+            {O, 0F}, {O, 0F}, {G, .018F}, {G, .05F}, {G, .087F}, {G, .125F}, {G, .162F}, {G, .2F},   // spring 9-16
+            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 1-8
+            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 9-16
+            {G, .2F}, {G, .2F}, {G, .191F}, {G, .175F}, {G, .159F}, {G, .15F}, {A, .5F}, {A, .5F},   // autumn 1-8
+            {A, .631F}, {A, .763F}, {A, .831F}, {H, .85F}, {H, .85F}, {H, .85F}, {W, .85F}, {W, .85F},   // autumn 9-16
+            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F},   // winter 1-8
+            {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}, {W, .85F}   // winter 9-16
     });
 
     /** One of the first to turn: leaf-out Apr 4; yellow from Sep 19, full by the first leaf fall (Oct 4), bare Nov 19. */
     public static final Tree BIRCH = new Tree(0xF2C230, 0xAD9F5F, 0, new float[][]{
-            {W, .343F}, {W, .086F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-7
-            {G, .043F}, {G, .086F}, {G, .129F}, {G, .171F}, {G, .2F}, {G, .2F}, {G, .2F},   // spring 8-14
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 1-7
-            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .186F}, {G, .143F}, {G, .1F},   // summer 8-14
-            {G, .1F}, {A, .5F}, {A, .6F}, {A, .75F}, {A, .857F}, {A, .879F}, {A, .9F},   // autumn 1-7
-            {A, .9F}, {H, .8F}, {H, .8F}, {W, .7F}, {W, .686F}, {W, .643F}, {W, .6F},   // autumn 8-14
-            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // winter 1-7
-            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}   // winter 8-14
+            {W, .375F}, {W, .15F}, {W, .032F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-8
+            {G, .038F}, {G, .075F}, {G, .113F}, {G, .15F}, {G, .182F}, {G, .2F}, {G, .2F}, {G, .2F},   // spring 9-16
+            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F},   // summer 1-8
+            {G, .2F}, {G, .2F}, {G, .2F}, {G, .2F}, {G, .195F}, {G, .175F}, {G, .138F}, {G, .1F},   // summer 9-16
+            {G, .1F}, {A, .5F}, {A, .562F}, {A, .675F}, {A, .79F}, {A, .863F}, {A, .882F}, {A, .9F},   // autumn 1-8
+            {A, .9F}, {H, .8F}, {H, .8F}, {W, .7F}, {W, .695F}, {W, .675F}, {W, .638F}, {W, .6F},   // autumn 9-16
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // winter 1-8
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}   // winter 9-16
     });
 
     /**
      * Cherry: one painted texture (packs/.../trees/cherry_leaves.png, tint 0) colored by this table, like birch. Leaves
-     * come out after the blossoms (spring 8) in CHERRY_GREEN; yellow from summer 14 (the extra color), red-orange from
-     * autumn 3 as they start to fall (the painted leaves make the red, orange and yellow ones). Before spring 8 and
-     * after autumn 9 the season file shows untinted blossoms and twigs, so those weeks don't matter.
+     * come out after the blossoms (spring 9) in CHERRY_GREEN; yellow from summer 15 (the extra color), red-orange from
+     * autumn 3 as they start to fall (the painted leaves make the red, orange and yellow ones). Before spring 9 and
+     * after autumn 10 the season file shows untinted blossoms and twigs, so those weeks don't matter.
      */
     public static final int CHERRY_GREEN = 0xBADD3E;
     public static final Tree CHERRY = new Tree(0xE8622A, 0x8B5A33, 0xE8B830, new float[][]{
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-7
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 8-14
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 1-7
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {T, .3F},   // summer 8-14: yellowing starts
-            {T, .55F}, {T, .8F}, {A, .8F}, {A, .9F}, {A, .95F}, {A, .95F}, {A, .95F},   // autumn 1-7: yellow, then red-orange
-            {A, .95F}, {A, .95F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // autumn 8-14
-            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // winter 1-7
-            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}   // winter 8-14
+            {W, .088F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 1-8
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // spring 9-16
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 1-8
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {T, .037F}, {T, .3F},   // summer 9-16: yellowing starts
+            {T, .519F}, {T, .738F}, {A, .8F}, {A, .85F}, {A, .919F}, {A, .95F}, {A, .95F}, {A, .95F},   // autumn 1-8: yellow, then red-orange
+            {A, .95F}, {A, .95F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // autumn 9-16
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F},   // winter 1-8
+            {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}, {W, .7F}   // winter 9-16
     });
 
     /** Evergreen: bright new tips in May-June, duller and darker in winter. */
     public static final Tree SPRUCE = new Tree(0, 0x4A6A4A, 0x7FB24A, new float[][]{
-            {W, .279F}, {W, .257F}, {W, .236F}, {W, .214F}, {W, .186F}, {W, .143F}, {W, .1F},   // spring 1-7
-            {W, .1F}, {T, .2F}, {T, .229F}, {T, .271F}, {T, .286F}, {T, .243F}, {T, .2F},   // spring 8-14
-            {T, .114F}, {T, .029F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 1-7
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 8-14
-            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {W, .014F}, {W, .057F}, {W, .1F},   // autumn 1-7
-            {W, .121F}, {W, .143F}, {W, .164F}, {W, .186F}, {W, .207F}, {W, .229F}, {W, .25F},   // autumn 8-14
-            {W, .271F}, {W, .293F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F},   // winter 1-7
-            {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}   // winter 8-14
+            {W, .282F}, {W, .263F}, {W, .244F}, {W, .225F}, {W, .203F}, {W, .175F}, {W, .138F}, {W, .1F},   // spring 1-8
+            {W, .1F}, {T, .2F}, {T, .218F}, {T, .25F}, {T, .277F}, {T, .275F}, {T, .238F}, {T, .2F},   // spring 9-16
+            {T, .125F}, {T, .05F}, {T, .011F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 1-8
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F},   // summer 9-16
+            {O, 0F}, {O, 0F}, {O, 0F}, {O, 0F}, {W, .005F}, {W, .025F}, {W, .062F}, {W, .1F},   // autumn 1-8
+            {W, .118F}, {W, .137F}, {W, .156F}, {W, .175F}, {W, .194F}, {W, .212F}, {W, .232F}, {W, .25F},   // autumn 9-16
+            {W, .268F}, {W, .287F}, {W, .297F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F},   // winter 1-8
+            {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}, {W, .3F}   // winter 9-16
     });
 
     /** Acacia and jungle leaves in autumn-colored biomes (aspen-like: gold in September, bare in early October). */
     public static final Tree AUTUMN_BIOME = new Tree(0, 0x8F7A55, 0, new float[][]{
-            {W, .6F}, {W, .6F}, {W, .571F}, {W, .529F}, {W, .464F}, {W, .357F}, {W, .25F},   // spring 1-7
-            {W, .143F}, {W, .036F}, {G, .043F}, {G, .107F}, {G, .15F}, {G, .15F}, {G, .15F},   // spring 8-14
-            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F},   // summer 1-7
-            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {A, .6F}, {A, .6F},   // summer 8-14
-            {A, .729F}, {A, .857F}, {A, .9F}, {H, .8F}, {H, .8F}, {W, .7F}, {W, .7F},   // autumn 1-7
-            {W, .657F}, {W, .614F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // autumn 8-14
-            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // winter 1-7
-            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}   // winter 8-14
+            {W, .6F}, {W, .6F}, {W, .582F}, {W, .55F}, {W, .505F}, {W, .437F}, {W, .344F}, {W, .25F},   // spring 1-8
+            {W, .156F}, {W, .063F}, {G, .043F}, {G, .075F}, {G, .123F}, {G, .15F}, {G, .15F}, {G, .15F},   // spring 9-16
+            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F},   // summer 1-8
+            {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {G, .15F}, {A, .6F}, {A, .6F},   // summer 9-16
+            {A, .713F}, {A, .825F}, {A, .884F}, {H, .8F}, {H, .8F}, {H, .8F}, {W, .7F}, {W, .7F},   // autumn 1-8
+            {W, .662F}, {W, .625F}, {W, .605F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // autumn 9-16
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F},   // winter 1-8
+            {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}, {W, .6F}   // winter 9-16
     });
 
     // ---- The biome's own foliage color, without the season (blended like vanilla's)

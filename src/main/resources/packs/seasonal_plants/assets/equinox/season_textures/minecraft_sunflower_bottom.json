@@ -6,8 +6,8 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "autumn_week_6",
-      "end": "spring_week_12",
+      "start": "autumn_week_7",
+      "end": "spring_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_bottom_leaves_petals"
       },
@@ -16,8 +16,8 @@
       }
     },
     {
-      "start": "spring_week_13",
-      "end": "spring_week_14",
+      "start": "spring_week_15",
+      "end": "spring_week_16",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_bottom_bud_green_petals"
       },
@@ -37,7 +37,7 @@
     },
     {
       "start": "summer_week_3",
-      "end": "summer_week_5",
+      "end": "summer_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_bottom_opening_petals"
       },
@@ -46,15 +46,15 @@
       }
     },
     {
-      "start": "summer_week_6",
-      "end": "summer_week_14",
+      "start": "summer_week_7",
+      "end": "summer_week_16",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_bottom_bloom_petals_snow"
       }
     },
     {
       "start": "autumn_week_1",
-      "end": "autumn_week_5",
+      "end": "autumn_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_sunflower_bottom_seed_petals"
       },

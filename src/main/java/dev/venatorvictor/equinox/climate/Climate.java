@@ -138,9 +138,9 @@ public final class Climate {
         Season season = state.season();
         summer = season == Season.SUMMER;
         winter = season == Season.WINTER;
-        // dry: autumn week 10 to spring week 5
-        savannaDry = winter || season == Season.AUTUMN && state.weekOfSeason() >= 9
-                || season == Season.SPRING && state.weekOfSeason() <= 4;
+        // dry: autumn week 11 to spring week 6 (of 16)
+        savannaDry = winter || season == Season.AUTUMN && state.weekOfSeason() >= 10
+                || season == Season.SPRING && state.weekOfSeason() <= 5;
     }
 
     /**

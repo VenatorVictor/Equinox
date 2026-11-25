@@ -6,7 +6,7 @@
   "slices": [
     {
       "start": "winter_week_1",
-      "end": "spring_week_5",
+      "end": "spring_week_6",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
       },
@@ -15,8 +15,8 @@
       }
     },
     {
-      "start": "spring_week_6",
-      "end": "spring_week_7",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_bud/stage_2"
       },
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "spring_week_8",
-      "end": "spring_week_9",
+      "start": "spring_week_9",
+      "end": "spring_week_10",
       "textures": {
         "all": "equinox:leaf_fall/flowering_azalea_half_open/stage_1"
       },
@@ -41,7 +41,7 @@
       }
     },
     {
-      "start": "spring_week_13",
+      "start": "spring_week_15",
       "end": "autumn_week_2",
       "textures": {
         "all": "minecraft:block/azalea_leaves"
@@ -49,7 +49,7 @@
     },
     {
       "start": "autumn_week_3",
-      "end": "autumn_week_5",
+      "end": "autumn_week_6",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_turning"
       },
@@ -58,8 +58,8 @@
       }
     },
     {
-      "start": "autumn_week_6",
-      "end": "autumn_week_7",
+      "start": "autumn_week_7",
+      "end": "autumn_week_8",
       "textures": {
         "all": "equinox:block/trees/azalea_leaves_autumn"
       },
@@ -68,8 +68,8 @@
       }
     },
     {
-      "start": "autumn_week_8",
-      "end": "autumn_week_9",
+      "start": "autumn_week_9",
+      "end": "autumn_week_10",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_1"
       },
@@ -84,8 +84,8 @@
       }
     },
     {
-      "start": "autumn_week_10",
-      "end": "autumn_week_12",
+      "start": "autumn_week_11",
+      "end": "autumn_week_14",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_2"
       },
@@ -100,8 +100,8 @@
       }
     },
     {
-      "start": "autumn_week_13",
-      "end": "autumn_week_14",
+      "start": "autumn_week_15",
+      "end": "autumn_week_16",
       "textures": {
         "all": "equinox:leaf_fall/azalea_autumn/stage_3"
       },

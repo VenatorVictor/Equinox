@@ -1,7 +1,7 @@
 {
   "equinox.settings.days_per_season.name": "Duração da estação",
   "equinox.settings.heading.calendar": "Calendário",
-  "equinox.settings.days_per_season.desc": "Dias em uma estação, de 14 em 14: uma estação tem 14 semanas de dias inteiros (42 dias: 3 dias por semana). Um ano tem 4 estações.\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
+  "equinox.settings.days_per_season.desc": "Dias em uma estação, de 16 em 16: uma estação tem 16 semanas de dias inteiros (48 dias: 3 dias por semana, 3 meses de 16 dias). Um ano tem 4 estações.\nA estação é contada a partir do dia do mundo, então mudar isto muda a data de hoje.",
   "equinox.settings.latitude.name": "Latitude",
   "equinox.settings.heading.day_length": "Duração do dia",
   "equinox.settings.latitude.desc": "O sol fica mais tempo no céu no verão e menos no inverno, como nesta latitude na Terra. Nos equinócios os dias ficam como no vanilla (13,6 horas). Mobs, camas e sensores de luz solar seguem o sol.\nO controle mostra as horas de sol no dia mais longo (primeiro dia do verão) / no mais curto (primeiro dia do inverno). 0: dias do vanilla o ano todo.",
@@ -164,7 +164,7 @@
   "equinox.settings.biome_cell.cost": "2x2 checa 4 vezes menos biomas, 4x4 16 vezes menos.",
   "equinox.settings.updates_per_step.name": "Atualizações de cor",
   "equinox.settings.heading.this_computer_redraws": "Este computador: redesenho",
-  "equinox.settings.updates_per_step.desc": "Quantas vezes por semana (1/56 do ano) a mistura suave de cores é atualizada. Cada atualização redesenha os chunks que você vê (e os LODs).",
+  "equinox.settings.updates_per_step.desc": "Quantas vezes por semana (1/64 do ano) a mistura suave de cores é atualizada. Cada atualização redesenha os chunks que você vê (e os LODs).",
   "equinox.settings.updates_per_step.cost": "Cada atualização redesenha todos os chunks visíveis.",
   "equinox.settings.redraw_seconds.name": "Espalhar redesenho",
   "equinox.settings.redraw_seconds.desc": "Quando as texturas de neve ou as cores mudam, os chunks perto são redesenhados do mais perto ao mais longe ao longo deste tempo em vez de todos de uma vez.",

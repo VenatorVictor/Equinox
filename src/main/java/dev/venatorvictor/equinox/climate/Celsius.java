@@ -25,7 +25,7 @@ public final class Celsius {
     /** Where the season is gone underground, and the temperature there. */
     private static final int FADE_DEPTH = 20;
     private static final float CAVE = 15.6F, BEDROCK = 32.2F; // 60 °F and 90 °F
-    /** The sea warms and cools later than the land, rivers and lakes: this share of a season (7 days of 42, about two weeks). */
+    /** The sea warms and cools later than the land, rivers and lakes: this share of a season (8 days of 48, about two weeks). */
     private static final double SEA_LAG = 1 / 6.0;
 
     /** 0 at midnight, 1 at noon, smooth in between. */

@@ -46,8 +46,8 @@ import java.util.function.Predicate;
 
 /**
  * Reads seasonal texture files (assets/<ns>/season_textures/*.json). Each file swaps texture variables of block models per week
- * (14 a season, 56 a year, whole days each, on the calendar: week 0 = the first days of spring), in the biomes it
- * names. Weeks are named <season>_week_<1..14> (YearSteps). Supported: target, biomes, slices with start/end, season,
+ * (16 a season, 64 a year, whole days each, on the calendar: week 0 = the first days of spring), in the biomes it
+ * names. Weeks are named <season>_week_<1..16> (YearSteps). Supported: target, biomes, slices with start/end, season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants

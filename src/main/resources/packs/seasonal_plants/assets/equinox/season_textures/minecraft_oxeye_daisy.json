@@ -6,7 +6,7 @@
   "snow_only_in_snow_layer": true,
   "slices": [
     {
-      "start": "summer_week_13",
+      "start": "summer_week_15",
       "end": "spring_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_leaves_petals"
@@ -17,7 +17,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_5",
+      "end": "spring_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_bud_green_petals",
         "cross": "equinox:block/plants/minecraft_oxeye_daisy_bud_green_stem"
@@ -28,8 +28,8 @@
       }
     },
     {
-      "start": "spring_week_6",
-      "end": "spring_week_7",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_bud_color_petals",
         "cross": "equinox:block/plants/minecraft_oxeye_daisy_bud_color_stem"
@@ -40,8 +40,8 @@
       }
     },
     {
-      "start": "spring_week_8",
-      "end": "spring_week_9",
+      "start": "spring_week_9",
+      "end": "spring_week_10",
       "textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_opening_petals",
         "cross": "equinox:block/plants/minecraft_oxeye_daisy_opening_stem"
@@ -52,15 +52,15 @@
       }
     },
     {
-      "start": "spring_week_10",
-      "end": "summer_week_7",
+      "start": "spring_week_11",
+      "end": "summer_week_8",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_bloom_petals_snow"
       }
     },
     {
-      "start": "summer_week_8",
-      "end": "summer_week_12",
+      "start": "summer_week_9",
+      "end": "summer_week_14",
       "textures": {
         "flower": "equinox:block/plants/minecraft_oxeye_daisy_seed_petals",
         "cross": "equinox:block/plants/minecraft_oxeye_daisy_seed_stem"

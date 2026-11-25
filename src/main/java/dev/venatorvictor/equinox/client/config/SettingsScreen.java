@@ -74,7 +74,7 @@ public final class SettingsScreen extends Screen implements Setting.Values {
     @Override
     public int daysPerSeason() {
         for (Setting s : Settings.ALL) if (s.value == Config.DAYS_PER_SEASON) return Math.max(1, ((Number) current(s)).intValue());
-        return 42;
+        return 48;
     }
 
     /** Why this setting can't be changed here, or null. */

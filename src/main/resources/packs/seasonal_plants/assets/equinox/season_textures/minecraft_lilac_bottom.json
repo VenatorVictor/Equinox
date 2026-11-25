@@ -17,7 +17,7 @@
     },
     {
       "start": "spring_week_3",
-      "end": "spring_week_5",
+      "end": "spring_week_6",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lilac_bottom_bud_color_petals"
       },
@@ -26,8 +26,8 @@
       }
     },
     {
-      "start": "spring_week_6",
-      "end": "spring_week_7",
+      "start": "spring_week_7",
+      "end": "spring_week_8",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lilac_bottom_opening_petals"
       },
@@ -36,14 +36,14 @@
       }
     },
     {
-      "start": "spring_week_8",
-      "end": "spring_week_12",
+      "start": "spring_week_9",
+      "end": "spring_week_14",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_lilac_bottom_bloom_petals_snow"
       }
     },
     {
-      "start": "spring_week_13",
+      "start": "spring_week_15",
       "end": "summer_week_2",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lilac_bottom_seed_petals"
@@ -54,7 +54,7 @@
     },
     {
       "start": "summer_week_3",
-      "end": "winter_week_14",
+      "end": "winter_week_16",
       "textures": {
         "flower": "equinox:block/plants/minecraft_lilac_bottom_leaves_petals"
       },

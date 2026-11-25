@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * /season, /season get: show the season. /season set <season> [week 1-14]: jump to the start of it this year.
+ * /season, /season get: show the season. /season set <season> [week 1-16]: jump to the start of it this year.
  * /season add <days>. Setting moves the day count (the season is the day count), keeping the time of day.
  */
 public final class SeasonCommand {

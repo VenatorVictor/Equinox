@@ -5,13 +5,13 @@ import dev.venatorvictor.equinox.api.SeasonState;
 import java.util.List;
 
 /**
- * Week names in seasonal texture files: <season>_week_<1..14> (spring_week_1 .. winter_week_14; "fall" = autumn),
- * 14 a season, 56 a year, week 0 = the first days of spring.
+ * Week names in seasonal texture files: <season>_week_<1..16> (spring_week_1 .. winter_week_16; "fall" = autumn),
+ * 16 a season, 64 a year, week 0 = the first days of spring.
  */
 final class YearSteps {
     private static final List<String> SEASONS = List.of("spring", "summer", "autumn", "winter");
 
-    /** <season>_week_<1..14> -> 0..55, -1 for an unknown name. */
+    /** <season>_week_<1..16> -> 0..63, -1 for an unknown name. */
     static int week(String name) {
         String lower = name.toLowerCase();
         int at = lower.indexOf("_week_");

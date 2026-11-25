@@ -9,7 +9,7 @@ No library mods are needed.
 ## Features
 
 ### Seasons
-- Four seasons, each split into early, mid and late. 42 days per season by default (a 168-day year).
+- Four seasons, each split into early, mid and late. 48 days per season by default (a 192-day year).
 - Every year is a bit different: random warmer or colder seasons and days.
 - Long summer days, short winter days.
 

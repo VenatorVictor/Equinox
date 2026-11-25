@@ -3,12 +3,12 @@ package dev.venatorvictor.equinox.api;
 /**
  * Where a dimension is in the year, worked out from its day time (the day count): day 0 is the first day of spring,
  * the spring equinox; the seasons start at the equinoxes and solstices.
- * Each season has 14 weeks of whole days; progress values allow finer steps where needed (colors).
+ * Each season has 16 weeks of whole days; progress values allow finer steps where needed (colors).
  */
 public record SeasonState(long dayTime, int daysPerSeason) {
     public static final int DAY = 24000;
-    /** Texture steps: 14 a season ("weeks", about 6.5 calendar days), 56 a year, each a whole number of days. */
-    public static final int WEEKS_PER_SEASON = 14;
+    /** Texture steps: 16 a season ("weeks", about 5.7 calendar days), 64 a year, each a whole number of days. */
+    public static final int WEEKS_PER_SEASON = 16;
     public static final int WEEKS = WEEKS_PER_SEASON * Season.COUNT;
 
     public long seasonTicks() {
@@ -34,26 +34,26 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return (float) (ticksInYear() % seasonTicks()) / seasonTicks();
     }
 
-    /** 0 .. 13: the week of the season. */
+    /** 0 .. 15: the week of the season. */
     public int weekOfSeason() {
         return week() % WEEKS_PER_SEASON;
     }
 
-    /** Counts up through the years: the week of the year plus 56 per year. Changes when the week changes. */
+    /** Counts up through the years: the week of the year plus 64 per year. Changes when the week changes. */
     public long weeksSinceStart() {
         return year() * WEEKS + week();
     }
 
     /**
-     * 0 .. 55: the week of the year (0 = the first days of spring). Whole days: with days_per_season a multiple of 14
-     * every week has the same number of days (42: 3 days); otherwise a few weeks are a day longer.
+     * 0 .. 63: the week of the year (0 = the first days of spring). Whole days: with days_per_season a multiple of 16
+     * every week has the same number of days (48: 3 days); otherwise a few weeks are a day longer.
      */
     public int week() {
         long day = ticksInYear() / DAY;
         return (int) Math.min(day * WEEKS_PER_SEASON / daysPerSeason, WEEKS - 1);
     }
 
-    /** The week of the year (0 .. 55) of a season's week 1 .. 14. */
+    /** The week of the year (0 .. 63) of a season's week 1 .. 16. */
     public static int week(Season season, int week) {
         return season.ordinal() * WEEKS_PER_SEASON + week - 1;
     }

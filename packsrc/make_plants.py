@@ -29,9 +29,9 @@ from PIL import Image, ImageDraw
 PARTS, SEASONS = ["early", "mid", "late"], ["spring", "summer", "autumn", "winter"]
 # The 24 year steps, 2 per season part: 0 = early_spring_start (the spring equinox) ... 23 = late_winter_end.
 TERMS = [f"{PARTS[i // 2 % 3]}_{SEASONS[i // 6]}_{'start' if i % 2 == 0 else 'end'}" for i in range(24)]
-# The season files use weeks (14 a season, <season>_week_<1..14>); a step here covers 2 or 3 of them.
-def first_week(step): return f"{SEASONS[step // 6]}_week_{[1, 3, 6, 8, 10, 13][step % 6]}"
-def last_week(step): return f"{SEASONS[step // 6]}_week_{[2, 5, 7, 9, 12, 14][step % 6]}"
+# The season files use weeks (16 a season, <season>_week_<1..16>); a step here covers 2 or 3 of them.
+def first_week(step): return f"{SEASONS[step // 6]}_week_{[1, 3, 7, 9, 11, 15][step % 6]}"
+def last_week(step): return f"{SEASONS[step // 6]}_week_{[2, 6, 8, 10, 14, 16][step % 6]}"
 BIOMES = "#equinox:seasonal_zones"
 
 SNOW = (240, 250, 252)

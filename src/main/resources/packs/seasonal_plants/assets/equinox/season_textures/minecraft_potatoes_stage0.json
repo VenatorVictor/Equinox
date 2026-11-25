@@ -6,7 +6,7 @@
   "slices": [
     {
       "start": "spring_week_1",
-      "end": "winter_week_14",
+      "end": "winter_week_16",
       "snow_textures": {
         "flower": "equinox:block/plants/minecraft_potatoes_stage0_snow"
       },

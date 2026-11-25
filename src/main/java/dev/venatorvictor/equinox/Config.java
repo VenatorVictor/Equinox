@@ -56,11 +56,12 @@ public final class Config {
             "minecraft:stony_peaks=1.0", "minecraft:windswept_hills=0.2", "minecraft:deep_frozen_ocean=0.05");
 
     public static final ModConfigSpec.IntValue DAYS_PER_SEASON = BUILDER
-            .comment("Days in one season (a year is 4 seasons; 42 days: 168-day year). A multiple of 14: each season has 14",
-                    "weeks (texture steps) of whole days (14: 1 day a week, 28: 2, 42: 3, 56: 4, 70: 5, 84: 6); other numbers",
-                    "are rounded to the nearest multiple of 14. Day 1 is the spring equinox; the seasons start at the equinoxes",
+            .comment("Days in one season (a year is 4 seasons; 48 days: 192-day year). A multiple of 16: each season has 16",
+                    "weeks (texture steps) of whole days (16: 1 day a week, 32: 2, 48: 3, 64: 4, 80: 5, 96: 6); other numbers",
+                    "are rounded to the nearest multiple of 16. With 48, a month is 16 days (3 a season, 12 a year) and the",
+                    "moon's 8 phases last 2 days each. Day 1 is the spring equinox; the seasons start at the equinoxes",
                     "and solstices, as on Earth. The season comes from the day count, so changing this moves the season.")
-            .defineInRange("days_per_season", 42, 14, 1008);
+            .defineInRange("days_per_season", 48, 16, 1024);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CELSIUS_CHANGES = BUILDER
             .comment("The climate: °C change of each climate zone at the start of mid spring, summer, autumn and winter, added",
                     "to the biome's spring/autumn °C (data map equinox:celsius). One value = same at midnight and noon;",
@@ -182,7 +183,7 @@ public final class Config {
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     // Copies for hot paths and for before the config loads: set when it (re)loads.
-    private static volatile int daysPerSeason = 42;
+    private static volatile int daysPerSeason = 48;
     private static volatile int dayMinutes = 20;
     private static volatile Map<Zone, float[]> celsiusChanges = toCelsiusMap(DEFAULT_CELSIUS_CHANGES);
     private static volatile float seasonVariation = 0.067F, dailyVariation = 0.133F;
@@ -201,7 +202,7 @@ public final class Config {
     private static volatile float zoneWarmStart = 0, zoneWarmEnd = 0.2F;
 
     public static void refresh() {
-        // a multiple of 14 (whole-day weeks), at least 14
+        // a multiple of 16 (whole-day weeks), at least 16
         daysPerSeason = Math.max(1, Math.round(val(DAYS_PER_SEASON) / (float) SeasonState.WEEKS_PER_SEASON)) * SeasonState.WEEKS_PER_SEASON;
         celsiusChanges = toCelsiusMap(val(CELSIUS_CHANGES));
         seasonVariation = val(SEASON_VARIATION).floatValue();
