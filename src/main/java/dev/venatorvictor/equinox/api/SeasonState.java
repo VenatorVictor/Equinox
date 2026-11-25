@@ -84,6 +84,35 @@ public record SeasonState(long dayTime, int daysPerSeason) {
         return season.ordinal() * FILE_WEEKS_PER_SEASON + week - 1;
     }
 
+    /** Days in a month: a third of a season (8, 16, 24 or 32), one moon cycle. */
+    public int monthDays() {
+        return Math.max(1, daysPerSeason / 3);
+    }
+
+    /** 0 .. 11: the month of the year, 0 = the first month of spring (April on the calendar). */
+    public int month() {
+        return season().ordinal() * 3 + Math.min(dayOfSeason() / monthDays(), 2);
+    }
+
+    /** 0 for the first day of the month. */
+    public int dayOfMonth() {
+        return dayOfSeason() - Math.min(dayOfSeason() / monthDays(), 2) * monthDays();
+    }
+
+    /** Days each of the moon's 8 phases lasts: a month / 8 (1, 2, 3 or 4). */
+    public int daysPerMoonPhase() {
+        return Math.max(1, monthDays() / 8);
+    }
+
+    /**
+     * Vanilla's moon phase index (0 full, 4 new) following the month: every month starts with a new moon, each phase
+     * lasts daysPerMoonPhase days, the full moon is in the middle of the month.
+     */
+    public int moonPhase() {
+        int step = Math.min(dayOfMonth() / daysPerMoonPhase(), 7);   // 0 new, 1 waxing crescent .. 4 full .. 7 waning crescent
+        return (step + 4) % 8;
+    }
+
     /** 0 for the first day of the season. */
     public int dayOfSeason() {
         return (int) (ticksInYear() % seasonTicks() / DAY);
