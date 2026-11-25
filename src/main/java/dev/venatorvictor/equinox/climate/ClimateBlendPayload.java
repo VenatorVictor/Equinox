@@ -53,6 +53,10 @@ public record ClimateBlendPayload(long chunk, List<Holder<Biome>> biomes, List<F
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Load.class, e -> {
             if (e.getLevel() instanceof ServerLevel level && Config.hasSeasons(level.dimension())) ClimateBlend.compute(level, e.getChunk().getPos());
         });
+        // Players: a chunk's mix goes with the chunk (the server sends it again when the chunk comes back).
+        NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, e -> {
+            if (e.getLevel() != null && e.getLevel().isClientSide()) ClimateBlend.forgetClient(e.getChunk().getPos().toLong());
+        });
         NeoForge.EVENT_BUS.addListener(ChunkWatchEvent.Sent.class, e -> {
             ServerLevel level = e.getLevel();
             if (!Config.hasSeasons(level.dimension())) return;

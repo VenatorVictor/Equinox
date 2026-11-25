@@ -215,6 +215,15 @@ public final class SnowyPlants {
      * Random tick of a block with snow (SnowStateMixin): melts a layer in block light above 11 (as vanilla snow) or
      * where snow no longer lies (SnowRules.lies). True if it melted (the state changed).
      */
+    /**
+     * The precipitation tick's column (any weather): snow kept in a fence, wall, stair or slab (SnowMap) melts here
+     * by the randomTick rule, so those blocks don't need random ticks.
+     */
+    public static void meltInBlock(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (SnowMap.holds(state) && SnowMap.get(level, pos) > 0) randomTick(state, level, pos);
+    }
+
     public static boolean randomTick(BlockState state, ServerLevel level, BlockPos pos) {
         if (level.getBrightness(LightLayer.BLOCK, pos) <= 11 && SnowRules.lies(level.getBiome(pos), pos, Snowpack.warmest())) return false;
         setLayers(level, pos, state, layers(level, pos, state) - 1, Block.UPDATE_ALL);

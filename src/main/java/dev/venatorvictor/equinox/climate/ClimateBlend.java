@@ -93,7 +93,7 @@ public final class ClimateBlend {
     private static final Map<Long, Holder<Biome>> GRID = new ConcurrentHashMap<>();
     private static volatile int gridStep;
     /** Keys in the order they were added to each map, for dropping the oldest. */
-    private static final ConcurrentLinkedQueue<Long> SERVER_ORDER = new ConcurrentLinkedQueue<>(), CLIENT_ORDER = new ConcurrentLinkedQueue<>(),
+    private static final ConcurrentLinkedQueue<Long> SERVER_ORDER = new ConcurrentLinkedQueue<>(),
             FAR_ORDER = new ConcurrentLinkedQueue<>(), GRID_ORDER = new ConcurrentLinkedQueue<>();
 
     /** Drops the oldest keys until the map is under max (a tenth below, so this runs rarely); keep(key) puts one back at the end. */
@@ -111,22 +111,29 @@ public final class ClimateBlend {
 
     /**
      * Last samples per thread and side, by block column (the blend doesn't depend on height). Rain drawing asks the
-     * same few hundred columns every frame; a version bump (mixes changed, new climate phase) makes them stale.
+     * same few hundred columns every frame; a version bump (new climate phase, mixes cleared) makes them stale. A new
+     * mix only changes columns that missed one of their four mixes, so it makes only those stale (MIXES).
      */
     private static final class Columns {
         static final int SIZE = 2048;
         final long[] keys = new long[SIZE];
-        final int[] stamps = new int[SIZE];
+        final int[] stamps = new int[SIZE], mixStamps = new int[SIZE];
+        final boolean[] complete = new boolean[SIZE];
         final float[] temperatures = new float[SIZE], coolings = new float[SIZE];
     }
 
     private static final ThreadLocal<Columns> CLIENT_COLUMNS = ThreadLocal.withInitial(Columns::new),
             SERVER_COLUMNS = ThreadLocal.withInitial(Columns::new);
-    private static final AtomicInteger VERSION = new AtomicInteger(1);
+    private static final AtomicInteger VERSION = new AtomicInteger(1), MIXES = new AtomicInteger(1);
 
     /** The mixes or the climate phase changed: cached samples are worked out again. */
     public static void changed() {
         VERSION.incrementAndGet();
+    }
+
+    /** A mix was added: only columns that missed one are worked out again. */
+    private static void added() {
+        MIXES.incrementAndGet();
     }
 
     /**
@@ -169,13 +176,14 @@ public final class ClimateBlend {
         Columns columns = (client ? CLIENT_COLUMNS : SERVER_COLUMNS).get();
         long key = ((long) pos.getX() << 32) | (pos.getZ() & 0xFFFFFFFFL);
         int i = (int) HashCommon.mix(key) & (Columns.SIZE - 1);
-        int stamp = VERSION.get();   // read before working it out: a change meanwhile makes this entry stale
-        if (columns.stamps[i] == stamp && columns.keys[i] == key) {
+        int stamp = VERSION.get(), mixStamp = MIXES.get();   // read before working it out: a change meanwhile makes this entry stale
+        if (columns.stamps[i] == stamp && columns.keys[i] == key && (columns.complete[i] || columns.mixStamps[i] == mixStamp)) {
             out[0] = columns.temperatures[i];
             out[1] = columns.coolings[i];
             return out;
         }
-        sampleNow(client, pos, out);
+        columns.complete[i] = sampleNow(client, pos, out);
+        columns.mixStamps[i] = mixStamp;
         columns.keys[i] = key;
         columns.temperatures[i] = out[0];
         columns.coolings[i] = out[1];
@@ -183,20 +191,24 @@ public final class ClimateBlend {
         return out;
     }
 
-    private static void sampleNow(boolean client, BlockPos pos, float[] out) {
-        around(client ? CLIENT : SERVER, 16, pos, out);
+    /** True when all four chunk mixes around pos were known (a new mix can't change the result). */
+    private static boolean sampleNow(boolean client, BlockPos pos, float[] out) {
+        boolean complete = around(client ? CLIENT : SERVER, 16, pos, out) == 4;
         if (client && farCell > 0 && (Float.isNaN(out[0]) || Float.isNaN(out[1]))) {
             float temperature = out[0], cooling = out[1];
+            complete = false; // far mixes keep arriving
             around(FAR, farCell, pos, out);
             if (!Float.isNaN(temperature)) out[0] = temperature;
             if (!Float.isNaN(cooling)) out[1] = cooling;
         }
+        return complete;
     }
 
     /** The mixes' temperature and cooling at pos, blended between the centers of the cells around it; NaN if none is known. */
-    private static void around(Map<Long, Mix> mixes, int cell, BlockPos pos, float[] out) {
+    private static int around(Map<Long, Mix> mixes, int cell, BlockPos pos, float[] out) {
         out[0] = out[1] = Float.NaN;
-        if (mixes.isEmpty()) return;
+        if (mixes.isEmpty()) return 0;
+        int found = 0;
         float half = cell / 2F;
         float gx = (pos.getX() - half) / cell, gz = (pos.getZ() - half) / cell;
         int x0 = (int) Math.floor(gx), z0 = (int) Math.floor(gz);
@@ -206,6 +218,7 @@ public final class ClimateBlend {
             int dx = i & 1, dz = i >> 1;
             Mix mix = mixes.get(ChunkPos.asLong(x0 + dx, z0 + dz));
             if (mix == null) continue;
+            found++;
             float w = (dx == 0 ? 1 - fx : fx) * (dz == 0 ? 1 - fz : fz);
             float temperature = mix.temperature();
             if (!Float.isNaN(temperature)) {
@@ -219,6 +232,7 @@ public final class ClimateBlend {
         }
         if (weight >= 1e-4F) out[0] = sum / weight;
         if (coolWeight >= 1e-4F) out[1] = coolSum / coolWeight;
+        return found;
     }
 
     // ---- Colors (client): the same mixes give grass and leaf colors, so they fade over the blend radius too.
@@ -312,9 +326,14 @@ public final class ClimateBlend {
 
     /** Client: the server sent a chunk's mix. */
     public static void put(long chunk, Mix mix) {
-        if (CLIENT.put(chunk, mix) == null) CLIENT_ORDER.add(chunk);
-        trim(CLIENT, CLIENT_ORDER, MAX_CHUNKS, null);
-        changed();
+        if (CLIENT.size() > MAX_CHUNKS) CLIENT.clear(); // only a safety net: mixes leave with their chunks (forgetClient)
+        CLIENT.put(chunk, mix);
+        added();
+    }
+
+    /** Client: a chunk unloaded; its mix goes with it. */
+    public static void forgetClient(long chunk) {
+        CLIENT.remove(chunk);
     }
 
     /** Client: the server sent far mixes (cells of cell blocks; a new size replaces the old ones). */
@@ -323,17 +342,17 @@ public final class ClimateBlend {
             FAR.clear();
             FAR_ORDER.clear();
             farCell = cell;
+            changed();
         }
         if (FAR.put(key, mix) == null) FAR_ORDER.add(key);
         trim(FAR, FAR_ORDER, MAX_CHUNKS, null);
-        changed();
+        added();
     }
 
     /** Client: leaving a world. */
     public static void clearClient() {
         CLIENT.clear();
         FAR.clear();
-        CLIENT_ORDER.clear();
         FAR_ORDER.clear();
         farCell = 0;
         changed();
@@ -358,7 +377,7 @@ public final class ClimateBlend {
         if (mix == null) return null;
         if (SERVER.put(key, mix) == null) SERVER_ORDER.add(key);
         trim(SERVER, SERVER_ORDER, MAX_CHUNKS, k -> level.getChunkSource().getChunkNow(ChunkPos.getX(k), ChunkPos.getZ(k)) != null);
-        changed();
+        added();
         return mix;
     }
 

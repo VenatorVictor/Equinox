@@ -23,7 +23,9 @@ public abstract class ServerLevelSnowfallMixin {
     @Inject(method = "tickPrecipitation", at = @At("TAIL"))
     private void equinox$snowOnPlants(BlockPos pos, CallbackInfo ci) {
         ServerLevel level = (ServerLevel) (Object) this;
-        SnowyPlants.onSnowfall(level, level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos));
+        BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+        SnowyPlants.onSnowfall(level, top);
+        SnowyPlants.meltInBlock(level, top.below());
     }
 
     @WrapOperation(method = "tickPrecipitation", at = @At(value = "INVOKE",

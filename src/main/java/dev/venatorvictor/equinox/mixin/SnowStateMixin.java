@@ -26,7 +26,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * A plant or fence with snow in it (SnowyPlants) acts as its snow too (and has no random offset): snow's outline and collision added to its own,
- * snow's sound, snow's mining speed (the snow breaks first, BlockStateSnowBreakMixin), and random ticks to melt.
+ * snow's sound, snow's mining speed (the snow breaks first, BlockStateSnowBreakMixin), and random ticks to melt. Blocks
+ * keeping their snow by position (SnowMap: fences, walls, stairs, slabs) don't random tick: their snow melts in the
+ * precipitation tick (ServerLevelSnowfallMixin) and the snow cover.
  */
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class SnowStateMixin {
@@ -47,7 +49,7 @@ public abstract class SnowStateMixin {
     private void equinox$cacheSnow(CallbackInfo ci) {
         equinox$snow = SnowyPlants.stateLayers(asState());
         equinox$map = SnowMap.holds(asState());
-        if (equinox$snow > 0 || equinox$map) isRandomlyTicking = true;
+        if (equinox$snow > 0) isRandomlyTicking = true;
     }
 
     /** Snow layers at pos: this state's own, or the position's (SnowMap). */
@@ -111,6 +113,5 @@ public abstract class SnowStateMixin {
     private void equinox$melt(ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
         // Melted: the plant's own tick would work on the old state, so it waits for the next one.
         if (equinox$snow > 0 && SnowyPlants.randomTick(asState(), level, pos)) ci.cancel();
-        else if (equinox$map && SnowMap.get(level, pos) > 0) SnowyPlants.randomTick(asState(), level, pos);
     }
 }
