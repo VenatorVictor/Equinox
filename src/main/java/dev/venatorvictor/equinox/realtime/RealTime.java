@@ -17,7 +17,7 @@ import java.time.temporal.ChronoUnit;
  * The rest of Equinox reads the season from the world's day time with 96-day seasons. Here that day time is made
  * from the real date: each real season (from one equinox or solstice to the next, 89 to 94 days, uneven as on Earth)
  * is spread over the 96 days of a game season, so the season changes on the day of the real equinox or solstice. The
- * time of day is the real clock (day time 0 = 6:00, as in vanilla), so a game day turns at 6:00 in the morning.
+ * time of day is the real clock (day time 0 = 6:00, as in vanilla); Equinox's day turns at midnight.
  *
  * The equinoxes and solstices come from the standard astronomical formula (Meeus, Astronomical Algorithms, ch. 27,
  * good to a few minutes); the moon from the mean lunar month from a known new moon.
@@ -140,11 +140,15 @@ public final class RealTime {
         return span.seasonYear() * 4L * SEASON + (long) span.season().ordinal() * SEASON + into;
     }
 
-    /** The world's day time for a moment: day time 0 is 6:00, so the game day turns at 6:00 in the morning. */
+    /**
+     * The world's day time for a moment. Equinox's day starts at midnight (GameYear.day), as the real date does, so
+     * the season changes at midnight on the day of the equinox or solstice. When a game day is skipped the clock jumps
+     * by whole days, so the time of day never moves.
+     */
     public static long dayTime(ZonedDateTime time) {
-        ZonedDateTime shifted = time.minusHours(6);
-        long ticks = Math.round(shifted.toLocalTime().toNanoOfDay() / 1e9 * SeasonState.DAY / 86400);
-        return Math.max(0, gameDay(shifted.toLocalDate()) * SeasonState.DAY + Math.min(ticks, SeasonState.DAY - 1));
+        long ticks = Math.round(time.toLocalTime().toNanoOfDay() / 1e9 * SeasonState.DAY / 86400);
+        return Math.max(0, gameDay(time.toLocalDate()) * SeasonState.DAY - dev.venatorvictor.equinox.api.GameYear.MIDNIGHT
+                + Math.min(ticks, SeasonState.DAY - 1));
     }
 
     /** A date's midday as the world's day time (day length, season of a calendar day). */

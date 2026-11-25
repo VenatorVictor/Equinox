@@ -13,6 +13,27 @@ import dev.venatorvictor.equinox.Config;
  * is the spring equinox.
  */
 public final class GameYear {
+    /**
+     * Equinox's days start at midnight (vanilla's day time 0 is 6:00): the date, the season, the weeks and colour steps
+     * turn at midnight, in the dark. Day and season reading goes through day() and seasonTime().
+     */
+    public static final int MIDNIGHT = 6000;
+
+    /** Equinox's day number for the world's day time (turns at midnight). */
+    public static long day(long worldDayTime) {
+        return Math.floorDiv(worldDayTime + MIDNIGHT, SeasonState.DAY);
+    }
+
+    /** The day time the season is read from (SeasonState): from midnight, the calendar's seasons stretched to equal ones. */
+    public static long seasonTime(long worldDayTime, int daysPerSeason) {
+        return internal(worldDayTime + MIDNIGHT, daysPerSeason);
+    }
+
+    /** The world's day time on Equinox's day, at the same time of day as now (keeping the clock, like sleeping). */
+    public static long atDay(long day, long worldDayTimeNow) {
+        return day * SeasonState.DAY - MIDNIGHT + Math.floorMod(worldDayTimeNow + MIDNIGHT, SeasonState.DAY);
+    }
+
     /** Where the March equinox falls in the year (from January 1), and the real stretches from it, in days. */
     private static final double MARCH = 0.2146;
     private static final double[] STRETCHES = {92.76, 93.65, 89.84, 88.99};
@@ -71,10 +92,10 @@ public final class GameYear {
     }
 
     /**
-     * The day time the rest of Equinox reads (equal seasons) for the world's day time: each season stretched over
-     * days_per_season days, smoothly. Real time makes its day time this way already, so it is left as it is.
+     * Equal seasons from a day time counted from midnight: each season stretched over days_per_season days, smoothly.
+     * Real time makes its day time this way already, so it is left as it is.
      */
-    public static long internal(long dayTime, int daysPerSeason) {
+    private static long internal(long dayTime, int daysPerSeason) {
         if (Config.realTime()) return dayTime;
         long year = 4L * daysPerSeason;
         long day = Math.floorDiv(dayTime, SeasonState.DAY);

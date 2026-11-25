@@ -85,7 +85,8 @@ public interface CalendarDates {
 
     /**
      * Game time: 12 equal months; the seasons uneven as on Earth (GameYear), starting on the equinoxes and solstices
-     * (16-day months: March 10, June 11, September 12, December 11). A day is the world's day count.
+     * (16-day months: March 10, June 11, September 12, December 11). A day is Equinox's day count (GameYear.day: from
+     * midnight); day * DAY + 6000 is its noon on the world's clock.
      */
     record Game(SeasonState now) implements CalendarDates {
         private int dps() { return now.daysPerSeason(); }
@@ -93,7 +94,7 @@ public interface CalendarDates {
         private long cal(long day) { return dev.venatorvictor.equinox.api.GameYear.calendarDay(day, dps()); }
         private dev.venatorvictor.equinox.api.GameYear.Place place(long day) { return dev.venatorvictor.equinox.api.GameYear.place(day, dps()); }
 
-        @Override public long today() { return Math.floorDiv(now.dayTime(), SeasonState.DAY); }
+        @Override public long today() { return dev.venatorvictor.equinox.api.GameYear.day(now.dayTime()); }
         @Override public int month(long day) { return (int) ((Math.floorMod(Math.floorDiv(cal(day), md()), 12L) + 9) % 12); }
         @Override public int dayOfMonth(long day) { return (int) Math.floorMod(cal(day), (long) md()); }
         @Override public int monthLength(long day) { return md(); }

@@ -127,7 +127,7 @@ public final class Climate {
     public static void update(Level level) {
         SeasonState state = Seasons.get(level);
         if (state == null) return;
-        Phase next = Phase.of(state, variationAt(state), dailyVariationAt(state)), now = phase;
+        Phase next = Phase.of(state, variationAt(state), dailyVariationAt(level.getDayTime())), now = phase;
         // Only when it really moved (about every 5 s in a normal year, at once after /season set): cached
         // temperatures (ClimateBlend) stay valid in between; a step is a few thousandths of a degree.
         if (next.from() != now.from() || next.to() != now.to() || Math.abs(next.blend() - now.blend()) >= 1e-4F
@@ -163,10 +163,11 @@ public final class Climate {
      * Each day's variation peaks at noon and blends into the next day's (smoothstep), so warm and cold spells last a
      * few days like a real front, with no jump at midnight. Same seed, other salt.
      */
-    static float dailyVariationAt(SeasonState state) {
+    static float dailyVariationAt(long worldDayTime) {
         float amount = Config.dailyVariation();
         if (amount == 0) return 0;
-        double position = (state.dayTime() - 6000) / 24000.0; // 0: noon of the first day
+        // the world's clock, not the season's (stretched) one, so it peaks at noon
+        double position = (worldDayTime - 6000) / 24000.0; // 0: noon of the first day
         long index = (long) Math.floor(position);
         float blend = (float) (position - index);
         blend = blend * blend * (3 - 2 * blend);

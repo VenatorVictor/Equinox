@@ -18,6 +18,8 @@ public abstract class ServerLevelTimeMixin {
     @ModifyVariable(method = "setDayTime", at = @At("HEAD"), argsOnly = true)
     private long equinox$keepDate(long time) {
         if (SeasonClock.settingSeason || time < 0 || time >= SeasonState.DAY) return time;
-        return Math.floorDiv(((ServerLevel) (Object) this).getDayTime(), SeasonState.DAY) * SeasonState.DAY + time;
+        // the same date (Equinox's day, from midnight), at that time of day
+        long day = dev.venatorvictor.equinox.api.GameYear.day(((ServerLevel) (Object) this).getDayTime());
+        return dev.venatorvictor.equinox.api.GameYear.atDay(day, time);
     }
 }
