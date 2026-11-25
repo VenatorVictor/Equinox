@@ -272,7 +272,6 @@
   "equinox.calendar.season.autumn": "Outono",
   "equinox.calendar.season.winter": "Inverno",
   "equinox.calendar.year": "%s, ano %s",
-  "equinox.calendar.day_of": "Dia %s de %s",
   "equinox.calendar.day_length": "Duração do dia",
   "equinox.calendar.next_label": "%s em",
   "equinox.calendar.next_value": "%s dias",
@@ -286,5 +285,12 @@
   "equinox.calendar.mark.winter": "Solstício de inverno",
   "equinox.calendar.mark_on": "%1$s: %3$s de %2$s",
   "equinox.calendar.hud.top": "%s, %s, ano %s",
-  "equinox.calendar.hud.day": "Dia %s"
+  "equinox.calendar.hud.day": "Dia %s",
+  "equinox.calendar.marks_title": "Equinócios e solstícios",
+  "equinox.calendar.date": "%2$s de %1$s",
+  "equinox.calendar.today": "hoje",
+  "equinox.calendar.in_day": "em %s dia",
+  "equinox.calendar.in_days": "em %s dias",
+  "equinox.calendar.day_ago": "há %s dia",
+  "equinox.calendar.days_ago": "há %s dias"
 }

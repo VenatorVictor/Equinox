@@ -50,9 +50,10 @@ public final class CalendarRenderer implements BlockEntityRenderer<CalendarBlock
         pose.popPose();
     }
 
-    /** A w x h patch of the page at texture pixel (x, row) (rows counted from the top), facing north. */
+    /** A w x h patch of the page at texture pixel (x, row) (rows counted from the top), facing north. Seen from the
+     *  north, the model's x runs right to left, so the texture's x is turned round. */
     private static void quad(VertexConsumer vc, PoseStack.Pose p, int x, int row, int w, int h, int rgb, int light) {
-        float x0 = x / 16F, x1 = (x + w) / 16F, y1 = (16 - row) / 16F, y0 = (16 - row - h) / 16F;
+        float x0 = (16 - x - w) / 16F, x1 = (16 - x) / 16F, y1 = (16 - row) / 16F, y0 = (16 - row - h) / 16F;
         int r = rgb >> 16 & 255, g = rgb >> 8 & 255, b = rgb & 255;
         vertex(vc, p, x0, y0, r, g, b, light);
         vertex(vc, p, x0, y1, r, g, b, light);
