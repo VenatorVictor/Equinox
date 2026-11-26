@@ -22,6 +22,14 @@ under the MIT License:
 > COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 > OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## Inspiration
+
+- [Snow! Real Magic!](https://github.com/Snownee/SnowRealMagic) by Snownee (MIT): snow that settles in plants, on
+  fences, walls and leaves.
+- [Immersive Snow](https://github.com/Straywave/ImmersiveSnow) by Straywave (MIT): snow that covers the world by season.
+
+Equinox's snow is its own code, written after the ideas of these mods.
+
 ## Minecraft
 
 Textures based on Minecraft's own (plants, leaves, crops) remain the property of Mojang.
