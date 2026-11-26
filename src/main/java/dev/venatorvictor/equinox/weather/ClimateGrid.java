@@ -147,6 +147,15 @@ public final class ClimateGrid {
         return (a + (b - a) * fx) * (1 - fz) + (c + (d - c) * fx) * fz;
     }
 
+    /** Climate zone of the cell a block is in, or NONE if its tile is missing. */
+    public Zone zone(double x, double z) {
+        int cx = (int) Math.floor(x / CELL), cz = (int) Math.floor(z / CELL);
+        byte[] data = tile(tileKey(tileOf(cx), tileOf(cz)));
+        if (data == null) return Zone.NONE;
+        int zone = data[CELLS + Math.floorMod(cx, TILE) * TILE + Math.floorMod(cz, TILE)] & 0xFF;
+        return zone < ZONES.length ? ZONES[zone] : Zone.NONE;
+    }
+
     private static float dry(float share) {
         return Float.isNaN(share) ? 0 : share;
     }

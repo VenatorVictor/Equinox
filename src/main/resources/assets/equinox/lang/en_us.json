@@ -465,7 +465,7 @@
   "equinox.configuration.storm_clouds": "Storm clouds",
   "equinox.configuration.cloud_distance": "Cloud distance",
   "equinox.settings.storm_clouds.name": "Storm clouds",
-  "equinox.settings.storm_clouds.desc": "With weather per region: our own clouds, drawn from the storms, so the clouds are where the rain is. Small white clouds in fair weather close up into a grey layer as a storm comes and turn into tall dark clouds inside it; they drift with the storms.\nFollows the game's Clouds option (off: none, fast: one pass).\nOff: vanilla clouds.",
+  "equinox.settings.storm_clouds.desc": "With weather per region: clouds drawn from the storms, so the clouds are where the rain is. Vanilla's clouds grow and darken where a storm comes; in warm weather white heaps gather and climb into thunderstorm towers with a flat top; a rain front comes with high streaks and middle clouds first. They drift with the storms.\nFollows the game's Clouds option (off: none, fast: one pass). With Distant Horizons it draws them, so they sit behind far terrain.\nOff: vanilla clouds.",
   "equinox.settings.cloud_distance.name": "Cloud distance",
   "equinox.settings.cloud_distance.desc": "How far the clouds reach; they fade out toward it. Farther shows storms coming sooner but takes a little more time to make in the background.",
   "commands.equinox.weather.rain_here": "A storm is forming over you: clouds gather for %s minutes, then it rains (or snows where it's cold). It reaches %s blocks out and drifts with the wind.",

@@ -113,12 +113,13 @@ public final class ClientConfig {
                         "frozen open water, and snow/ice saved while it was cold removed once it's warm.")
                 .define("snow_and_ice", true);
         BUILDER.pop().push("clouds");
-        STORM_CLOUDS = BUILDER.comment("With weather per region: own clouds drawn from the storms, so clouds are where the rain is. Small white",
-                        "clouds in fair weather close up into a grey layer as a storm comes and turn into tall dark clouds inside it.",
-                        "Follows the game's Clouds option (off: none, fast: one pass). false: vanilla clouds.")
+        STORM_CLOUDS = BUILDER.comment("With weather per region: clouds drawn from the storms, so clouds are where the rain is. Vanilla's cloud",
+                        "layer grows and darkens where a storm comes; in warm weather white heaps gather and climb into thunderstorm",
+                        "towers; rain fronts come with high streaks and middle clouds first. Follows the game's Clouds option",
+                        "(off: none, fast: one pass); with Distant Horizons it draws them instead. false: vanilla clouds.")
                 .define("storm_clouds", true);
         CLOUD_DISTANCE = BUILDER.comment("How far the clouds reach, in blocks (they fade out toward it).")
-                .defineInRange("cloud_distance", 1152, 384, 2304);
+                .defineInRange("cloud_distance", 768, 384, 2304);
         BUILDER.pop().push("calendar");
         HUD_POSITION = BUILDER.comment("Where the date box shows while you hold a calendar: TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT,",
                         "BOTTOM_RIGHT, or ABOVE_HOTBAR (centered just above the health and food bars).")
