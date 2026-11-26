@@ -1,6 +1,21 @@
-# Equinox
+<p align="center"><img src="docs/images/logo.png" alt="Equinox" width="128"></p>
 
-The whole world follows the year: **Spring**, **Summer**, **Autumn** and **Winter**.
+<h1 align="center">Equinox</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Minecraft-1.21.1-62B47A" alt="Minecraft 1.21.1">
+  <img src="https://img.shields.io/badge/NeoForge-21.1-E0682B" alt="NeoForge 21.1">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-3C78C3" alt="License: GPL-3.0"></a>
+  <a href="https://github.com/VenatorVictor/Equinox/wiki"><img src="https://img.shields.io/badge/Docs-wiki-8A63D2" alt="Wiki"></a>
+</p>
+
+<p align="center">The whole world follows the year: <b>Spring</b>, <b>Summer</b>, <b>Autumn</b> and <b>Winter</b>.</p>
+
+| Spring | Summer |
+|:---:|:---:|
+| ![Spring](docs/images/season-spring.jpg) | ![Summer](docs/images/season-summer.jpg) |
+| **Autumn** | **Winter** |
+| ![Autumn](docs/images/season-autumn.jpg) | ![Winter](docs/images/season-winter.jpg) |
 
 Equinox is a seasons mod for **NeoForge 1.21.1**. The seasons start on the equinoxes and solstices, with a
 calendar, a moon that drifts through the months and long summer and short winter days; the world can even follow
@@ -68,6 +83,10 @@ you can pick and plant. No library mods are needed.
   red in spring, green over the summer and brown in early autumn: pick the ripe cones for spruce cones, which grow a
   spruce sapling. Old cones hang on through the winter.
 - Snow lies on leaves too, in front of whatever they show (leaves, catkins, cones), wherever a snow layer covers them.
+
+![Oak through the year: leaves, catkins, flowers and acorns, and the acorn](docs/images/oak-year.png)
+
+![Spruce through the year: pollen cones, seed cones, and the spruce cone](docs/images/spruce-year.png)
 
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.
