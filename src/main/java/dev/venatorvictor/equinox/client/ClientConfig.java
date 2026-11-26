@@ -74,7 +74,7 @@ public final class ClientConfig {
         MANGROVE = BUILDER.comment("Seasonal mangrove leaf colors.").define("mangrove", true);
         BUILDER.pop().push("textures");
         SEASONAL_TEXTURES = BUILDER.comment("Seasonal block textures from resource packs in the seasonal texture format",
-                        "(assets/<namespace>/season_textures/*.json), e.g. Seasonal Plants and Seasonal Trees.")
+                        "(assets/<namespace>/season_textures/*.json), e.g. the built-in Seasonal Plants pack.")
                 .define("seasonal_textures", true);
         BUILDER.pop().push("crops");
         CROP_LOOKS = BUILDER.comment("Crops that don't grow show it, in 4 steps: a hint while they grow slowly near a limit,",
