@@ -112,7 +112,8 @@ void main() {
         float u = (light * (uPalette.x - 1.0) + 0.5) / uPalette.x;
         float code = state == 0u ? 0.0 : state == 1u ? 1.0 + float(uStamp) : 1025.0 + float(uStamp);
         uint uvV = floatBitsToUint(v + code);
-        uint colour = packUnorm4x8(vec4(SHADE[i], SHADE[i], SHADE[i], alpha));
+        // face shading in the colour; its lowest bit per channel says which corner of the cube a vertex is (x, y, z)
+        uint shade = uint(round(SHADE[i] * 255.0)) & 0xFEu, a8 = uint(round(alpha * 255.0));
         uint normal = packSnorm4x8(vec4(n, 0.0));
         uint o = slot * 28u;
         for (int k = 0; k < 4; k++) {
@@ -121,10 +122,10 @@ void main() {
             verts[b] = floatBitsToUint(pos.x);
             verts[b + 1u] = floatBitsToUint(pos.y);
             verts[b + 2u] = floatBitsToUint(pos.z);
-            vec3 side = CORNERS[i * 4 + k];
-            verts[b + 3u] = floatBitsToUint(u + side.x + 2.0 * side.y + 4.0 * side.z);
+            uvec3 side = uvec3(CORNERS[i * 4 + k]);
+            verts[b + 3u] = floatBitsToUint(u);
             verts[b + 4u] = uvV;
-            verts[b + 5u] = colour;
+            verts[b + 5u] = (shade | side.x) | (shade | side.y) << 8 | (shade | side.z) << 16 | a8 << 24;
             verts[b + 6u] = normal;
         }
         slot++;

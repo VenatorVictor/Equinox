@@ -157,7 +157,7 @@ public final class ClientConfig {
                 .defineInRange("updates_per_frame", 2, 1, 8);
         CLOUD_ANIMATION = BUILDER.comment("Cloud cubes grow out of their middle when they appear and shrink away when they go, over this many",
                         "seconds (0 = they just appear). Not with a shader pack (its own cloud shader draws them).")
-                .defineInRange("growing_seconds", 1.0, 0.0, 3.0);
+                .defineInRange("growing_seconds", 2.0, 0.0, 4.0);
         CLOUD_FOG = BUILDER.comment("Inside a cloud, fog closes in to the cloud's colour: how far you still see deep inside, in blocks",
                         "(0 = no fog, the cloud is hollow inside).")
                 .defineInRange("inside_fog_blocks", 48, 0, 128);

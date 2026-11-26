@@ -39,7 +39,7 @@ import static org.lwjgl.opengl.GL43C.*;
  */
 public final class CloudGpu {
     /** Cubes per chunk side, grid side with the border, faces a chunk can have, bytes per vertex. */
-    private static final int CHUNK = 32, GRID = CHUNK + 2, MAX_FACES = 1 << 15, VERTEX = 28;
+    private static final int CHUNK = 32, GRID = CHUNK + 2, MAX_FACES = 1 << 16, VERTEX = 28;
     /** Chunks being made at once, domes a chunk can see, blocks around a chunk whose domes it sees. */
     private static final int SLOTS = 4, MAX_LIST = 2048, MARGIN = 96;
     /** A chunk isn't remade sooner than this after its last make (nanoseconds), so cubes finish growing first. */
@@ -94,7 +94,7 @@ public final class CloudGpu {
     }
 
     private static final class Slot {
-        int list, grid, out;
+        int list, grid, out, capacity = MAX_FACES;
         long fence;
         Chunk target;
     }
@@ -420,7 +420,7 @@ public final class CloudGpu {
                 } else {
                     glUniform3f(uniform(program, "uSun"), sun[0], sun[1], sun[2]);
                     glUniform1i(uniform(program, "uLight"), full ? 1 : 0);
-                    glUniform1ui(uniform(program, "uMaxFaces"), MAX_FACES);
+                    glUniform1ui(uniform(program, "uMaxFaces"), slot.capacity);
                     glUniform2f(uniform(program, "uPalette"), PALETTE_W, PALETTE_H);
                     glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
                     glUniform1ui(uniform(program, "uStamp"), stamp & 1023);
@@ -484,11 +484,21 @@ public final class CloudGpu {
                 glGetBufferSubData(GL_COPY_READ_BUFFER, 0, n);
                 count = n.get(0);
             }
-            if (count > MAX_FACES && !warnedFull) {
-                warnedFull = true;
-                Equinox.LOGGER.warn("Equinox: a cloud chunk had more faces than fit ({}), some are left out", count);
+            if (count > slot.capacity) {
+                // didn't fit: this slot gets room for it and the chunk is made again soon (it keeps what it shows)
+                slot.capacity = Integer.highestOneBit(count) * 2;
+                glBindBuffer(GL_COPY_WRITE_BUFFER, slot.out);
+                glBufferData(GL_COPY_WRITE_BUFFER, 16L + (long) slot.capacity * 4 * VERTEX, GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+                glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                if (!warnedFull) {
+                    warnedFull = true;
+                    Equinox.LOGGER.info("Equinox: a cloud chunk had {} faces, its build buffer grew", count);
+                }
+                if (!chunk.ready()) chunk.hasOld = false; // never shown: it still grows in
+                chunk.made = 0;
+                continue;
             }
-            count = Math.min(count, MAX_FACES);
             if (count > 0) {
                 if (chunk.vbo == 0) makeArrays(chunk);
                 long bytes = (long) count * 4 * VERTEX;
