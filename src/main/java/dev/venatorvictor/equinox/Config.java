@@ -200,6 +200,13 @@ public final class Config {
             .comment("Real time: the time zone of the clock, e.g. Europe/Lisbon or America/Sao_Paulo. Empty: the server's own.")
             .define("time_zone", "", v -> v instanceof String text && validTimeZone(text));
 
+    public static final ModConfigSpec.BooleanValue REGIONAL_WEATHER = BUILDER
+            .comment("Weather per region: storms move across the map with the wind and rain only where they are; elsewhere the",
+                    "sky is clear. How often it rains at a place follows its climate and season (deserts never, jungles often,",
+                    "dry seasons dry), so a storm reaching dry land dies at its edge. Thunder only in a storm's core.",
+                    "/weather clear, rain and thunder still work, for the whole world. false: vanilla weather, the same everywhere.")
+            .define("regional_weather", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     /** Real time mode: a season of 96 days and 8-day weeks under the hood (the date comes from the real calendar). */
@@ -285,6 +292,7 @@ public final class Config {
         blendStrength = val(BLEND_STRENGTH).floatValue();
         dhBlendDistance = val(DH_BLEND_DISTANCE);
         climateZones = val(CLIMATE_ZONES);
+        regionalWeather = val(REGIONAL_WEATHER);
         if (SnowConfig.SPEC.isLoaded()) { // the snow file may load after this one
             snowLocks = val(SnowConfig.SNOW_LOCKS);
             snowDepth = val(SnowConfig.SNOW_DEPTH);
@@ -307,7 +315,7 @@ public final class Config {
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, DAYS_PER_WEEK, CELSIUS_CHANGES,
             SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
-            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE,
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE, REGIONAL_WEATHER,
             // the snow settings a player's game reads too (equinox-common.toml)
             SnowConfig.SNOW_LOCKS, SnowConfig.SNOW_DEPTH, SnowConfig.SNOWY_PLANTS);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
@@ -452,6 +460,13 @@ public final class Config {
         }
         for (float change : changes) if (!(change >= -100 && change <= 100)) return null;
         return Map.entry(zone, changes);
+    }
+
+    private static volatile boolean regionalWeather = true;
+
+    /** Storms per region (Weather) instead of vanilla's one weather for the whole world. */
+    public static boolean regionalWeather() {
+        return regionalWeather;
     }
 
     /** Only the overworld has seasons. */

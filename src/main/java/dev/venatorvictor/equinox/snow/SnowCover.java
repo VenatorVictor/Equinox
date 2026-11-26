@@ -1,5 +1,7 @@
 package dev.venatorvictor.equinox.snow;
 
+import dev.venatorvictor.equinox.weather.ServerWeather;
+import dev.venatorvictor.equinox.weather.Weather;
 import com.mojang.serialization.Codec;
 import dev.venatorvictor.equinox.Config;
 import dev.venatorvictor.equinox.Equinox;
@@ -170,6 +172,7 @@ public final class SnowCover {
         Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
         BlockPos.MutableBlockPos top = new BlockPos.MutableBlockPos();
         RandomSource random = level.random;
+        boolean storms = Weather.on(level);
         // Starts where the last tick stopped, so all chunks get their turn when the budget runs out.
         int size = ORDER.size();
         for (int i = 0; i < size; i++) {
@@ -188,9 +191,11 @@ public final class SnowCover {
                 top.set(chunk.getPos().getMinBlockX() + lx, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, lx, lz) + 1, chunk.getPos().getMinBlockZ() + lz);
                 Holder<Biome> biome = level.getBiome(top);
                 boolean cold = SnowRules.cold(biome, top);
-                boolean snowing = level.isRaining() && biome.value().hasPrecipitation() && cold;
-                // Snow and ice only go in warm rain (the world's rain: also where none shows, like a dry desert).
-                boolean melting = level.isRaining() && !cold;
+                // Per-region weather: the storm over this column; else the world's rain (also where none shows, like a dry desert).
+                boolean falling = storms ? Weather.fallsAt(level, top.getX(), top.getZ()) : level.isRaining();
+                boolean snowing = falling && biome.value().hasPrecipitation() && cold;
+                // Snow and ice only go in warm rain.
+                boolean melting = falling && !cold;
                 column(level, chunk, biome, top, warmest, true, snowing, melting);
                 int yNoLeaves = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz) + 1;
                 if (yNoLeaves != top.getY()) column(level, chunk, biome, top.setY(yNoLeaves), warmest, true, snowing, melting);
@@ -227,8 +232,12 @@ public final class SnowCover {
     /** A chunk that loaded: every column at once; snow is only added in biomes where it snowed since stamp, and only melts if it rained since. */
     private static void catchUp(ServerLevel level, LevelChunk chunk, long stamp) {
         Map<ResourceKey<Biome>, Float> warmest = Snowpack.warmest();
-        // Melting only if the world had rain since the chunk was saved (snow and ice only go in warm rain).
-        boolean rainedSince = Snowpack.lastRain() > stamp;
+        // Melting only if it rained since the chunk was saved (snow and ice only go in warm rain): per-region weather
+        // asks the storms over the chunk's middle since then, else the world's rain.
+        boolean storms = Weather.on(level);
+        boolean rainedSince = storms
+                ? ServerWeather.fellSince(level, chunk.getPos().getMiddleBlockX(), chunk.getPos().getMiddleBlockZ(), stamp)
+                : Snowpack.lastRain() > stamp;
         BlockPos.MutableBlockPos top = new BlockPos.MutableBlockPos();
         int minX = chunk.getPos().getMinBlockX(), minZ = chunk.getPos().getMinBlockZ();
         // Biomes come from vanilla's fuzzy lookup (irregular edges); with a cell size above 1, one lookup per cell.
@@ -243,7 +252,7 @@ public final class SnowCover {
                 int index = lx / cell * cells + lz / cell;
                 Holder<Biome> biome = biomes[index];
                 if (biome == null) biome = biomes[index] = level.getBiome(top);
-                boolean snowedSince = Snowpack.lastSnowfall(biome) > stamp;
+                boolean snowedSince = Snowpack.lastSnowfall(biome) > stamp && (!storms || rainedSince);
                 column(level, chunk, biome, top, warmest, false, snowedSince, rainedSince);
                 // Also the ground under trees.
                 if (yNoLeaves != y) column(level, chunk, biome, top.setY(yNoLeaves), warmest, false, snowedSince, rainedSince);

@@ -315,5 +315,8 @@
   "equinox.settings.time_zone.name": "Fuso horário",
   "equinox.settings.time_zone.desc": "Tempo real: o fuso horário do relógio, por exemplo Europe/Lisbon ou America/Sao_Paulo. Vazio: o do próprio servidor.",
   "equinox.settings.locked.real_time": "Definido pelo Tempo real.",
-  "equinox.settings.unit.latitude_south": "%s° S (%sh / %sh)"
+  "equinox.settings.unit.latitude_south": "%s° S (%sh / %sh)",
+  "equinox.settings.heading.weather": "Tempo",
+  "equinox.settings.regional_weather.name": "Tempo por região",
+  "equinox.settings.regional_weather.desc": "Tempestades andam pelo mapa com o vento e só chove onde elas estão; no resto o céu fica limpo. A frequência da chuva num lugar segue o clima e a estação: desertos nunca, selvas muito, estações secas secas. Uma tempestade que chega em terra seca morre na borda. Trovões só no centro da tempestade.\n/weather clear, rain e thunder continuam funcionando, para o mundo todo.\nDesligado: o tempo do vanilla, igual em todo lugar."
 }

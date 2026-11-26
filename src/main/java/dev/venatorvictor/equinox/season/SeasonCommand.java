@@ -1,5 +1,6 @@
 package dev.venatorvictor.equinox.season;
 
+import net.minecraft.server.level.ServerLevel;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -105,6 +106,29 @@ public final class SeasonCommand {
                 Component.translatable(SnowRules.lies(holder, pos, Snowpack.warmest()) ? "gui.yes" : "gui.no").withStyle(ChatFormatting.WHITE),
                 value(snowDays != null ? String.format("%.0f", snowDays.days()) : "-"),
                 value(warmest != null ? String.format("%.2f", warmest) : "-")));
+        // Storms (per-region weather): the storm here, how often it rains here, the wind, a /weather override.
+        ServerLevel stormLevel = source.getLevel();
+        if (dev.venatorvictor.equinox.weather.Weather.on(stormLevel)) {
+            var side = dev.venatorvictor.equinox.weather.Weather.server();
+            long time = stormLevel.getGameTime();
+            float strength = dev.venatorvictor.equinox.weather.Weather.strength(stormLevel, pos.getX(), pos.getZ());
+            String here = strength > 1 - dev.venatorvictor.equinox.weather.Weather.THUNDER_SHARE ? "thunder"
+                    : dev.venatorvictor.equinox.weather.Weather.fallsAt(stormLevel, pos.getX(), pos.getZ()) ? "storm" : "clear";
+            long step = time / dev.venatorvictor.equinox.weather.StormField.STEP;
+            double angle = side.field.windAngle(step);
+            // x east, z south: the way the wind blows the storms
+            int compass = Math.floorMod(Math.round((float) (Math.toDegrees(Math.atan2(Math.cos(angle), -Math.sin(angle))) / 45)), 8);
+            send(source, line("storm", ChatFormatting.BLUE, false,
+                    Component.translatable("commands.equinox.season.storm." + here, Math.round(strength * 100)).withStyle(ChatFormatting.WHITE),
+                    value(Math.round(side.grid.share(pos.getX() + 0.5, pos.getZ() + 0.5) * 100) + "%"),
+                    Component.translatable("equinox.compass." + compass).withStyle(ChatFormatting.WHITE),
+                    value(Math.round(side.field.windSpeed(step) * 1200))));
+            var kind = side.overrideAt(time);
+            if (kind != dev.venatorvictor.equinox.weather.Weather.Override.NONE)
+                send(source, line("storm_override", ChatFormatting.BLUE, false,
+                        Component.translatable("commands.equinox.season.storm_override." + kind.name().toLowerCase(java.util.Locale.ROOT)).withStyle(ChatFormatting.WHITE),
+                        value((side.overrideUntil() - time + 1199) / 1200)));
+        }
         // For testing: the biome's climate zone and seasonal change (with the season's and the day's variation, before
         // the zone's factor), and the biome's temperature here (snow and ice below 0.15).
         Biome biome = source.getLevel().getBiome(pos).value();

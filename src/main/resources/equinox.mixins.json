@@ -17,6 +17,7 @@
     "StateDefinitionBuilderAccessor",
     "IceSeamMixin",
     "ServerLevelSnowfallMixin",
+    "ServerLevelWeatherMixin",
     "SnowStateMixin",
     "BlockStateSnowBreakMixin",
     "SnowyDirtMixin",

@@ -32,7 +32,12 @@ public abstract class ServerLevelSnowfallMixin {
             target = "Lnet/minecraft/world/level/biome/Biome;shouldFreeze(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z"))
     private boolean equinox$freezeWhileSnowing(Biome biome, LevelReader reader, BlockPos pos, Operation<Boolean> original) {
         ServerLevel level = (ServerLevel) (Object) this;
-        if (Config.hasSeasons(level.dimension()) && !(level.isRaining() && biome.hasPrecipitation())) return false;
+        if (Config.hasSeasons(level.dimension())) {
+            boolean falling = dev.venatorvictor.equinox.weather.Weather.on(level)
+                    ? dev.venatorvictor.equinox.weather.Weather.fallsAt(level, pos.getX(), pos.getZ()) && biome.hasPrecipitation()
+                    : level.isRaining() && biome.hasPrecipitation();
+            if (!falling) return false;
+        }
         return original.call(biome, reader, pos);
     }
 }

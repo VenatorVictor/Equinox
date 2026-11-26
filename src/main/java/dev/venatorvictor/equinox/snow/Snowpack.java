@@ -86,7 +86,8 @@ public final class Snowpack {
         if (level.getGameTime() % 20 != 0 || !Config.hasSeasons(level.dimension())) return;
         Data data = data(level);
         current = data;
-        boolean raining = level.isRaining();
+        boolean storms = dev.venatorvictor.equinox.weather.Weather.on(level);
+        boolean raining = storms ? rainOnPlayers(level) : level.isRaining();
         if (raining) data.lastRain = lastRain = level.getGameTime();
         else if (lastRain == Long.MIN_VALUE) lastRain = data.lastRain;
         for (Holder<Biome> holder : Climate.seasonalBiomes()) {
@@ -95,14 +96,24 @@ public final class Snowpack {
             float now = Climate.surfaceTemperature(holder.value());
             Float old = data.warmest.get(key);
             // A new world (or biome) starts as if it had just snowed: worldgen snow stays where it's cold.
-            boolean falling = old == null || raining && holder.value().hasPrecipitation();
+            // Per-region weather: where it falls in that biome (ServerWeather.fallsInBiome).
+            boolean falling = old == null || (storms ? dev.venatorvictor.equinox.weather.ServerWeather.fallsInBiome(level, holder)
+                    : raining) && holder.value().hasPrecipitation();
             data.warmest.put(key, falling ? now : Math.max(old, now));
             // Worlds from before this was kept count as if it had just snowed too.
             if (falling || !data.lastFall.containsKey(key)) data.lastFall.put(key, level.getGameTime());
         }
         data.setDirty();
         publish(data, true);
-        forceSnowfall(level, data, raining);
+        // Only for the world's one weather: storms per region already snow where it's cold and rain where it's warm.
+        if (!storms) forceSnowfall(level, data, raining);
+    }
+
+    /** Per-region weather: a storm over any player (for lastRain). */
+    private static boolean rainOnPlayers(ServerLevel level) {
+        for (ServerPlayer player : level.players())
+            if (dev.venatorvictor.equinox.weather.Weather.fallsAt(level, player.getBlockX(), player.getBlockZ())) return true;
+        return false;
     }
 
     /** Takes the values when one moved by STEP since the last time; tells the clients. */

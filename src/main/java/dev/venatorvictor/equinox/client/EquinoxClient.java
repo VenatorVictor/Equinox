@@ -56,6 +56,7 @@ public final class EquinoxClient {
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, dev.venatorvictor.equinox.client.textures.LeafFallTextures::register);
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, dev.venatorvictor.equinox.client.textures.SnowStepTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> ClientWeather.tick());
         RenderBench.init();
         SnowAnimBench.init();
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, true, net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock.class, SnowAnimation::onUse);
@@ -65,6 +66,7 @@ public final class EquinoxClient {
             dev.venatorvictor.equinox.climate.ClimateBlend.clearClient();
             dev.venatorvictor.equinox.snow.SnowMap.clearClient();
             dev.venatorvictor.equinox.trees.TreeFruit.clearClient();
+            ClientWeather.clear();
         });
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
             ColorClock.reset();
@@ -91,6 +93,8 @@ public final class EquinoxClient {
             if (event.getOldPlayer().level() != event.getNewPlayer().level()) {
                 dev.venatorvictor.equinox.snow.SnowMap.clearClient();
                 dev.venatorvictor.equinox.trees.TreeFruit.clearClient();
+                // the server sends the climate tiles again in the overworld
+                if (dev.venatorvictor.equinox.weather.Weather.client() != null) dev.venatorvictor.equinox.weather.Weather.client().grid.clear();
             }
         });
         Equinox.LOGGER.info("Equinox: seasonal colors on, Distant Horizons {}", dhLoaded ? "found" : "not installed");

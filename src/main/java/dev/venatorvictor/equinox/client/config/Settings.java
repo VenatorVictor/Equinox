@@ -97,6 +97,8 @@ final class Settings {
                 .cost(Cost.NONE));
 
         // ---- Climate
+        all.add(server(Config.REGIONAL_WEATHER, "regional_weather").tab(CLIMATE, "weather")
+                .cost(Cost.NONE));
         all.add(server(Config.BLEND_RADIUS, "blend_radius").tab(CLIMATE, "blending")
                 .cost(Cost.MEDIUM)
                 .range(0, 512, 16).label((v, x) -> off(v, u("blocks", (int) v))));

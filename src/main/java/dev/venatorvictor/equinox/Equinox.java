@@ -98,6 +98,9 @@ public final class Equinox {
         dev.venatorvictor.equinox.climate.ClimateBlendPayload.init();
         modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venatorvictor.equinox.climate.FarBlend::register);
         dev.venatorvictor.equinox.climate.FarBlend.init();
+        // Per-region weather: storms that move, raining where the climate lets them.
+        modBus.addListener(RegisterPayloadHandlersEvent.class, dev.venatorvictor.equinox.weather.WeatherPayload::register);
+        dev.venatorvictor.equinox.weather.ServerWeather.init();
         Snowpack.init();
         SnowCover.init(modBus);
         dev.venatorvictor.equinox.snow.SnowMap.init(modBus);

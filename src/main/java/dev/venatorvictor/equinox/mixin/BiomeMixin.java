@@ -201,4 +201,10 @@ public abstract class BiomeMixin implements ClimateBiome {
         Boolean rain = Climate.precipitation(equinox$zone);
         if (rain != null) cir.setReturnValue(rain);
     }
+
+    /** Per-region weather on a client: nothing falls on a column without a storm over it (Weather.clientDry). */
+    @Inject(method = "getPrecipitationAt", at = @At("HEAD"), cancellable = true)
+    private void equinox$dryOutsideStorms(BlockPos pos, CallbackInfoReturnable<Biome.Precipitation> cir) {
+        if (dev.venatorvictor.equinox.weather.Weather.clientDry(pos)) cir.setReturnValue(Biome.Precipitation.NONE);
+    }
 }
