@@ -26,6 +26,18 @@ public final class Weather {
 
     public enum Override { NONE, CLEAR, RAIN, THUNDER }
 
+    /** Forced storm (snowfall when cold and bare, rain when warm and snowy): radius (blocks), strength, fade (ticks). */
+    public static final double FORCED_RADIUS = 1200;
+    private static final float FORCED_STRENGTH = 0.6F;
+    private static final int FORCED_FADE = 1200;
+
+    /**
+     * A storm started over a spot (a player's) for a while; it drifts with the wind from there like any storm and
+     * fades in and out. Rain or snow follow the temperature, as always.
+     */
+    public record Forced(double x, double z, long from, long until) {
+    }
+
     /** One side's storms: the field, the climate grid, the /weather override, a cache of strengths. */
     public static final class Side {
         public final long seed;
@@ -33,6 +45,7 @@ public final class Weather {
         public final ClimateGrid grid;
         private volatile Override override = Override.NONE;
         private volatile long from, until;
+        private volatile java.util.List<Forced> forced = java.util.List.of();
         private final Long2FloatOpenHashMap corners = new Long2FloatOpenHashMap();
         private long cacheTime = Long.MIN_VALUE;
         private double[] cacheOffset;
@@ -62,6 +75,32 @@ public final class Weather {
             corners.clear();
         }
 
+        public java.util.List<Forced> forced() {
+            return forced;
+        }
+
+        /** Replaces the forced storms (ended ones are dropped). */
+        public synchronized void setForced(java.util.List<Forced> list) {
+            this.forced = java.util.List.copyOf(list);
+            corners.clear();
+        }
+
+        /** Strength of the forced storms at a spot and time (0 if none). */
+        private float forcedStrength(double x, double z, long time, double[] offset) {
+            float best = 0;
+            for (Forced storm : forced) {
+                if (time < storm.from() || time >= storm.until()) continue;
+                double[] start = field.offset(storm.from());
+                double cx = storm.x() + offset[0] - start[0], cz = storm.z() + offset[1] - start[1];
+                double d = Math.sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz)) / FORCED_RADIUS;
+                if (d >= 1) continue;
+                float shape = (float) (1 - d * d * (3 - 2 * d)); // smooth to 0 at the edge
+                float fade = Math.min(1, Math.min(time - storm.from(), storm.until() - time) / (float) FORCED_FADE);
+                best = Math.max(best, FORCED_STRENGTH * shape * fade);
+            }
+            return best;
+        }
+
         /** The /weather override at a time, or NONE. */
         public Override overrideAt(long time) {
             Override kind = override;
@@ -82,6 +121,7 @@ public final class Weather {
             float u = field.value(x, z, time, offset);
             float threshold = 1 - share;
             float base = u <= threshold ? 0 : (u - threshold) / share;
+            if (!forced.isEmpty()) base = Math.max(base, forcedStrength(x, z, time, offset));
             if (kind == Override.RAIN) return Math.min(Math.max(base, RAIN_OVERRIDE), 1 - THUNDER_SHARE - 0.01F);
             return base;
         }

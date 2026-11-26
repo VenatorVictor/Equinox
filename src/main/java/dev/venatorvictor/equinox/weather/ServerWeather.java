@@ -77,6 +77,7 @@ public final class ServerWeather {
         Weather.Side side = new Weather.Side(seed, grid);
         Data data = data(level);
         side.setOverride(data.override, data.from, data.until);
+        side.setForced(data.forced);
         Weather.setServer(side);
         SENT.clear();
     }
@@ -92,7 +93,7 @@ public final class ServerWeather {
     }
 
     private static WeatherPayload payload(Weather.Side side) {
-        return new WeatherPayload(side.seed, side.override().ordinal(), side.overrideFrom(), side.overrideUntil());
+        return new WeatherPayload(side.seed, side.override().ordinal(), side.overrideFrom(), side.overrideUntil(), side.forced());
     }
 
     /**
@@ -112,6 +113,25 @@ public final class ServerWeather {
         data.override = kind;
         data.from = now;
         data.until = now + Math.max(0, duration);
+        data.setDirty();
+        PacketDistributor.sendToPlayersInDimension(level, payload(side));
+    }
+
+    /**
+     * Starts a storm over a spot for a while (forced snowfall or thaw rain): it drifts from there with the wind, snows
+     * where it's cold and rains where it's warm. Ended forced storms are dropped.
+     */
+    public static void forceStorm(ServerLevel level, double x, double z, int duration) {
+        Weather.Side side = Weather.server();
+        if (side == null) return;
+        long now = Math.floorDiv(level.getGameTime(), Weather.TIME_STEP) * Weather.TIME_STEP;
+        List<Weather.Forced> list = new ArrayList<>();
+        for (Weather.Forced storm : side.forced()) if (storm.until() > now) list.add(storm);
+        list.add(new Weather.Forced(x, z, now, now + Math.max(1, duration)));
+        while (list.size() > 32) list.remove(0);
+        side.setForced(list);
+        Data data = data(level);
+        data.forced = List.copyOf(list);
         data.setDirty();
         PacketDistributor.sendToPlayersInDimension(level, payload(side));
     }
@@ -186,6 +206,7 @@ public final class ServerWeather {
     private static final class Data extends SavedData {
         Weather.Override override = Weather.Override.NONE;
         long from, until;
+        List<Weather.Forced> forced = List.of();
 
         static Data load(CompoundTag tag, HolderLookup.Provider registries) {
             Data data = new Data();
@@ -194,6 +215,12 @@ public final class ServerWeather {
             data.override = kind >= 0 && kind < kinds.length ? kinds[kind] : Weather.Override.NONE;
             data.from = tag.getLong("from");
             data.until = tag.getLong("until");
+            List<Weather.Forced> forced = new ArrayList<>();
+            for (net.minecraft.nbt.Tag entry : tag.getList("forced", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                CompoundTag storm = (CompoundTag) entry;
+                forced.add(new Weather.Forced(storm.getDouble("x"), storm.getDouble("z"), storm.getLong("from"), storm.getLong("until")));
+            }
+            data.forced = List.copyOf(forced);
             return data;
         }
 
@@ -202,6 +229,16 @@ public final class ServerWeather {
             tag.putInt("override", override.ordinal());
             tag.putLong("from", from);
             tag.putLong("until", until);
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            for (Weather.Forced storm : forced) {
+                CompoundTag entry = new CompoundTag();
+                entry.putDouble("x", storm.x());
+                entry.putDouble("z", storm.z());
+                entry.putLong("from", storm.from());
+                entry.putLong("until", storm.until());
+                list.add(entry);
+            }
+            tag.put("forced", list);
             return tag;
         }
     }

@@ -9,13 +9,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 /** Server to client: the storm seed and the /weather override, so the client works out the same storms. */
-public record WeatherPayload(long seed, int override, long from, long until) implements CustomPacketPayload {
+public record WeatherPayload(long seed, int override, long from, long until, java.util.List<Weather.Forced> forced) implements CustomPacketPayload {
+    private static final StreamCodec<ByteBuf, Weather.Forced> FORCED = StreamCodec.composite(
+            ByteBufCodecs.DOUBLE, Weather.Forced::x, ByteBufCodecs.DOUBLE, Weather.Forced::z,
+            ByteBufCodecs.VAR_LONG, Weather.Forced::from, ByteBufCodecs.VAR_LONG, Weather.Forced::until, Weather.Forced::new);
     public static final Type<WeatherPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Equinox.MOD_ID, "weather"));
     public static final StreamCodec<ByteBuf, WeatherPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_LONG, WeatherPayload::seed,
             ByteBufCodecs.VAR_INT, WeatherPayload::override,
             ByteBufCodecs.VAR_LONG, WeatherPayload::from,
             ByteBufCodecs.VAR_LONG, WeatherPayload::until,
+            FORCED.apply(ByteBufCodecs.list(64)), WeatherPayload::forced,
             WeatherPayload::new);
 
     @Override
@@ -49,7 +53,7 @@ public record WeatherPayload(long seed, int override, long from, long until) imp
 
     // Optional: a client without the mod still connects (it gets vanilla's clear sky).
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1").optional();
+        var registrar = event.registrar("2").optional();
         registrar.playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(() -> receive(payload)));
         registrar.playToClient(Grid.TYPE, Grid.CODEC, (payload, context) -> context.enqueueWork(() -> receive(payload)));
     }
@@ -60,6 +64,7 @@ public record WeatherPayload(long seed, int override, long from, long until) imp
         Weather.Override[] kinds = Weather.Override.values();
         side.setOverride(payload.override >= 0 && payload.override < kinds.length ? kinds[payload.override] : Weather.Override.NONE,
                 payload.from, payload.until);
+        side.setForced(payload.forced);
     }
 
     private static void receive(Grid payload) {

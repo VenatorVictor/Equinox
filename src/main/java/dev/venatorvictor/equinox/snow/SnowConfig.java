@@ -34,10 +34,12 @@ public final class SnowConfig {
                         "false = every biome follows its snow days (data map) and blending changes all of them.")
                 .define("snow_locks", true);
         FORCE_SNOWFALL = BUILDER.comment("Where a player is, it's cold enough to snow and no snow lies, a snowfall comes within a day",
-                        "(at most one a day; weather is global, so it rains where it's warm).")
+                        "(at most one a day). Weather per region: a storm starts over that player and drifts on with the wind; world weather:",
+                        "it rains where it's warm.")
                 .define("force_snowfall", true);
         FORCE_THAW_RAIN = BUILDER.comment("Where a player is, it's warm and snow or ice is still on the ground, rain comes within a day (snow and",
-                        "ice only melt in warm rain; at most one snowfall or rain a day; weather is global, so it snows where it's cold).")
+                        "ice only melt in warm rain; at most one snowfall or rain a day). Weather per region: a storm starts over that player",
+                        "and drifts on with the wind; world weather: it snows where it's cold.")
                 .define("force_thaw_rain", true);
         SNOWFALL_TICKS = BUILDER.comment("How long that snowfall or rain lasts, in ticks (6000 = a quarter of an in-game day, 5 real minutes).")
                 .defineInRange("snowfall_ticks", 6000, 20, 1_000_000);

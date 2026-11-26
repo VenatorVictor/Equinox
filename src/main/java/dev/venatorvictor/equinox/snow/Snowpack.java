@@ -105,8 +105,7 @@ public final class Snowpack {
         }
         data.setDirty();
         publish(data, true);
-        // Only for the world's one weather: storms per region already snow where it's cold and rain where it's warm.
-        if (!storms) forceSnowfall(level, data, raining);
+        forceSnowfall(level, data, raining, storms);
     }
 
     /** Per-region weather: a storm over any player (for lastRain). */
@@ -136,28 +135,33 @@ public final class Snowpack {
     /**
      * Cold enough to snow where a player is, but no snow lies: a snowfall comes within a day (at a random time). The
      * other way round, warm where a player is but snow or ice is still on the ground around them: rain comes within a
-     * day, since snow and ice only go in warm rain. At most one a day. Weather is global, so it rains where it's warm
-     * and snows where it's cold.
+     * day, since snow and ice only go in warm rain. At most one a day. World weather: the whole world's rain (it rains
+     * where it's warm and snows where it's cold). Weather per region (storms): a storm starts over each player who
+     * wants one and isn't under a storm already, and drifts on from there with the wind.
      */
-    private static void forceSnowfall(ServerLevel level, Data data, boolean raining) {
+    private static void forceSnowfall(ServerLevel level, Data data, boolean raining, boolean storms) {
         boolean snowfall = SnowConfig.FORCE_SNOWFALL.get(), thaw = SnowConfig.FORCE_THAW_RAIN.get();
         if (!snowfall && !thaw) return;
         long time = level.getGameTime();
-        if (raining) {
+        if (raining && !storms) {
             data.pending = 0;
             return;
         }
         boolean wanted = false;
+        java.util.List<BlockPos> spots = new java.util.ArrayList<>();
         for (ServerPlayer player : level.players()) {
             BlockPos pos = player.blockPosition();
+            if (storms && dev.venatorvictor.equinox.weather.Weather.fallsAt(level, pos.getX(), pos.getZ())) continue;
             Holder<Biome> biome = level.getBiome(pos);
             Float since = biome.unwrapKey().map(warmest::get).orElse(null);
             if (since == null) continue;
             boolean cold = SnowRules.cold(biome, pos);
             // Nothing lies here: stayed above the snow line since the last snowfall (height counted).
-            if (snowfall && cold && biome.value().hasPrecipitation()
-                    && since + Climate.temperature(biome.value(), pos) - Climate.surfaceTemperature(biome.value()) >= Climate.SNOW_LINE) wanted = true;
-            if (thaw && !cold && snowAround(level, pos)) wanted = true;
+            boolean want = snowfall && cold && biome.value().hasPrecipitation()
+                    && since + Climate.temperature(biome.value(), pos) - Climate.surfaceTemperature(biome.value()) >= Climate.SNOW_LINE;
+            if (thaw && !cold && snowAround(level, pos)) want = true;
+            if (want) spots.add(pos);
+            wanted |= want;
         }
         if (!wanted) {
             data.pending = 0;
@@ -165,7 +169,16 @@ public final class Snowpack {
         }
         if (data.pending == 0) data.pending = Math.max(time + level.random.nextInt(DAY), data.nextAllowed);
         if (time < data.pending) return;
-        level.setWeatherParameters(0, SnowConfig.SNOWFALL_TICKS.get(), true, false);
+        if (storms) {
+            // One storm per group of players (one already covers those within half its radius).
+            java.util.List<BlockPos> started = new java.util.ArrayList<>();
+            double near = dev.venatorvictor.equinox.weather.Weather.FORCED_RADIUS / 2;
+            for (BlockPos pos : spots) {
+                if (started.stream().anyMatch(p -> p.distToCenterSqr(pos.getX(), p.getY(), pos.getZ()) < near * near)) continue;
+                dev.venatorvictor.equinox.weather.ServerWeather.forceStorm(level, pos.getX() + 0.5, pos.getZ() + 0.5, SnowConfig.SNOWFALL_TICKS.get());
+                started.add(pos);
+            }
+        } else level.setWeatherParameters(0, SnowConfig.SNOWFALL_TICKS.get(), true, false);
         data.pending = 0;
         data.nextAllowed = time + DAY;
     }
