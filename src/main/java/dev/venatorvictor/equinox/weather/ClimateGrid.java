@@ -56,6 +56,14 @@ public final class ClimateGrid {
 
     public synchronized void put(long key, byte[] data) {
         if (data.length == CELLS * 2) tiles.put(key, data);
+        version++;
+    }
+
+    private volatile int version;
+
+    /** Changes when tiles arrive or go (clouds are drawn again). */
+    public int version() {
+        return version;
     }
 
     public synchronized boolean has(long key) {
@@ -68,6 +76,7 @@ public final class ClimateGrid {
 
     public synchronized void clear() {
         tiles.clear();
+        version++;
     }
 
     /** Keeps tiles within radius (tiles) of a tile; the rest go. */

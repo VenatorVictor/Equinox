@@ -460,5 +460,12 @@
   "equinox.configuration.regional_weather": "Weather per region",
   "equinox.settings.heading.weather": "Weather",
   "equinox.settings.regional_weather.name": "Weather per region",
-  "equinox.settings.regional_weather.desc": "Storms move across the map with the wind and rain only where they are; elsewhere the sky is clear. How often it rains at a place follows its climate and season: deserts never, jungles often, dry seasons dry. A storm reaching dry land dies at its edge. Thunder only in a storm's core.\n/weather clear, rain and thunder still work, for the whole world.\nOff: vanilla weather, the same everywhere."
+  "equinox.settings.regional_weather.desc": "Storms move across the map with the wind and rain only where they are; elsewhere the sky is clear. How often it rains at a place follows its climate and season: deserts never, jungles often, dry seasons dry. A storm reaching dry land dies at its edge. Thunder only in a storm's core.\n/weather clear, rain and thunder still work, for the whole world.\nOff: vanilla weather, the same everywhere.",
+  "equinox.configuration.clouds": "Clouds",
+  "equinox.configuration.storm_clouds": "Storm clouds",
+  "equinox.configuration.cloud_distance": "Cloud distance",
+  "equinox.settings.storm_clouds.name": "Storm clouds",
+  "equinox.settings.storm_clouds.desc": "With weather per region: our own clouds, drawn from the storms, so the clouds are where the rain is. Small white clouds in fair weather close up into a grey layer as a storm comes and turn into tall dark clouds inside it; they drift with the storms.\nFollows the game's Clouds option (off: none, fast: one pass).\nOff: vanilla clouds.",
+  "equinox.settings.cloud_distance.name": "Cloud distance",
+  "equinox.settings.cloud_distance.desc": "How far the clouds reach; they fade out toward it. Farther shows storms coming sooner but takes a little more time to make in the background."
 }

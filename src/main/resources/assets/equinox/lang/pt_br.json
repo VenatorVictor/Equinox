@@ -318,5 +318,9 @@
   "equinox.settings.unit.latitude_south": "%s° S (%sh / %sh)",
   "equinox.settings.heading.weather": "Tempo",
   "equinox.settings.regional_weather.name": "Tempo por região",
-  "equinox.settings.regional_weather.desc": "Tempestades andam pelo mapa com o vento e só chove onde elas estão; no resto o céu fica limpo. A frequência da chuva num lugar segue o clima e a estação: desertos nunca, selvas muito, estações secas secas. Uma tempestade que chega em terra seca morre na borda. Trovões só no centro da tempestade.\n/weather clear, rain e thunder continuam funcionando, para o mundo todo.\nDesligado: o tempo do vanilla, igual em todo lugar."
+  "equinox.settings.regional_weather.desc": "Tempestades andam pelo mapa com o vento e só chove onde elas estão; no resto o céu fica limpo. A frequência da chuva num lugar segue o clima e a estação: desertos nunca, selvas muito, estações secas secas. Uma tempestade que chega em terra seca morre na borda. Trovões só no centro da tempestade.\n/weather clear, rain e thunder continuam funcionando, para o mundo todo.\nDesligado: o tempo do vanilla, igual em todo lugar.",
+  "equinox.settings.storm_clouds.name": "Nuvens de tempestade",
+  "equinox.settings.storm_clouds.desc": "Com tempo por região: nossas próprias nuvens, feitas a partir das tempestades, então as nuvens ficam onde está a chuva. Nuvens brancas pequenas no tempo bom se fecham numa camada cinza quando uma tempestade chega e viram nuvens altas e escuras dentro dela; elas seguem as tempestades.\nSegue a opção Nuvens do jogo (desligada: nenhuma, rápida: uma passada).\nDesligado: nuvens do vanilla.",
+  "equinox.settings.cloud_distance.name": "Distância das nuvens",
+  "equinox.settings.cloud_distance.desc": "Até onde as nuvens vão; elas somem aos poucos perto disso. Mais longe mostra tempestades chegando antes, mas leva um pouco mais de tempo para montar em segundo plano."
 }

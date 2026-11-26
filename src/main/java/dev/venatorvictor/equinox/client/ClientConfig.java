@@ -28,6 +28,8 @@ public final class ClientConfig {
     public static final ModConfigSpec.EnumValue<SnowLook> SNOW_LOOK;
     public static final ModConfigSpec.IntValue REDRAW_SECONDS;
     public static final ModConfigSpec.EnumValue<HudPosition> HUD_POSITION;
+    public static final ModConfigSpec.BooleanValue STORM_CLOUDS;
+    public static final ModConfigSpec.IntValue CLOUD_DISTANCE;
 
     /**
      * Tree colors: REPLACE = each tree's own colors and timing, mixed over the original; FILTER = the same, keeping
@@ -110,6 +112,13 @@ public final class ClientConfig {
         DH_SNOW = BUILDER.comment("Seasonal snow and ice on LODs: snow where real snow would lie (same temperature and first-snow rules),",
                         "frozen open water, and snow/ice saved while it was cold removed once it's warm.")
                 .define("snow_and_ice", true);
+        BUILDER.pop().push("clouds");
+        STORM_CLOUDS = BUILDER.comment("With weather per region: own clouds drawn from the storms, so clouds are where the rain is. Small white",
+                        "clouds in fair weather close up into a grey layer as a storm comes and turn into tall dark clouds inside it.",
+                        "Follows the game's Clouds option (off: none, fast: one pass). false: vanilla clouds.")
+                .define("storm_clouds", true);
+        CLOUD_DISTANCE = BUILDER.comment("How far the clouds reach, in blocks (they fade out toward it).")
+                .defineInRange("cloud_distance", 1152, 384, 2304);
         BUILDER.pop().push("calendar");
         HUD_POSITION = BUILDER.comment("Where the date box shows while you hold a calendar: TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT,",
                         "BOTTOM_RIGHT, or ABOVE_HOTBAR (centered just above the health and food bars).")

@@ -38,7 +38,8 @@
     "client.BiomeColorMixin",
     "client.ClientLevelSnowMixin",
     "client.CherryPetalsMixin",
-    "client.ClientLevelTintAccessor"
+    "client.ClientLevelTintAccessor",
+    "client.CloudsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

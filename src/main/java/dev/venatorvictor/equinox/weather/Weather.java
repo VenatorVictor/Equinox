@@ -126,6 +126,23 @@ public final class Weather {
             return base;
         }
 
+        /**
+         * The sky's look at a spot (for clouds), 0..2: 0 far from storms, rising to 1 at a storm's edge (the rain line),
+         * then 1 + strength inside (2 at the thunder core). Clouds close up as a storm comes: from 2.5 times the rain
+         * share below the rain line.
+         */
+        public float cloudiness(double x, double z, long time, double[] offset) {
+            Override kind = overrideAt(time);
+            float share = grid.share(x, z);
+            if (kind == Override.CLEAR || share <= 0) return 0;
+            if (kind == Override.THUNDER) return 2;
+            float s = strength(x, z, time, offset);
+            if (s > 0) return 1 + s;
+            float u = field.value(x, z, time, offset);
+            float approach = (u - (1 - 2.5F * share)) / (1.5F * share);
+            return Math.max(0, Math.min(1, approach));
+        }
+
         /** Strength now at a block column, from a 16-block lattice worked out once a second. */
         public synchronized float strength(int x, int z, long time) {
             long step = Math.floorDiv(time, TIME_STEP) * TIME_STEP;

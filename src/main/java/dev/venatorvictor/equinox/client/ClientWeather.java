@@ -56,6 +56,7 @@ public final class ClientWeather {
     /** Leaving a server: forget its storms. */
     public static void clear() {
         Weather.setClient(null);
+        CloudRenderer.clear();
         Weather.clientLevel = null;
         managed = null;
         rain = thunder = 0;
