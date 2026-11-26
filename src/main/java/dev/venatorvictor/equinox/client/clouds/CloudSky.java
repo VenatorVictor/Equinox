@@ -99,9 +99,10 @@ public final class CloudSky {
 
     /** Vanilla-like grey of a cloud for its storm level (1 white); the thunder part lighter than vanilla's sky-wide one. */
     public static float grey(float c) {
-        float rain = c <= 1 ? 0.5F * c : Math.min(1, 0.5F + (c - 1) * 2);
-        float thunder = smooth(THUNDER_LEVEL - 0.04F, THUNDER_LEVEL + 0.05F, c);
-        return (1 - 0.38F * rain) * (1 - 0.76F * 0.6F * thunder);
+        // one smooth slope from white (fair) through grey (rain) to dark grey (thunder), same ends as before
+        // (it used to bend at full rain and drop to dark in a narrow band at thunder)
+        float t = Mth.clamp(c / Math.min(2, THUNDER_LEVEL + 0.3F), 0, 1);
+        return 1 - 0.66F * t * t * (3 - 2 * t);
     }
 
     /** How warm the weather is for fair-weather heaps, 0..1. */

@@ -79,6 +79,11 @@ public final class CloudExtras {
             }
         }
         palette.upload();
+        // blended between palette steps (the upload sets it back to blocky)
+        GlStateManager._bindTexture(palette.getId());
+        GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GlStateManager._bindTexture(0);
     }
 
     /** The palette colour for a light and storm level (for renderers that take colours). */

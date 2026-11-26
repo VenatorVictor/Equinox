@@ -1,11 +1,16 @@
-// Pass 2: the faces of a chunk's cloud cubes where the neighbour is empty, with the light baked in per face:
-// sun through the cloud (a short march toward the sun), sky from above, openness, a small tone per cube.
-// Vertices in the game's cloud format (position, texture, colour, normal): the texture is a palette (light across,
-// storm grey down), the colour carries the face shading and the alpha.
+// Passes 2 and 3 (built twice from this file, the light pass with LIGHT_PASS defined).
+// Light pass: each cube that shows a face gets its light: sun through the cloud (a short march toward the sun), sky
+// from above, openness, a small tone.
+// Faces pass: the faces where the neighbour is empty. Each corner takes the average light and storm of the cubes
+// that share it (and a little shade where cubes stand in front of it), so colours blend across faces instead of
+// stepping from cube to cube. Vertices in the game's cloud format (position, texture, colour, normal): the texture
+// is a palette (light across, storm grey down), the colour carries the face shading and the alpha.
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(std430, binding = 2) readonly buffer Grid { uint grid[]; };
 layout(std430, binding = 3) buffer Out { uint faceCount; uint pad0; uint pad1; uint pad2; uint verts[]; };
 layout(std430, binding = 4) readonly buffer Old { uint old[]; }; // this chunk's cubes last time
+// per grid cell: light without the sun's side (x) and sun through the cloud (y); y < 0: shows no face
+layout(std430, binding = 5) buffer Light { vec2 lights[]; };
 
 uniform vec3 uChunk;
 uniform ivec3 uChunkCell;
@@ -52,6 +57,59 @@ uint shown(ivec3 g) {
     return uMode == 2 ? was(g) : at(g);
 }
 
+uint cellIndex(ivec3 g) {
+    return uint((g.y * 34 + g.z) * 34 + g.x);
+}
+
+bool inGrid(ivec3 g) {
+    return g.x >= 0 && g.z >= 0 && g.x < 34 && g.z < 34 && g.y >= 0 && g.y < uLayers + 2;
+}
+
+// a cube drawn now (settled, growing or going), with its data
+uint drawn(ivec3 g) {
+    uint now = at(g);
+    return (now & 1u) != 0u ? now : was(g);
+}
+
+#ifdef LIGHT_PASS
+void main() {
+    ivec3 g = ivec3(gl_GlobalInvocationID);
+    if (g.x >= 34 || g.z >= 34 || g.y >= uLayers + 2) return;
+    uint index = cellIndex(g);
+    lights[index] = vec2(0.0, -1.0);
+    if (g.y == 0 || g.y > uLayers || (drawn(g) & 1u) == 0u) return;
+    int count = 0;
+    for (int i = 0; i < 6; i++) {
+        ivec3 h = g + DIRS[i];
+        if (!inGrid(h) || !hides(h)) count++;
+    }
+    if (count == 0) return;
+    float s = float(uCube);
+    ivec3 c = g - 1;
+    vec3 p = uChunk + vec3((float(c.x) + 0.5) * s, uBottom + (float(c.y) + 0.5) * s, (float(c.z) + 0.5) * s);
+    // sky from above: cubes over this one in the column
+    int above = 0;
+    for (int k = 1; k <= 6; k++) if (g.y + k <= uLayers && (shown(g + ivec3(0, k, 0)) & 1u) != 0u) above++;
+    float sky = 1.0 - float(above) / 6.0;
+    float through;
+    if (uLight == 1) {
+        float inside = 0.0, last = 0.0;
+        for (int k = 1; k <= 8; k++) {
+            float d = 72.0 * pow(float(k) / 8.0, 1.5);
+            vec3 q = p + uSun * d;
+            if (q.y > 220.0) break;
+            if (density(q, absBlock(q)).x > 0.0) inside += d - last;
+            last = d;
+        }
+        through = exp(-0.045 * inside);
+    } else {
+        through = sky;
+    }
+    float tone = (u01(hash3(uChunkCell + c, 9u)) - 0.5) * 0.06;
+    float openness = float(min(count, 6)) / 6.0;
+    lights[index] = vec2(0.22 * sky + 0.12 * openness + tone, through);
+}
+#else
 void main() {
     ivec3 c = ivec3(gl_GlobalInvocationID);
     if (c.x >= 32 || c.z >= 32 || c.y >= uLayers) return;
@@ -74,31 +132,8 @@ void main() {
 
     float s = float(uCube);
     vec3 p = uChunk + vec3((float(c.x) + 0.5) * s, uBottom + (float(c.y) + 0.5) * s, (float(c.z) + 0.5) * s);
-    float storm = float((here >> 8) & 255u) / 100.0;
     uint kind = (here >> 16) & 3u;
-
-    // sky from above: cubes over this one in the column
-    int above = 0;
-    for (int k = 1; k <= 6; k++) if (g.y + k <= uLayers && (shown(g + ivec3(0, k, 0)) & 1u) != 0u) above++;
-    float sky = 1.0 - float(above) / 6.0;
-    float through;
-    if (uLight == 1) {
-        float inside = 0.0, last = 0.0;
-        for (int k = 1; k <= 8; k++) {
-            float d = 72.0 * pow(float(k) / 8.0, 1.5);
-            vec3 q = p + uSun * d;
-            if (q.y > 220.0) break;
-            if (density(q, absBlock(q)).x > 0.0) inside += d - last;
-            last = d;
-        }
-        through = exp(-0.045 * inside);
-    } else {
-        through = sky;
-    }
-    float tone = (u01(hash3(uChunkCell + c, 9u)) - 0.5) * 0.06;
-    float openness = float(count) / 6.0;
     float alpha = kind == 2u ? 0.55 : kind == 1u ? 0.85 : 1.0;
-    float v = (clamp(storm * 0.5, 0.0, 1.0) * (uPalette.y - 1.0) + 0.5) / uPalette.y;
 
     // a cube that comes or goes grows out of (or shrinks into) the cloud next to it: below first, then the sides,
     // then above; one on its own grows from its middle
@@ -121,10 +156,9 @@ void main() {
         if (slot >= uMaxFaces) return;
         vec3 n = vec3(DIRS[i]);
         float facing = max(dot(n, uSun), 0.0);
-        float light = clamp(0.22 * sky + 0.12 * openness + 0.66 * through * (0.3 + 0.7 * facing) + tone, 0.0, 1.0);
-        float u = (light * (uPalette.x - 1.0) + 0.5) / uPalette.x;
         float code = state == 0u ? 0.0 : 1.0 + float(uStamp) + 1024.0 * float(anchor + (state == 2u ? 7 : 0));
-        uint uvV = floatBitsToUint(v + code);
+        // the face's two other axes
+        ivec3 ta = i < 2 ? ivec3(1, 0, 0) : ivec3(0, 1, 0), tb = i < 4 ? ivec3(0, 0, 1) : ivec3(1, 0, 0);
         // face shading in the colour; its lowest bit per channel says which corner of the cube a vertex is (x, y, z)
         uint shade = uint(round(SHADE[i] * 255.0)) & 0xFEu, a8 = uint(round(alpha * 255.0));
         uint normal = packSnorm4x8(vec4(n, 0.0));
@@ -136,11 +170,38 @@ void main() {
             verts[b + 1u] = floatBitsToUint(pos.y);
             verts[b + 2u] = floatBitsToUint(pos.z);
             uvec3 side = uvec3(CORNERS[i * 4 + k]);
+            // this corner: the cubes beside this one in the face's plane (toward the corner) and the ones in front
+            ivec3 da = ta * (2 * ivec3(CORNERS[i * 4 + k]) - 1), db = tb * (2 * ivec3(CORNERS[i * 4 + k]) - 1);
+            ivec3 cells[4] = ivec3[4](g, g + da, g + db, g + da + db);
+            float sumBase = 0.0, sumThrough = 0.0, sumStorm = 0.0, weight = 0.0;
+            for (int j = 0; j < 4; j++) {
+                if (j > 0 && !inGrid(cells[j])) continue;
+                uint d = drawn(cells[j]);
+                vec2 l = lights[cellIndex(cells[j])];
+                if ((d & 1u) == 0u || l.y < 0.0) continue;
+                sumBase += l.x;
+                sumThrough += l.y;
+                sumStorm += float((d >> 8) & 255u) / 100.0;
+                weight += 1.0;
+            }
+            if (weight == 0.0) {
+                weight = 1.0;
+                sumStorm = float((here >> 8) & 255u) / 100.0;
+            }
+            // shade where cubes stand in front of the corner (soft corners)
+            ivec3 f = g + DIRS[i];
+            bool sa = inGrid(f + da) && hides(f + da), sb = inGrid(f + db) && hides(f + db);
+            int near = sa && sb ? 3 : int(sa) + int(sb) + int(inGrid(f + da + db) && hides(f + da + db));
+            float light = (sumBase + 0.66 * sumThrough * (0.3 + 0.7 * facing)) / weight * (1.0 - 0.06 * float(near));
+            float u = (clamp(light, 0.0, 1.0) * (uPalette.x - 1.0) + 0.5) / uPalette.x;
+            float v = (clamp(sumStorm / weight * 0.5, 0.0, 1.0) * (uPalette.y - 1.0) + 0.5) / uPalette.y;
             verts[b + 3u] = floatBitsToUint(u);
-            verts[b + 4u] = uvV;
+            verts[b + 4u] = floatBitsToUint(v + code);
             verts[b + 5u] = (shade | side.x) | (shade | side.y) << 8 | (shade | side.z) << 16 | a8 << 24;
             verts[b + 6u] = normal;
         }
         slot++;
     }
 }
+
+#endif

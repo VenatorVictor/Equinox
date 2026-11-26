@@ -47,7 +47,7 @@ public final class CloudGpu {
     public static final int PALETTE_W = 64, PALETTE_H = 32;
 
     private static Boolean supported;
-    private static int fill, faces, domeBuffer, map0, map1;
+    private static int fill, light, faces, domeBuffer, map0, map1;
     private static final Map<String, Integer> UNIFORMS = new HashMap<>();
     private static final Slot[] SLOT = new Slot[SLOTS];
     private static final Long2ObjectOpenHashMap<Chunk> CHUNKS = new Long2ObjectOpenHashMap<>();
@@ -94,7 +94,7 @@ public final class CloudGpu {
     }
 
     private static final class Slot {
-        int list, grid, out, capacity = MAX_FACES;
+        int list, grid, light, out, capacity = MAX_FACES;
         long fence;
         Chunk target;
     }
@@ -113,11 +113,13 @@ public final class CloudGpu {
                     String common = read("common.glsl");
                     fill = program(common + read("fill.comp"));
                     faces = program(common + read("faces.comp"));
+                    light = program("#define LIGHT_PASS\n" + common + read("faces.comp"));
                     domeBuffer = glGenBuffers();
                     for (int i = 0; i < SLOTS; i++) {
                         Slot s = new Slot();
                         s.list = buffer(4L * (MAX_LIST + 1));
                         s.grid = buffer(4L * GRID * GRID * (256 / 4 + 2));
+                        s.light = buffer(8L * GRID * GRID * (256 / 4 + 2));
                         s.out = buffer(16L + (long) MAX_FACES * 4 * VERTEX);
                         SLOT[i] = s;
                     }
@@ -405,14 +407,16 @@ public final class CloudGpu {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, slot.out);
             boolean hasOld = mode == 2 || useOld && chunk.hasOld;
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, hasOld ? chunk.old : slot.grid);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, slot.light);
             GlStateManager._activeTexture(GL_TEXTURE0 + 1);
             GlStateManager._bindTexture(map1);
             GlStateManager._activeTexture(GL_TEXTURE0);
             GlStateManager._bindTexture(map0);
 
             int previous = glGetInteger(GL_CURRENT_PROGRAM);
-            for (int pass = mode == 2 ? 1 : 0; pass < 2; pass++) {
-                int program = pass == 0 ? fill : faces;
+            // fill (which cubes), light (per cube), faces (light averaged per corner)
+            for (int pass = mode == 2 ? 1 : 0; pass < 3; pass++) {
+                int program = pass == 0 ? fill : pass == 1 ? light : faces;
                 glUseProgram(program);
                 glUniform2i(uniform(program, "uCentre"), s.centerX(), s.centerZ());
                 glUniform2f(uniform(program, "uMapOrigin"), s.mapX0(), s.mapZ0());
@@ -428,6 +432,13 @@ public final class CloudGpu {
                 glUniform1f(uniform(program, "uBottom"), CloudSky.BOTTOM);
                 glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
                 if (pass == 0) {
+                    glDispatchCompute((GRID + 3) / 4, (layers + 2 + 3) / 4, (GRID + 3) / 4);
+                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                } else if (pass == 1) {
+                    glUniform3f(uniform(program, "uSun"), sun[0], sun[1], sun[2]);
+                    glUniform1i(uniform(program, "uLight"), full ? 1 : 0);
+                    glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
+                    glUniform1i(uniform(program, "uMode"), mode);
                     glDispatchCompute((GRID + 3) / 4, (layers + 2 + 3) / 4, (GRID + 3) / 4);
                     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                 } else {
@@ -469,13 +480,13 @@ public final class CloudGpu {
 
     /** Shader storage bindings 0-4 as they were (shader packs may use them). */
     private static int[] saveBindings() {
-        int[] saved = new int[5];
-        for (int i = 0; i < 5; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
+        int[] saved = new int[6];
+        for (int i = 0; i < 6; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
         return saved;
     }
 
     private static void restoreBindings(int[] saved) {
-        for (int i = 0; i < 5; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
+        for (int i = 0; i < 6; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
     }
 
     /** Finished chunks: their faces copied from the slot into the chunk's own buffer. */
