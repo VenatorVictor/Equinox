@@ -41,6 +41,8 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
      * (copy on write), so the lookups read them without holding the lock.
      */
     private static final Map<Level, Long2ObjectOpenHashMap<long[][]>> INDEX = new WeakHashMap<>();
+    /** Heaters and coolers placed or removed so far: a chunk list built while one changed may have missed it, so it isn't kept. */
+    private static final java.util.concurrent.atomic.AtomicLong CHANGES = new java.util.concurrent.atomic.AtomicLong();
     private static final long[] NONE = new long[0];
     private static volatile int maxRadius;
     /** The config changed: rebuild the sources, forget every chunk's list. */
@@ -70,7 +72,10 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
 
     /** A block changed (LevelChunkMixin): keep the chunk's list right if it has one. */
     public static void onBlockChanged(Level level, BlockPos pos, BlockState old, BlockState now) {
-        if (Math.max(radius(old), radius(now)) > 0) updateIndex(level, pos, now);
+        if (Math.max(radius(old), radius(now)) > 0) {
+            CHANGES.incrementAndGet();
+            updateIndex(level, pos, now);
+        }
     }
 
     private static synchronized void updateIndex(Level level, BlockPos pos, BlockState now) {
@@ -133,6 +138,7 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
         }
         LevelChunk chunk = level.getChunkSource().getChunkNow(cx, cz);
         if (chunk == null) return null; // never loads chunks
+        long changes = CHANGES.get();
         LevelChunkSection[] chunkSections = chunk.getSections();
         long[][] sections = new long[chunkSections.length][];
         LongArrayList list = new LongArrayList();
@@ -149,6 +155,8 @@ public record CropWarmth(float target, boolean heats, int radius, boolean needsL
             if (!list.isEmpty()) sections[s] = list.toLongArray();
         }
         synchronized (CropWarmth.class) {
+            // A heater or cooler changed while scanning: this list may be missing it, so it's used once and scanned again next time.
+            if (CHANGES.get() != changes) return sections;
             // Another thread may have built it meanwhile: keep the first (block changes went to that one).
             long[][] known = INDEX.computeIfAbsent(level, l -> new Long2ObjectOpenHashMap<>()).putIfAbsent(key, sections);
             return known != null ? known : sections;

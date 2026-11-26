@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SugarCaneBlockMixin {
     @Inject(method = "canSurvive", at = @At("RETURN"), cancellable = true)
     private void equinox$noWaterNeeded(BlockState state, LevelReader level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        if (cir.getReturnValueZ()) return;
+        if (cir.getReturnValueZ() || !dev.venatorvictor.equinox.Config.seasonalCrops()) return;
         BlockState soil = level.getBlockState(pos.below());
         if (!soil.canSustainPlant(level, pos.below(), Direction.UP, state).isDefault()) return; // the soil said no
         if (soil.is(BlockTags.DIRT) || soil.is(BlockTags.SAND)) cir.setReturnValue(true);

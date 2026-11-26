@@ -252,7 +252,7 @@ public final class Climate {
         }
         // Locked (snow_locks): snowy biomes have snow all year, no-snow ones (0 days, or warm without seasons: deserts,
         // jungles, savannas) never; blending leaves both alone (ClimateBlend), only the biomes in between change.
-        boolean locks = SnowConfig.SNOW_LOCKS.get();
+        boolean locks = dev.venatorvictor.equinox.Config.snowLocks();
         BiomeSnow snow = holder.getData(BiomeSnow.TYPE);
         boolean always = locks && holder.is(ALWAYS_SNOW);
         boolean never = locks && !always && (snow != null ? snow.days() <= 0 : changes == null && temperature >= SNOW_LINE);
@@ -280,7 +280,7 @@ public final class Climate {
 
     /** The biome's snow days (data map), 365 for snowy biomes while snow_locks is on. Null without a value. */
     public static BiomeSnow snowDays(Holder<Biome> holder) {
-        return SnowConfig.SNOW_LOCKS.get() && holder.is(ALWAYS_SNOW) ? ALL_YEAR : holder.getData(BiomeSnow.TYPE);
+        return dev.venatorvictor.equinox.Config.snowLocks() && holder.is(ALWAYS_SNOW) ? ALL_YEAR : holder.getData(BiomeSnow.TYPE);
     }
 
     /** Vanilla snows and freezes below this temperature. */

@@ -166,7 +166,7 @@ public final class SnowyPlants {
 
     /** Snow goes on plants now: config on and no snow mod doing it. */
     public static boolean enabled() {
-        return !SnowMod.LOADED && SnowConfig.SNOWY_PLANTS.get();
+        return !SnowMod.LOADED && dev.venatorvictor.equinox.Config.snowyPlants();
     }
 
     /** Whether snow can go in this block: it has the state, isn't excluded, and isn't a tall plant's upper half. */

@@ -285,7 +285,7 @@ public final class SnowCover {
             int target = now;
             if (now < depth && add) target = gradual ? now + 1 : depth;
             // Deeper than the climate gives now: thins toward it (deeper piles are a player's, left alone).
-            else if (now > depth && melt && SnowConfig.SNOW_DEPTH.get() && now <= SnowRules.maxLayers(biome)) target = gradual ? now - 1 : depth;
+            else if (now > depth && melt && dev.venatorvictor.equinox.Config.snowDepth() && now <= SnowRules.maxLayers(biome)) target = gradual ? now - 1 : depth;
             if (target != now && setSnow(level, top, topState, below, belowState, inFence, now, target)) return;
             // Water freezes with the snow, only while it snows.
             if (add && !freeze(level, below, belowState) && SNOW_REAL_MAGIC) SnowModCompat.cover(level, top.immutable(), topState, below, belowState);

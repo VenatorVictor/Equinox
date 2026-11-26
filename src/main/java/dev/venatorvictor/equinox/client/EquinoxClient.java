@@ -87,6 +87,11 @@ public final class EquinoxClient {
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.Clone.class, event -> {
             WATCHER.reset(); // dimension change
             SnowAnimation.clear();
+            // A new level (another dimension): the chunk maps are keyed by chunk only, the server sends the new ones.
+            if (event.getOldPlayer().level() != event.getNewPlayer().level()) {
+                dev.venatorvictor.equinox.snow.SnowMap.clearClient();
+                dev.venatorvictor.equinox.trees.TreeFruit.clearClient();
+            }
         });
         Equinox.LOGGER.info("Equinox: seasonal colors on, Distant Horizons {}", dhLoaded ? "found" : "not installed");
     }

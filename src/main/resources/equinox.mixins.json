@@ -24,6 +24,7 @@
     "SnowyNeighbourMixin",
     "SnowyDoublePlantMixin",
     "WorldgenClimateMixin",
+    "WorldgenFeaturesMixin",
     "PathNavigationRegionAccessor",
     "SnowyDirtShapeMixin",
     "BiomeFoliageAccessor",

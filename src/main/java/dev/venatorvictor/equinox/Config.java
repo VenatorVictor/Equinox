@@ -1,5 +1,7 @@
 package dev.venatorvictor.equinox;
 
+import dev.venatorvictor.equinox.snow.SnowConfig;
+
 
 import dev.venatorvictor.equinox.climate.Climate;
 import dev.venatorvictor.equinox.climate.Zone;
@@ -237,6 +239,21 @@ public final class Config {
     private static volatile boolean climateZones = true;
     private static volatile float zoneWarmStart = 0, zoneWarmEnd = 0.2F;
 
+    private static volatile boolean snowLocks = true, snowDepth = false, snowyPlants = true;
+
+    /** The snow settings players need too: the server's while connected to one. */
+    public static boolean snowLocks() {
+        return snowLocks;
+    }
+
+    public static boolean snowDepth() {
+        return snowDepth;
+    }
+
+    public static boolean snowyPlants() {
+        return snowyPlants;
+    }
+
     public static void refresh() {
         // a multiple of 24 (whole-day months and moon phases), at least 24
         daysPerSeason = Math.max(1, Math.round(val(DAYS_PER_SEASON) / (float) DAYS_STEP)) * DAYS_STEP;
@@ -268,6 +285,11 @@ public final class Config {
         blendStrength = val(BLEND_STRENGTH).floatValue();
         dhBlendDistance = val(DH_BLEND_DISTANCE);
         climateZones = val(CLIMATE_ZONES);
+        if (SnowConfig.SPEC.isLoaded()) { // the snow file may load after this one
+            snowLocks = val(SnowConfig.SNOW_LOCKS);
+            snowDepth = val(SnowConfig.SNOW_DEPTH);
+            snowyPlants = val(SnowConfig.SNOWY_PLANTS);
+        }
         zoneWarmStart = val(ZONE_WARM_START).floatValue();
         zoneWarmEnd = val(ZONE_WARM_END).floatValue();
         Climate.recategorize();
@@ -285,7 +307,9 @@ public final class Config {
     private static final List<ModConfigSpec.ConfigValue<?>> SYNCED = List.of(DAYS_PER_SEASON, DAYS_PER_WEEK, CELSIUS_CHANGES,
             SEASON_VARIATION, DAILY_VARIATION, VARIATION_SEED, BIOME_TEMPERATURES, BLEND_RADIUS, BLEND_RADIUS_LARGE,
             BLEND_STRENGTH, DH_BLEND_DISTANCE, CLIMATE_ZONES, ZONE_WARM_START, ZONE_WARM_END, SEASONAL_CROPS, CROPS_THAT_DIE, SLOW_GROWTH,
-            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE);
+            IDEAL_BONUS, FARMLAND_HEAT, CROP_HEATERS, CROP_COOLERS, LATITUDE, DAY_MINUTES, REAL_TIME, TIME_ZONE,
+            // the snow settings a player's game reads too (equinox-common.toml)
+            SnowConfig.SNOW_LOCKS, SnowConfig.SNOW_DEPTH, SnowConfig.SNOWY_PLANTS);
     /** The server's values while connected to one (path -> value); empty: this computer's file. */
     private static volatile Map<String, Object> remote = Map.of();
     private static volatile long worldSeed = 1;

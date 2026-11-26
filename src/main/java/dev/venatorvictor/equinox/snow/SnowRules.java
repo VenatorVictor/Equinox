@@ -40,7 +40,7 @@ public final class SnowRules {
      * limit (more snowy days, deeper snow). Only where lies() is true.
      */
     public static int layers(Holder<Biome> biome, BlockPos pos, Map<ResourceKey<Biome>, Float> warmest, float here) {
-        if (!SnowConfig.SNOW_DEPTH.get()) return 1;
+        if (!dev.venatorvictor.equinox.Config.snowDepth()) return 1;
         float over = margin(biome, warmest, here);
         return Mth.clamp(1 + Mth.floor(over / LAYER), 1, maxLayers(biome));
     }

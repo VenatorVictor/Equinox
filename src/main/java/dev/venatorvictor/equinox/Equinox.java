@@ -55,17 +55,28 @@ public final class Equinox {
         // Global (config/, the same for every world); a server sends its values to players (ConfigSync).
         container.registerConfig(ModConfig.Type.COMMON, Config.SPEC, "equinox-server.toml");
         modBus.addListener(ModConfigEvent.Loading.class, event -> { if (event.getConfig().getSpec() == Config.SPEC) Config.refresh(); });
+        // NeoForge reloads a changed file on its file-watching thread: the climate is worked out again on the server's
+        // thread, between ticks, so nothing reads it half changed.
         modBus.addListener(ModConfigEvent.Reloading.class, event -> {
             if (event.getConfig().getSpec() != Config.SPEC) return;
-            Config.refresh();
-            ConfigSync.sendToAll();
-            dev.venatorvictor.equinox.daylength.DaySpeed.reapply();
+            onMainThread(() -> {
+                Config.refresh();
+                ConfigSync.sendToAll();
+                dev.venatorvictor.equinox.daylength.DaySpeed.reapply();
+            });
         });
         modBus.addListener(RegisterPayloadHandlersEvent.class, ConfigSync::register);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.class, ConfigSync::onLogin);
         container.registerConfig(ModConfig.Type.COMMON, SnowConfig.SPEC);
-        // snow_locks changes which biomes are locked.
-        modBus.addListener(ModConfigEvent.Reloading.class, event -> { if (event.getConfig().getSpec() == SnowConfig.SPEC) dev.venatorvictor.equinox.climate.Climate.recategorize(); });
+        // snow_locks changes which biomes are locked; players get the snow settings they read too.
+        modBus.addListener(ModConfigEvent.Loading.class, event -> { if (event.getConfig().getSpec() == SnowConfig.SPEC) Config.refresh(); });
+        modBus.addListener(ModConfigEvent.Reloading.class, event -> {
+            if (event.getConfig().getSpec() != SnowConfig.SPEC) return;
+            onMainThread(() -> {
+                Config.refresh();
+                ConfigSync.sendToAll();
+            });
+        });
 
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, SeasonClock::onLevelTick);
         NeoForge.EVENT_BUS.addListener(LevelEvent.Load.class, SeasonClock::onLevelLoad);
@@ -110,6 +121,13 @@ public final class Equinox {
         NeoForge.EVENT_BUS.addListener(ChunkEvent.Unload.class, Crops::onChunkUnload);
 
         if (FMLEnvironment.dist == Dist.CLIENT) EquinoxClient.init(container, modBus);
+    }
+
+    /** On the server's thread when a server runs (single player too), else here (no world: nothing reads the climate). */
+    private static void onMainThread(Runnable task) {
+        net.minecraft.server.MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null) server.execute(task);
+        else task.run();
     }
 
     /** A built-in resource pack, always on (made by the packsrc scripts). */
