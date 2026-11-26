@@ -41,7 +41,7 @@ No library mods are needed.
   month.
 - The calendar item keeps track of the season, month, day, day length, moon phase and the equinoxes and solstices.
   Hang it on a wall or open it to see the month, then click a day for its details.
-- Held in your hand, it shows the date on screen; its position is configurable.
+- Held in your hand, it shows the date on screen.
 
 ### Real time
 - Off by default. When on, the world follows the real clock and date: a day lasts 24 hours, the seasons start on the
@@ -53,8 +53,9 @@ No library mods are needed.
 - Every biome has its own temperature through the year, in °C: mild coasts, a cold north, deserts, rainy and dry
   tropics. The Nether and the End have their own.
 - Neighboring biomes blend into each other, and winter fades out toward jungles and deserts.
-- Hot springs stay above freezing all winter.
-- Other mods can read the air and water temperature through the API.
+- Geothermal patches (hot ground and steaming pools) stay above freezing all winter.
+- Other mods can read the air and water temperature through the API. A survival mod that uses it (body temperature,
+  thirst) is in development.
 
 ### Snow
 - Snow builds up while it snows and melts in the rain.
@@ -75,17 +76,7 @@ No library mods are needed.
 - Flowers bud, bloom and go to seed.
 - In autumn, trees drop their leaves one by one and stand bare through the winter. Cherries blossom on their bare
   twigs in spring, and flowering azaleas open in May.
-- **Oak:** catkins in late spring. About a third of the leaf blocks also get tiny red flowers that grow into acorns
-  over the summer. Right-click to pick the ripe acorns in mid autumn (they grow back the next year), and plant them
-  for an oak sapling.
-- **Birch:** small dark catkins on the bare twigs all winter, opening yellow when the leaves come out. About a third
-  of the leaf blocks hang seed catkins, green in summer and brown in autumn: pick them for birch seeds.
-- **Spruce:** stays green. Red pollen cones open at the end of late spring, and about a third of the leaf blocks
-  grow seed cones, red in spring, green in summer and brown in early autumn: pick them for spruce cones. Old cones
-  hang on through the winter.
 - Snow covers the leaves too, on top of whatever they show.
-
-![Oak through the year: leaves, catkins, flowers and acorns, and the acorn](docs/images/oak-year.png)
 
 ### More
 - Far terrain in Distant Horizons follows the colors and the snow.
