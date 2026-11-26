@@ -167,8 +167,8 @@ public final class CloudRenderer {
             CloudSky.Sky s = f.sky();
             float[] d = f.density((float) (camera.x - now[0] - s.centerX()), (float) (camera.y - height),
                     (float) (camera.z - now[1] - s.centerZ()), new float[3]);
-            // from the cloud's edge to a few cubes deep
-            target = smooth(-1, 12, d[0]);
+            // from the cloud's edge to a cube or two deep
+            target = smooth(-1, 6, d[0]);
             if (d[0] > -1) insideStorm = d[1];
         }
         inside += (target - inside) * 0.25F;

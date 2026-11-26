@@ -160,7 +160,7 @@ public final class ClientConfig {
                 .defineInRange("growing_seconds", 2.0, 0.0, 4.0);
         CLOUD_FOG = BUILDER.comment("Inside a cloud, fog closes in to the cloud's colour: how far you still see deep inside, in blocks",
                         "(0 = no fog, the cloud is hollow inside).")
-                .defineInRange("inside_fog_blocks", 48, 0, 128);
+                .defineInRange("inside_fog_blocks", 16, 0, 128);
         DH_CLOUDS = BUILDER.comment("With Distant Horizons: the far clouds are drawn by it, so they sit behind far terrain (the near ones",
                         "are drawn the normal way). false: all clouds the normal way (far ones may show over far mountains).")
                 .define("distant_horizons_far_clouds", true);

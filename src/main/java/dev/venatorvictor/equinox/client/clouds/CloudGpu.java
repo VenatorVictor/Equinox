@@ -243,15 +243,25 @@ public final class CloudGpu {
         return Math.sqrt(dx * dx + dz * dz);
     }
 
+    /** Chunks split into smaller cubes last frame (they stay split a little farther out, so flying doesn't flip them). */
+    private static it.unimi.dsi.fastutil.longs.LongOpenHashSet split = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(),
+            splitNext = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    /** How much farther out a split chunk stays split. */
+    private static final double KEEP_SPLIT = 1.35;
+
     /** Marks the chunks wanted around the camera (wind space): a quadtree, split while nearer than the ring. */
     private static void want(double camX, double camZ, int reach, int nearCube, int ring) {
         for (Chunk c : CHUNKS.values()) c.wanted = false;
+        splitNext.clear();
         int[] sizes = cubes(nearCube);
         int top = sizes.length - 1, span = sizes[top] * CHUNK;
         int x0 = (int) Math.floor((camX - reach) / span), x1 = (int) Math.floor((camX + reach) / span);
         int z0 = (int) Math.floor((camZ - reach) / span), z1 = (int) Math.floor((camZ + reach) / span);
         for (int cx = x0; cx <= x1; cx++)
             for (int cz = z0; cz <= z1; cz++) want(top, cx, cz, sizes, camX, camZ, reach, ring);
+        var swap = split;
+        split = splitNext;
+        splitNext = swap;
     }
 
     private static void want(int level, int cx, int cz, int[] sizes, double camX, double camZ, int reach, int ring) {
@@ -260,12 +270,14 @@ public final class CloudGpu {
         double d = distance(camX, camZ, x0, z0, span);
         if (d > reach) return;
         // level L covers out to ring * 3^L blocks
-        if (level > 0 && d < ring * Math.pow(3, level - 1)) {
+        long key = key(level, cx, cz);
+        double limit = ring * Math.pow(3, level - 1) * (split.contains(key) ? KEEP_SPLIT : 1);
+        if (level > 0 && d < limit) {
+            splitNext.add(key);
             for (int i = 0; i < 2; i++)
                 for (int j = 0; j < 2; j++) want(level - 1, cx * 2 + i, cz * 2 + j, sizes, camX, camZ, reach, ring);
             return;
         }
-        long key = key(level, cx, cz);
         Chunk c = CHUNKS.get(key);
         if (c == null) {
             c = new Chunk(key, level, cx, cz, sizes[level]);
@@ -414,6 +426,7 @@ public final class CloudGpu {
                 glUniform3i(uniform(program, "uChunkCell"), chunk.cx * CHUNK, Math.floorDiv((int) CloudSky.BOTTOM, cube), chunk.cz * CHUNK);
                 glUniform1i(uniform(program, "uLayers"), layers);
                 glUniform1f(uniform(program, "uBottom"), CloudSky.BOTTOM);
+                glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
                 if (pass == 0) {
                     glDispatchCompute((GRID + 3) / 4, (layers + 2 + 3) / 4, (GRID + 3) / 4);
                     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

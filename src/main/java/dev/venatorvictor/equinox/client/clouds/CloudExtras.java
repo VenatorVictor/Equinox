@@ -206,7 +206,7 @@ public final class CloudExtras {
                 float alpha = ALPHA * Mth.clamp(rain * 2.5F, 0, 1) * fade;
                 float top = (float) (height + sky.map0()[o + 1] - camY);
                 if (top <= bottom) continue;
-                // light bluish grey, a little darker under a darker storm (fits rain and snow)
+                // cold light blue, a little darker under a darker storm (fits rain and snow)
                 float g = Mth.lerp(0.35F, 1, CloudSky.grey(storm)) * day;
                 float r = g * VEIL[0], gg = g * VEIL[1], b = g * VEIL[2];
                 float sx = -z / dist * half, sz = x / dist * half;
@@ -239,7 +239,7 @@ public final class CloudExtras {
 
     /** Distant rain: how see-through at most, its colour (times the day light). */
     private static final float ALPHA = 0.24F;
-    private static final float[] VEIL = {0.80F, 0.85F, 0.94F};
+    private static final float[] VEIL = {0.62F, 0.74F, 0.96F};
 
     /** One band of a veil from y0 down to y1: two quads, clear at the sides, alpha a0 at y0 and a1 at y1 in the middle. */
     private static void veil(BufferBuilder builder, float x, float z, float sx, float sz, float y0, float y1, float r, float g,

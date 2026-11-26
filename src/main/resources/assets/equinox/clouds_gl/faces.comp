@@ -100,6 +100,19 @@ void main() {
     float alpha = kind == 2u ? 0.55 : kind == 1u ? 0.85 : 1.0;
     float v = (clamp(storm * 0.5, 0.0, 1.0) * (uPalette.y - 1.0) + 0.5) / uPalette.y;
 
+    // a cube that comes or goes grows out of (or shrinks into) the cloud next to it: below first, then the sides,
+    // then above; one on its own grows from its middle
+    int anchor = 0;
+    if (state != 0u) {
+        const int ORDER[6] = int[6](1, 2, 3, 4, 5, 0);
+        for (int j = 0; j < 6; j++) {
+            if (hides(g + DIRS[ORDER[j]])) {
+                anchor = ORDER[j] + 1;
+                break;
+            }
+        }
+    }
+
     uint first = atomicAdd(faceCount, uint(count));
     uint slot = first;
     vec3 corner = vec3(float(c.x) * s, uBottom + float(c.y) * s, float(c.z) * s);
@@ -110,7 +123,7 @@ void main() {
         float facing = max(dot(n, uSun), 0.0);
         float light = clamp(0.22 * sky + 0.12 * openness + 0.66 * through * (0.3 + 0.7 * facing) + tone, 0.0, 1.0);
         float u = (light * (uPalette.x - 1.0) + 0.5) / uPalette.x;
-        float code = state == 0u ? 0.0 : state == 1u ? 1.0 + float(uStamp) : 1025.0 + float(uStamp);
+        float code = state == 0u ? 0.0 : 1.0 + float(uStamp) + 1024.0 * float(anchor + (state == 2u ? 7 : 0));
         uint uvV = floatBitsToUint(v + code);
         // face shading in the colour; its lowest bit per channel says which corner of the cube a vertex is (x, y, z)
         uint shade = uint(round(SHADE[i] * 255.0)) & 0xFEu, a8 = uint(round(alpha * 255.0));
