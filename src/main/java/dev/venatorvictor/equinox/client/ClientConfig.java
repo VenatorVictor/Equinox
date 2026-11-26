@@ -140,7 +140,7 @@ public final class ClientConfig {
         CLOUD_CUBE = BUILDER.comment("Size of the cubes near you, in blocks: 4 (finer) or 8 (lighter). Farther away they are twice and four",
                         "times as big (at most 16).")
                 .defineInRange("cube_size", 4, 4, 8);
-        CLOUD_DETAIL = BUILDER.comment("How far the near cubes reach: LOW 128 blocks, MEDIUM 256, HIGH 384; the next size reaches three times as far.")
+        CLOUD_DETAIL = BUILDER.comment("How far the near cubes reach: LOW 192 blocks, MEDIUM 384, HIGH 576; the next size reaches three times as far.")
                 .defineEnum("detail", CloudDetail.MEDIUM);
         CLOUD_LIGHTING = BUILDER.comment("FULL: sunlight goes through the cloud, so thick parts shade the rest and storm bases are dark.",
                         "SIMPLE: lighter from above only (cheaper).")

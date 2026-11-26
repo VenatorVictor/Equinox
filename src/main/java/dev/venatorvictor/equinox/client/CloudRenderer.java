@@ -103,9 +103,9 @@ public final class CloudRenderer {
     /** Near cubes, rings of detail (blocks the near cubes reach), from the settings. */
     private static int ring() {
         return switch (ClientConfig.CLOUD_DETAIL.get()) {
-            case LOW -> 128;
-            case MEDIUM -> 256;
-            case HIGH -> 384;
+            case LOW -> 192;
+            case MEDIUM -> 384;
+            case HIGH -> 576;
         };
     }
 

@@ -341,7 +341,7 @@
   "equinox.settings.choice.4_blocks": "4 blocos",
   "equinox.settings.choice.8_blocks": "8 blocos",
   "equinox.settings.cloud_detail.name": "Detalhe das nuvens",
-  "equinox.settings.cloud_detail.desc": "Até onde vão os cubos pequenos: Baixo 128 blocos, Médio 256, Alto 384. O tamanho seguinte vai três vezes mais longe, o maior o resto.",
+  "equinox.settings.cloud_detail.desc": "Até onde vão os cubos pequenos: Baixo 192 blocos, Médio 384, Alto 576. O tamanho seguinte vai três vezes mais longe, o maior o resto.",
   "equinox.settings.choice.low": "Baixo",
   "equinox.settings.choice.medium": "Médio",
   "equinox.settings.choice.high": "Alto",

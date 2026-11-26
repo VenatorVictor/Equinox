@@ -496,7 +496,7 @@
   "equinox.settings.choice.4_blocks": "4 blocks",
   "equinox.settings.choice.8_blocks": "8 blocks",
   "equinox.settings.cloud_detail.name": "Cloud detail",
-  "equinox.settings.cloud_detail.desc": "How far the near (small) cubes reach: Low 128 blocks, Medium 256, High 384. The next size reaches three times as far, the biggest the rest.",
+  "equinox.settings.cloud_detail.desc": "How far the near (small) cubes reach: Low 192 blocks, Medium 384, High 576. The next size reaches three times as far, the biggest the rest.",
   "equinox.settings.choice.low": "Low",
   "equinox.settings.choice.medium": "Medium",
   "equinox.settings.choice.high": "High",
