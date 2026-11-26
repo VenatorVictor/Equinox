@@ -472,7 +472,7 @@ class Pack:
             return
         ns, path = model_id.split(":")
         # snow_mode: "snow_needs_sky" (crops) or "snow_only_in_snow_layer" (other plants); see CROPS.
-        data = {"target": [model_id]} | ({"biomes": biomes} if biomes else {}) | {snow_mode: True, "slices": slices}
+        data = {"target": [model_id]} | ({"biomes": biomes} if biomes else {}) | {snow_mode: True, "weeks": slices}
         (self.rules / f"{ns}_{path.rsplit('/', 1)[1]}.json").write_text(json.dumps(data, indent=2))
 
     def tinted_flower(self, model_id, window):

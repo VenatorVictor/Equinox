@@ -48,7 +48,7 @@ import java.util.function.Predicate;
  * Reads seasonal texture files (assets/<ns>/season_textures/*.json). Each file swaps texture variables of block models per week
  * (12 file weeks a season, 48 a year, by date: week 0 = the first days of spring; the world's 4-day weeks are mapped
  * onto them, see remap), in the biomes it
- * names. Weeks are named <season>_week_<1..12> (YearSteps). Supported: target, biomes, slices with start/end, season,
+ * names. Weeks are named <season>_week_<1..12> (YearSteps). Supported: target, biomes, weeks (looks, each from start to end), season,
  * start_season/end_season, textures (one map, or a list picked per position), tint (texture variable to tint
  * index, -1 = untinted), and snow_textures/snow_tint, used where real snow would lie (same rule as the snow cover).
  * Our own additions: "snow_needs_sky": true = snow textures only on blocks open to the sky (full sky light), so plants
@@ -165,7 +165,7 @@ public final class SeasonalTextures {
         // held_over_textures: drawn in front when the week's leaf fall is held back (default: its over_textures).
         Variant[][] heldOver = new Variant[WEEKS][];
         Set<TextureAtlasSprite> used = new HashSet<>();
-        for (JsonElement element : GsonHelper.getAsJsonArray(json, "slices")) {
+        for (JsonElement element : GsonHelper.getAsJsonArray(json, "weeks")) {
             JsonObject slice = element.getAsJsonObject();
             int[] range = range(slice);
             if (range == null) continue;

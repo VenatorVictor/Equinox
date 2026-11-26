@@ -3,7 +3,7 @@
     "minecraft:block/oak_sapling"
   ],
   "snow_only_in_snow_layer": true,
-  "slices": [
+  "weeks": [
     {
       "start": "spring_week_1",
       "end": "winter_week_12",

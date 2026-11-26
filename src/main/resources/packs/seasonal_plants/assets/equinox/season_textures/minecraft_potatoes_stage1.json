@@ -3,7 +3,7 @@
     "minecraft:block/potatoes_stage1"
   ],
   "snow_needs_sky": true,
-  "slices": [
+  "weeks": [
     {
       "start": "spring_week_1",
       "end": "winter_week_12",

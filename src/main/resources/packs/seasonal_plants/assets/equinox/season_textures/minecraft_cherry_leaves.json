@@ -3,7 +3,7 @@
     "minecraft:block/cherry_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
-  "slices": [
+  "weeks": [
     {
       "start": "winter_week_12",
       "end": "spring_week_1",

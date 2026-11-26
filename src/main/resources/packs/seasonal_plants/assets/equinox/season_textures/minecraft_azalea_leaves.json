@@ -3,7 +3,7 @@
     "minecraft:block/azalea_leaves"
   ],
   "biomes": "#equinox:seasonal_zones",
-  "slices": [
+  "weeks": [
     {
       "start": "winter_week_1",
       "end": "spring_week_5",

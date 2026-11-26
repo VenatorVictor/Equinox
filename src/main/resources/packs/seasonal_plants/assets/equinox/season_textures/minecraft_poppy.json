@@ -4,7 +4,7 @@
   ],
   "biomes": "#equinox:seasonal_zones",
   "snow_only_in_snow_layer": true,
-  "slices": [
+  "weeks": [
     {
       "start": "summer_week_12",
       "end": "spring_week_5",

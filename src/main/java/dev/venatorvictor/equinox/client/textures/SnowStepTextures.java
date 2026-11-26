@@ -55,8 +55,8 @@ public final class SnowStepTextures implements SpriteSource {
         for (Map.Entry<ResourceLocation, Resource> file : resources.listResources(DIRECTORY, path -> path.getPath().endsWith(".json")).entrySet()) {
             try (Reader reader = file.getValue().openAsReader()) {
                 JsonObject json = GsonHelper.parse(reader);
-                if (!json.has("slices")) continue;
-                for (JsonElement slice : GsonHelper.getAsJsonArray(json, "slices"))
+                if (!json.has("weeks")) continue;
+                for (JsonElement slice : GsonHelper.getAsJsonArray(json, "weeks"))
                     if (slice.isJsonObject() && slice.getAsJsonObject().has("snow_textures")) collect(slice.getAsJsonObject().get("snow_textures"), textures);
             } catch (Exception e) {
                 Equinox.LOGGER.warn("Equinox: skipping {} for snow steps: {}", file.getKey(), e.toString());

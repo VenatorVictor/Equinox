@@ -3,7 +3,7 @@
     "minecraft:block/oak_leaves"
   ],
   "biomes": "#equinox:tropical_zones",
-  "slices": [
+  "weeks": [
     {
       "start": "spring_week_1",
       "end": "spring_week_2",
