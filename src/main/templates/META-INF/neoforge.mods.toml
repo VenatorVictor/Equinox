@@ -9,29 +9,34 @@ displayName="${mod_name}"
 authors="venatorvictor"
 description='''§fThe whole world follows the year: §aSpring§f, §eSummer§f, §6Autumn§f and §bWinter§f.
 
+§a§lSeasons and calendar
+§7• Seasons start on the equinoxes and solstices and are uneven, as on Earth; north or south hemisphere.
+§7• 12 months, weeks, and a moon whose cycle drifts through the months.
+§7• Long summer days and short winter days, from the latitude; the real length of a day is a setting.
+§7• A calendar to hang on the wall or carry, with month, moon and events pages.
+§7• Real time: the world can follow the real clock and date, with the real seasons and moon.
+
 §6§lClimate
-§7• Each biome has its own seasons: mild coasts, a cold north, deserts, rainy and dry tropics.
-§7• Neighbouring biomes blend, and winter fades out near jungles and deserts.
-§7• Long summer days, short winter days.
+§7• Each biome has its own °C year: mild coasts, a cold north, deserts, rainy and dry tropics.
+§7• Neighbouring biomes blend, and winter fades out near jungles and deserts; warm geothermal patches.
 
 §b§lSnow
-§7• Snow builds up while it's cold and melts in a thaw.
-§7• It settles in grass, flowers and plants and on fences, and slides in and out instead of popping.
-§7• Lakes and rivers freeze.
+§7• Snow comes with snowfall and melts in warm rain; lakes and rivers freeze while it snows.
+§7• It settles in grass, flowers and plants, on fences, stairs and slabs, and on leaves.
 
-§a§lCrops
+§e§lCrops
 §7• Crops grow by temperature: fast when it's ideal, slowly when it's cool or warm, dormant in the cold, killed by frost or heat.
 §7• Campfires, torches and other heat sources protect them; ice cools them.
-§7• On hot days farmland needs water closer by.
 
-§d§lColors
-§7• Grass and leaves change color through the year; birches turn yellow and orange in autumn.
-§7• Flowers bud, bloom and go to seed.
+§2§lTrees and plants
+§7• Grass and leaves change color through the year; leaves turn and fall one by one, and trees stand bare in winter.
+§7• Cherries bloom on bare twigs, azaleas flower in May, flowers bud, bloom and go to seed.
+§7• Oaks grow catkins and acorns, birches catkins and seeds, spruces cones: pick them and plant new trees.
 
 §9§lMore
 §7• Distant Horizons: far terrain follows the colors and the snow.
 §7• A config screen with tabs, descriptions and the performance cost of each setting.
-§7• No library mods needed; a temperature API for other mods.'''
+§7• No library mods needed; a season and temperature API for other mods.'''
 
 [[mixins]]
     config="${mod_id}.mixins.json"

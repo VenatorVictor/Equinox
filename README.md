@@ -2,14 +2,16 @@
 
 The whole world follows the year: **Spring**, **Summer**, **Autumn** and **Winter**.
 
-Equinox is a seasons mod for **NeoForge 1.21.1**. Every biome has its own temperatures, snow falls in winter
-and melts in the rain, crops grow by temperature, and grass, leaves and flowers change through the year.
-No library mods are needed.
+Equinox is a seasons mod for **NeoForge 1.21.1**. The seasons start on the equinoxes and solstices, with a
+calendar, a moon that drifts through the months and long summer and short winter days; the world can even follow
+the real date and clock. Every biome has its own °C year, snow falls and melts with the weather, crops grow by
+temperature, and trees and plants live through the year: leaves turn and fall, cherries bloom, oaks grow acorns
+you can pick and plant. No library mods are needed.
 
 ## Features
 
 ### Seasons
-- Four seasons of 48 days on average (a 192-day year); 24, 72 or 96 (a 384-day year) in the settings. 12 months of
+- Four seasons of 3 months each: 48 days on average (a 192-day year); 24, 72 or 96 (a 384-day year) in the settings. 12 months of
   equal length; weeks of 2 to 8 days, from the lengths that fit the month.
 - As on Earth the seasons are uneven: spring and summer a little longer, starting on equinoxes and solstices on
   different days of the month (48-day seasons: March 10, June 11, September 12, December 11). The world starts on the
@@ -32,14 +34,17 @@ No library mods are needed.
 - Held, it shows the month, season, year and day at the top left.
 
 ### Climate
-- Each biome has its own temperatures: mild coasts, a cold north, deserts, rainy and dry tropics.
+- Each biome has its own °C year: mild coasts, a cold north, deserts, rainy and dry tropics; the Nether and the End
+  have their own temperatures.
 - Neighbouring biomes blend, and winter fades out near jungles and deserts.
 - Geothermal patches (hot ground and steaming pools from world generation) stay above freezing all winter.
 - Other mods can read the air and water temperature through the API.
 
 ### Snow
 - Snow appears during snowfall and melts in the rain.
-- It settles in grass, flowers and plants and on fences, with an animation as it appears and melts.
+- It settles in grass, flowers and plants, on fences, gates and walls, in a thin layer on stairs and slabs, and on
+  leaves, with an animation as it appears and melts.
+- Snow lies on crops too, and the snow cover is worked out a bit at a time within a time budget.
 - Lakes and rivers freeze while it snows.
 
 ### Crops
@@ -48,7 +53,7 @@ No library mods are needed.
 - Campfires, torches and other heat sources protect them; ice cools them.
 - On hot days farmland needs water closer by.
 
-### Colors
+### Trees and plants
 - Grass and leaves change color through the year; birches turn yellow and orange in autumn.
 - Flowers bud, bloom and go to seed.
 - Trees lose their leaves one by one in autumn and stand on bare twigs in winter; cherries bloom on the twigs in
