@@ -12,7 +12,8 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public record WeatherPayload(long seed, int override, long from, long until, java.util.List<Weather.Forced> forced) implements CustomPacketPayload {
     private static final StreamCodec<ByteBuf, Weather.Forced> FORCED = StreamCodec.composite(
             ByteBufCodecs.DOUBLE, Weather.Forced::x, ByteBufCodecs.DOUBLE, Weather.Forced::z,
-            ByteBufCodecs.VAR_LONG, Weather.Forced::from, ByteBufCodecs.VAR_LONG, Weather.Forced::until, Weather.Forced::new);
+            ByteBufCodecs.VAR_LONG, Weather.Forced::from, ByteBufCodecs.VAR_LONG, Weather.Forced::until,
+            ByteBufCodecs.BOOL, Weather.Forced::thunder, Weather.Forced::new);
     public static final Type<WeatherPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Equinox.MOD_ID, "weather"));
     public static final StreamCodec<ByteBuf, WeatherPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_LONG, WeatherPayload::seed,
@@ -53,7 +54,7 @@ public record WeatherPayload(long seed, int override, long from, long until, jav
 
     // Optional: a client without the mod still connects (it gets vanilla's clear sky).
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("2").optional();
+        var registrar = event.registrar("3").optional();
         registrar.playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(() -> receive(payload)));
         registrar.playToClient(Grid.TYPE, Grid.CODEC, (payload, context) -> context.enqueueWork(() -> receive(payload)));
     }

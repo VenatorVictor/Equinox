@@ -99,10 +99,6 @@ final class Settings {
         // ---- Climate
         all.add(server(Config.REGIONAL_WEATHER, "regional_weather").tab(CLIMATE, "weather")
                 .cost(Cost.NONE));
-        all.add(client(ClientConfig.STORM_CLOUDS, "storm_clouds").tab(CLIMATE, null)
-                .cost(Cost.LOW));
-        all.add(client(ClientConfig.CLOUD_DISTANCE, "cloud_distance").tab(CLIMATE, null)
-                .cost(Cost.LOW).range(384, 2304, 96).label((v, x) -> u("blocks", (int) v)));
         all.add(server(Config.BLEND_RADIUS, "blend_radius").tab(CLIMATE, "blending")
                 .cost(Cost.MEDIUM)
                 .range(0, 512, 16).label((v, x) -> off(v, u("blocks", (int) v))));

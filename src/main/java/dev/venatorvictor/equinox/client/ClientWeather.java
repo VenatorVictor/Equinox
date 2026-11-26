@@ -17,6 +17,8 @@ public final class ClientWeather {
     private static final float FADE = 0.0125F;
     /** Full rain level from this storm strength on (the ragged edge is below). */
     private static final float FULL_RAIN = 0.25F;
+    /** Rain level (sky and cloud darkening) when the clouds have gathered but no rain falls yet. */
+    private static final float GATHER_DARK = 0.5F;
 
     private static float rain, thunder;
     private static ClientLevel managed;
@@ -36,6 +38,13 @@ public final class ClientWeather {
         int x = Mth.floor(camera.x), z = Mth.floor(camera.z);
         float strength = Weather.strength(level, x, z);
         float rainTarget = Mth.clamp(strength / FULL_RAIN, 0, 1);
+        // A storm coming or gathering overhead: the sky and the clouds darken first (vanilla darkens them by the rain
+        // level; no rain falls here, the columns stay dry), up to GATHER_DARK just before it rains.
+        if (strength <= 0) {
+            Weather.Side sky = Weather.client();
+            long time = level.getGameTime();
+            rainTarget = GATHER_DARK * sky.cloudiness(camera.x, camera.z, time, sky.field.offset(time));
+        }
         float thunderTarget = Mth.clamp((strength - (1 - Weather.THUNDER_SHARE)) / 0.02F, 0, 1);
         if (managed != level) {
             // A new level (join, back from another dimension): start from the storm, no fade from vanilla's.

@@ -109,6 +109,10 @@ public final class ServerWeather {
         long now = Math.floorDiv(level.getGameTime(), Weather.TIME_STEP) * Weather.TIME_STEP;
         if (duration <= 0) kind = Weather.Override.NONE;
         side.setOverride(kind, now, now + Math.max(0, duration));
+        if (kind == Weather.Override.CLEAR) {
+            side.setForced(List.of()); // clear sky: started storms end too
+            data(level).forced = List.of();
+        }
         Data data = data(level);
         data.override = kind;
         data.from = now;
@@ -122,12 +126,17 @@ public final class ServerWeather {
      * where it's cold and rains where it's warm. Ended forced storms are dropped.
      */
     public static void forceStorm(ServerLevel level, double x, double z, int duration) {
+        forceStorm(level, x, z, duration, false);
+    }
+
+    /** A started storm: clouds gather over the spot for Weather.FORCED_BUILD ticks, then it rains (or thunders) for duration. */
+    public static void forceStorm(ServerLevel level, double x, double z, int duration, boolean thunder) {
         Weather.Side side = Weather.server();
         if (side == null) return;
         long now = Math.floorDiv(level.getGameTime(), Weather.TIME_STEP) * Weather.TIME_STEP;
         List<Weather.Forced> list = new ArrayList<>();
         for (Weather.Forced storm : side.forced()) if (storm.until() > now) list.add(storm);
-        list.add(new Weather.Forced(x, z, now, now + Math.max(1, duration)));
+        list.add(new Weather.Forced(x, z, now, now + Weather.FORCED_BUILD + Math.max(1, duration), thunder));
         while (list.size() > 32) list.remove(0);
         side.setForced(list);
         Data data = data(level);
@@ -218,7 +227,7 @@ public final class ServerWeather {
             List<Weather.Forced> forced = new ArrayList<>();
             for (net.minecraft.nbt.Tag entry : tag.getList("forced", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
                 CompoundTag storm = (CompoundTag) entry;
-                forced.add(new Weather.Forced(storm.getDouble("x"), storm.getDouble("z"), storm.getLong("from"), storm.getLong("until")));
+                forced.add(new Weather.Forced(storm.getDouble("x"), storm.getDouble("z"), storm.getLong("from"), storm.getLong("until"), storm.getBoolean("thunder")));
             }
             data.forced = List.copyOf(forced);
             return data;
@@ -236,6 +245,7 @@ public final class ServerWeather {
                 entry.putDouble("z", storm.z());
                 entry.putLong("from", storm.from());
                 entry.putLong("until", storm.until());
+                entry.putBoolean("thunder", storm.thunder());
                 list.add(entry);
             }
             tag.put("forced", list);

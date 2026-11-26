@@ -39,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
  * camera moves on, every few seconds (storms change shape slowly) and when climate tiles arrive.
  */
 public final class CloudRenderer {
+    private static final boolean ENABLED = false;
     private static final int CELL = 12;
     private static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath(Equinox.MOD_ID, "textures/environment/cloud_white.png");
     /** Share of the sky with fair-weather clouds (far from storms, normal rain share), and in dry places. */
@@ -99,6 +100,9 @@ public final class CloudRenderer {
 
     /** Our clouds take over from vanilla's here (weather per region on, setting on, storms known). */
     public static boolean active(ClientLevel level) {
+        // Off (vanilla clouds) until a new look is picked from the cloud previews (user 2026-11-26: these were ugly
+        // and heavy, 200 -> 6 fps).
+        if (!ENABLED) return false;
         return level != null && ClientConfig.STORM_CLOUDS.get() && Weather.on(level) && Weather.client() != null;
     }
 

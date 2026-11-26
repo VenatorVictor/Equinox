@@ -18,6 +18,7 @@
     "IceSeamMixin",
     "ServerLevelSnowfallMixin",
     "ServerLevelWeatherMixin",
+    "WeatherCommandMixin",
     "SnowStateMixin",
     "BlockStateSnowBreakMixin",
     "SnowyDirtMixin",

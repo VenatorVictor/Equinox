@@ -322,5 +322,7 @@
   "equinox.settings.storm_clouds.name": "Nuvens de tempestade",
   "equinox.settings.storm_clouds.desc": "Com tempo por região: nossas próprias nuvens, feitas a partir das tempestades, então as nuvens ficam onde está a chuva. Nuvens brancas pequenas no tempo bom se fecham numa camada cinza quando uma tempestade chega e viram nuvens altas e escuras dentro dela; elas seguem as tempestades.\nSegue a opção Nuvens do jogo (desligada: nenhuma, rápida: uma passada).\nDesligado: nuvens do vanilla.",
   "equinox.settings.cloud_distance.name": "Distância das nuvens",
-  "equinox.settings.cloud_distance.desc": "Até onde as nuvens vão; elas somem aos poucos perto disso. Mais longe mostra tempestades chegando antes, mas leva um pouco mais de tempo para montar em segundo plano."
+  "equinox.settings.cloud_distance.desc": "Até onde as nuvens vão; elas somem aos poucos perto disso. Mais longe mostra tempestades chegando antes, mas leva um pouco mais de tempo para montar em segundo plano.",
+  "commands.equinox.weather.rain_here": "Uma tempestade está se formando sobre você: as nuvens se juntam por %s minutos, depois chove (ou neva onde está frio). Ela vai até %s blocos e segue com o vento.",
+  "commands.equinox.weather.thunder_here": "Uma tempestade com trovões está se formando sobre você: as nuvens se juntam por %s minutos, depois trovoa. Ela vai até %s blocos e segue com o vento."
 }

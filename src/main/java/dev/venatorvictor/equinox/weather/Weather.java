@@ -26,16 +26,21 @@ public final class Weather {
 
     public enum Override { NONE, CLEAR, RAIN, THUNDER }
 
-    /** Forced storm (snowfall when cold and bare, rain when warm and snowy): radius (blocks), strength, fade (ticks). */
+    /**
+     * Started storms (/weather rain or thunder, snowfall when cold and bare, rain when warm and snowy): radius
+     * (blocks), strength at the core (rain; thunder 1), ticks the clouds take to gather before it rains, ticks for
+     * the rain to come and go.
+     */
     public static final double FORCED_RADIUS = 1200;
     private static final float FORCED_STRENGTH = 0.6F;
-    private static final int FORCED_FADE = 1200;
+    public static final int FORCED_BUILD = 1800;
+    private static final int FORCED_FADE = 600;
 
     /**
-     * A storm started over a spot (a player's) for a while; it drifts with the wind from there like any storm and
-     * fades in and out. Rain or snow follow the temperature, as always.
+     * A storm started over a spot (a player's): the clouds gather there first (FORCED_BUILD), then it rains until
+     * `until`; it drifts with the wind from there like any storm. Rain or snow follow the temperature, as always.
      */
-    public record Forced(double x, double z, long from, long until) {
+    public record Forced(double x, double z, long from, long until, boolean thunder) {
     }
 
     /** One side's storms: the field, the climate grid, the /weather override, a cache of strengths. */
@@ -85,8 +90,11 @@ public final class Weather {
             corners.clear();
         }
 
-        /** Strength of the forced storms at a spot and time (0 if none). */
-        private float forcedStrength(double x, double z, long time, double[] offset) {
+        /**
+         * The sky of the started storms at a spot and time, 0..2 as cloudiness: the clouds gather (0 to 1) over
+         * FORCED_BUILD ticks, then the rain comes (1 + strength), thinner toward the storm's edge.
+         */
+        private float forcedSky(double x, double z, long time, double[] offset) {
             float best = 0;
             for (Forced storm : forced) {
                 if (time < storm.from() || time >= storm.until()) continue;
@@ -95,8 +103,11 @@ public final class Weather {
                 double d = Math.sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz)) / FORCED_RADIUS;
                 if (d >= 1) continue;
                 float shape = (float) (1 - d * d * (3 - 2 * d)); // smooth to 0 at the edge
-                float fade = Math.min(1, Math.min(time - storm.from(), storm.until() - time) / (float) FORCED_FADE);
-                best = Math.max(best, FORCED_STRENGTH * shape * fade);
+                long age = time - storm.from();
+                float gather = Math.min(1, age / (float) FORCED_BUILD);
+                float rain = Math.max(0, Math.min(1, Math.min((age - FORCED_BUILD) / (float) FORCED_FADE, (storm.until() - time) / (float) FORCED_FADE)));
+                float peak = storm.thunder() ? 1 : FORCED_STRENGTH;
+                best = Math.max(best, shape * (gather + peak * rain));
             }
             return best;
         }
@@ -121,7 +132,7 @@ public final class Weather {
             float u = field.value(x, z, time, offset);
             float threshold = 1 - share;
             float base = u <= threshold ? 0 : (u - threshold) / share;
-            if (!forced.isEmpty()) base = Math.max(base, forcedStrength(x, z, time, offset));
+            if (!forced.isEmpty()) base = Math.max(base, forcedSky(x, z, time, offset) - 1);
             if (kind == Override.RAIN) return Math.min(Math.max(base, RAIN_OVERRIDE), 1 - THUNDER_SHARE - 0.01F);
             return base;
         }
@@ -140,7 +151,8 @@ public final class Weather {
             if (s > 0) return 1 + s;
             float u = field.value(x, z, time, offset);
             float approach = (u - (1 - 2.5F * share)) / (1.5F * share);
-            return Math.max(0, Math.min(1, approach));
+            float sky = Math.max(0, Math.min(1, approach));
+            return forced.isEmpty() ? sky : Math.max(sky, Math.min(1, forcedSky(x, z, time, offset)));
         }
 
         /** Strength now at a block column, from a 16-block lattice worked out once a second. */
