@@ -344,10 +344,11 @@ public final class CloudSky {
                 // as the weather turns, a heap shrinks away (or grows) instead of vanishing
                 float fade = smooth(0, 0.12F, presence - hash01(si, sj, salt + 2));
                 if (fade <= 0.02F) continue;
-                // its own life: forms, lives, dissolves (1-3 game hours), offset per site
-                float life = 1000 + 2000 * hash01(si, sj, salt + 3);
+                // its own life: forms (a tenth of it), holds its shape, dissolves (the last tenth); 6-12 game hours
+                // (5-10 minutes), offset per site, so its edges stay put most of the time
+                float life = 6000 + 6000 * hash01(si, sj, salt + 3);
                 float phase = (float) (((time / (double) life) + hash01(si, sj, salt + 4)) % 1.0);
-                float gate = smooth(0, 0.2F, phase) * (1 - smooth(0.75F, 1, phase)) * fade;
+                float gate = smooth(0, 0.1F, phase) * (1 - smooth(0.9F, 1, phase)) * fade;
                 if (gate < 0.05F) continue;
                 float base = 4 * hash01(si, sj, salt + 5);
                 if (big) {

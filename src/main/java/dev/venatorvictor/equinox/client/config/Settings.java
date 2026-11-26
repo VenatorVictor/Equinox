@@ -110,7 +110,7 @@ final class Settings {
         all.add(client(ClientConfig.DISTANT_RAIN, "distant_rain").tab(CLIMATE, null)
                 .cost(Cost.LOW));
         all.add(client(ClientConfig.CLOUD_ANIMATION, "cloud_animation").tab(CLIMATE, null)
-                .cost(Cost.LOW).range(0, 4, 0.25).label((v, x) -> off(v, String.format(Locale.ROOT, "%.2f s", v))));
+                .cost(Cost.LOW).range(0, 8, 0.5).label((v, x) -> off(v, String.format(Locale.ROOT, "%.2f s", v))));
         all.add(client(ClientConfig.CLOUD_FOG, "cloud_fog").tab(CLIMATE, null)
                 .cost(Cost.NONE).range(0, 128, 4).label((v, x) -> off(v, u("blocks", (int) v))));
         all.add(server(Config.BLEND_RADIUS, "blend_radius").tab(CLIMATE, "blending")
