@@ -67,6 +67,9 @@ void main() {
     if (!on && !wasOn) return;
     // 0 settled, 1 growing (new), 2 going (gone now)
     uint state = on && wasOn ? 0u : on ? 1u : 2u;
+    // counts for the test log: cubes that came (pad0) and went (pad1) in this make
+    if (state == 1u) atomicAdd(pad0, 1u);
+    else if (state == 2u) atomicAdd(pad1, 1u);
     uint here = on ? now : before;
     uint open = 0u;
     int count = 0;

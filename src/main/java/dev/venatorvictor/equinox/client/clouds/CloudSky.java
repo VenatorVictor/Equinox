@@ -176,6 +176,10 @@ public final class CloudSky {
             patternAngle = (int) Math.round(raw) & 15;
         float pwx = (float) Math.cos(patternAngle * Math.PI * 2 / 16), pwz = (float) Math.sin(patternAngle * Math.PI * 2 / 16);
         it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> keep = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+        boolean testLog = Boolean.getBoolean("equinox.cloudTest");
+        int refreshed = 0;
+        int[] why = new int[5];
+        int angleBefore = patternAngle;
         int cx = Mth.floor(camX), cz = Mth.floor(camZ);
 
         // ---- map of the layer clouds (texel corners on a fixed wind-space lattice, so it doesn't shift as you move)
@@ -211,6 +215,10 @@ public final class CloudSky {
                     boolean same = true;
                     for (int q = 0; q < fresh.length; q++) same &= Math.abs(fresh[q] - old[q]) <= hold;
                     if (same) fresh = old;
+                    else if (testLog) {
+                        refreshed++;
+                        for (int q = 0; q < 5; q++) if (Math.abs(fresh[q] - old[q]) > hold) why[q]++;
+                    }
                 }
                 keep.put(key, fresh);
                 c = fresh[0];
@@ -246,6 +254,7 @@ public final class CloudSky {
         // ---- domes
         Domes domes = new Domes();
         stormSites(side, time, cx, cz, reach, wx, wz, partial, domes);
+        int stormDomes = domes.count;
         fairSites(cx, cz, reach, amount, partial, domes, BIG_SITE, 7, true);
         fairSites(cx, cz, reach, amount, partial, domes, SMALL_SITE, 8, false);
 
@@ -255,6 +264,15 @@ public final class CloudSky {
         float shadowX0 = -shadowReach, shadowZ0 = -shadowReach;
         float[] shadow = shadows(partial, domes, shadowSize, shadowX0, shadowZ0);
 
+        if (testLog) {
+            float maxC = 0, maxPeak = 0;
+            for (float[] v : held.values()) {
+                maxC = Math.max(maxC, v[0]);
+                maxPeak = Math.max(maxPeak, v[3]);
+            }
+            dev.venatorvictor.equinox.Equinox.LOGGER.info("CLOUDTEST sky: {} spots refreshed (c {} near {} far {} peak {} warm {}), angle {} -> {}, override {} from {} now {}, max c {} max peak {}, storm domes {} all domes {}",
+                    refreshed, why[0], why[1], why[2], why[3], why[4], angleBefore, patternAngle, side.overrideAt(time), side.overrideFrom(), time, maxC, maxPeak, stormDomes, domes.count);
+        }
         return new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, java.util.Arrays.copyOf(domes.data, domes.count * DOME_FLOATS),
                 domes.count, shadowSize, shadowX0, shadowZ0, shadow, pwx, pwz);
     }

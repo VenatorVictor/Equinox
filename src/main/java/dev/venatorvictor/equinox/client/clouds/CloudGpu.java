@@ -300,6 +300,7 @@ public final class CloudGpu {
         minAge = (long) ((Math.max(0.4F, animSeconds + 0.2F)) * 1e9);
         collect();
         want(camX, camZ, reach, nearCube, ring);
+        testLog();
         boolean animate = animSeconds > 0;
         long now = System.nanoTime();
         // Unwanted chunks (another cube size took over, or out of reach) go once every wanted chunk over them is ready.
@@ -341,6 +342,7 @@ public final class CloudGpu {
             long signature = signature(best, sun, full);
             if (best.ready() && best.made != 0 && signature == best.signature) {
                 best.made = now;
+                testSkipped++;
                 continue;
             }
             best.signature = signature;
@@ -510,6 +512,24 @@ public final class CloudGpu {
     }
 
     /** Finished chunks: their faces copied from the slot into the chunk's own buffer. */
+    /** For the test log (-Dequinox.cloudTest=true): makes, cubes that came and went, makes skipped (sky unchanged). */
+    private static long testMakes, testCame, testWent, testSkipped, testLogged;
+
+    private static void testLog() {
+        if (!Boolean.getBoolean("equinox.cloudTest")) return;
+        long now = System.nanoTime();
+        if (now - testLogged < 5_000_000_000L) return;
+        testLogged = now;
+        int faces = 0, chunks = 0;
+        for (Chunk c : CHUNKS.values()) if (c.ready()) {
+            chunks++;
+            faces += c.faces;
+        }
+        Equinox.LOGGER.info("CLOUDTEST makes {} skipped {} came {} went {} chunks {} faces {}", testMakes, testSkipped, testCame,
+                testWent, chunks, faces);
+        testMakes = testCame = testWent = testSkipped = 0;
+    }
+
     private static void collect() {
         for (Slot slot : SLOT) {
             if (slot.fence == 0) continue;
@@ -523,10 +543,15 @@ public final class CloudGpu {
             chunk.building = false;
             int count;
             try (MemoryStack stack = MemoryStack.stackPush()) {
-                IntBuffer n = stack.mallocInt(1);
+                IntBuffer n = stack.mallocInt(3);
                 glBindBuffer(GL_COPY_READ_BUFFER, slot.out);
                 glGetBufferSubData(GL_COPY_READ_BUFFER, 0, n);
                 count = n.get(0);
+                if (chunk.hasOld) {
+                    testCame += n.get(1);
+                    testWent += n.get(2);
+                }
+                testMakes++;
             }
             if (count > slot.capacity) {
                 // didn't fit: this slot gets room for it and the chunk is made again soon (it keeps what it shows)
