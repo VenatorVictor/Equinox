@@ -62,7 +62,7 @@ public final class DhClouds {
         static IDhApiRenderableBoxGroup group;
         static IDhApiLevelWrapper wrapper;
         static CloudSky.Sky filledSky, shownSky;
-        static long filled = Long.MIN_VALUE;
+        static long filled = Long.MIN_VALUE / 2;
         static CompletableFuture<List<DhApiRenderableBox>> pending;
         static CloudSky.Sky pendingSky;
         static final int FILL_TICKS = 200, CELL = 16;

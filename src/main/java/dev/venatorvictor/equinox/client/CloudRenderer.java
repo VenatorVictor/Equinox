@@ -48,7 +48,7 @@ public final class CloudRenderer {
     });
 
     private static CompletableFuture<CloudSky.Sky> pending;
-    private static long builtTime = Long.MIN_VALUE, paletteTime = Long.MIN_VALUE;
+    private static long builtTime = Long.MIN_VALUE / 2, paletteTime = Long.MIN_VALUE / 2;
     private static int builtVersion = -1, builtReach = -1;
     private static double builtX, builtZ;
     private static String shownSettings = "";
@@ -243,8 +243,8 @@ public final class CloudRenderer {
         CloudGpu.clear();
         CloudExtras.clear();
         pending = null;
-        builtTime = Long.MIN_VALUE;
-        paletteTime = Long.MIN_VALUE;
+        builtTime = Long.MIN_VALUE / 2;
+        paletteTime = Long.MIN_VALUE / 2;
         builtReach = -1;
         model = null;
         sky = null;
