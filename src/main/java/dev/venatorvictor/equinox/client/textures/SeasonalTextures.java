@@ -332,9 +332,8 @@ public final class SeasonalTextures {
     }
 
     /**
-     * Biome filter: a tag ("#ns:path") or a list of biome ids; none = everywhere. The format's own tags are
-     * filled in by its mod at runtime, so without it they're empty: those fall back to the same biome profiles
-     * the colors use.
+     * Biome filter: a tag ("#ns:path") or a list of biome ids; none = everywhere. Two names are not real tags but
+     * climates: "#equinox:seasonal_zones" and "#equinox:tropical_zones".
      */
     private static Predicate<Holder<Biome>> biomes(JsonElement json) {
         if (json == null) return biome -> true;
@@ -344,39 +343,25 @@ public final class SeasonalTextures {
             return biome -> ((ClimateBiome) (Object) biome.value()).equinox$climate() == ClimateBiome.SEASONAL
                     && ((ClimateBiome) (Object) biome.value()).equinox$zone().tropical;
         }
-        if (json.isJsonPrimitive() && json.getAsString().startsWith("#")) {
-            ResourceLocation id = ResourceLocation.parse(json.getAsString().substring(1));
-            TagKey<Biome> tag = TagKey.create(Registries.BIOME, id);
-            boolean format = id.getNamespace().equals("equinox");
-            Set<ColorProfile> fallback = format ? profilesFor(id.getPath()) : Set.of();
-            // "seasonal" also takes every biome with a seasonal climate (beaches, rivers: their colors barely change,
-            // but they have winters), so a tree standing on a biome border loses its leaves as a whole.
-            boolean climate = format && (id.getPath().equals("seasonal") || id.getPath().equals("rain/seasonal"));
-            // Warm zones (Zone.tropical) never take the "seasonal" files, even when their color profile is a seasonal
-            // one (sparse / bamboo jungle: SEASONAL_HOT), so their leaves don't fall; they have their own files.
+        if (json.isJsonPrimitive() && json.getAsString().equals("#equinox:seasonal_zones")) {
+            // Not a real tag: biomes with a seasonal color profile, plus every biome with a seasonal climate (beaches,
+            // rivers: their colors barely change, but they have winters), so a tree standing on a biome border loses
+            // its leaves as a whole. Warm zones (Zone.tropical) never take it, even when their color profile is a
+            // seasonal one (sparse / bamboo jungle: SEASONAL_HOT), so their leaves don't fall; they have their own files.
+            Set<ColorProfile> seasonal = EnumSet.of(ColorProfile.SEASONAL, ColorProfile.SEASONAL_HOT, ColorProfile.SEASONAL_COLD);
             return biome -> {
                 ClimateBiome c = (ClimateBiome) (Object) biome.value();
-                if (climate && c.equinox$zone().tropical) return false;
-                return biome.is(tag) || fallback.contains(c.equinox$colorProfile())
-                        || climate && c.equinox$climate() == ClimateBiome.SEASONAL;
+                if (c.equinox$zone().tropical) return false;
+                return seasonal.contains(c.equinox$colorProfile()) || c.equinox$climate() == ClimateBiome.SEASONAL;
             };
+        }
+        if (json.isJsonPrimitive() && json.getAsString().startsWith("#")) {
+            TagKey<Biome> tag = TagKey.create(Registries.BIOME, ResourceLocation.parse(json.getAsString().substring(1)));
+            return biome -> biome.is(tag);
         }
         Set<ResourceLocation> ids = new HashSet<>();
         for (String biome : strings(json)) ids.add(ResourceLocation.parse(biome));
         return biome -> biome.unwrapKey().map(key -> ids.contains(key.location())).orElse(false);
-    }
-
-    private static Set<ColorProfile> profilesFor(String path) {
-        String type = path.startsWith("rain/") ? path.substring(5) : path;
-        return switch (type) {
-            case "seasonal" -> EnumSet.of(ColorProfile.SEASONAL, ColorProfile.SEASONAL_HOT, ColorProfile.SEASONAL_COLD);
-            case "seasonal/hot" -> EnumSet.of(ColorProfile.SEASONAL_HOT);
-            case "seasonal/cold" -> EnumSet.of(ColorProfile.SEASONAL_COLD);
-            case "monsoonal" -> EnumSet.of(ColorProfile.MONSOONAL);
-            case "slightly" -> EnumSet.of(ColorProfile.SLIGHTLY);
-            case "stable" -> EnumSet.of(ColorProfile.STABLE);
-            default -> EnumSet.noneOf(ColorProfile.class);
-        };
     }
 
     private static List<String> strings(JsonElement json) {
