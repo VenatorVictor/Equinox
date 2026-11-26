@@ -139,8 +139,8 @@ public final class Weather {
 
         /**
          * The sky's look at a spot (for clouds), 0..2: 0 far from storms, rising to 1 at a storm's edge (the rain line),
-         * then 1 + strength inside (2 at the thunder core). Clouds close up as a storm comes: from 2.5 times the rain
-         * share below the rain line.
+         * then 1 + strength inside (2 at the thunder core). Clouds close up as a storm comes: from 1.8 times the rain
+         * share below the rain line (1.8 times: user 2026-11-26, the sky was too cloudy far from storms).
          */
         public float cloudiness(double x, double z, long time, double[] offset) {
             Override kind = overrideAt(time);
@@ -150,7 +150,7 @@ public final class Weather {
             float s = strength(x, z, time, offset);
             if (s > 0) return 1 + s;
             float u = field.value(x, z, time, offset);
-            float approach = (u - (1 - 2.5F * share)) / (1.5F * share);
+            float approach = (u - (1 - 1.8F * share)) / (0.8F * share);
             float sky = Math.max(0, Math.min(1, approach));
             return forced.isEmpty() ? sky : Math.max(sky, Math.min(1, forcedSky(x, z, time, offset)));
         }

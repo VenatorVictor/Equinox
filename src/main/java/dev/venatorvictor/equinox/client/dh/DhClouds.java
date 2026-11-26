@@ -10,9 +10,9 @@ import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBox;
 import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBoxGroupShading;
 import dev.venatorvictor.equinox.Equinox;
 import dev.venatorvictor.equinox.client.CloudRenderer;
+import dev.venatorvictor.equinox.client.clouds.CloudMesher;
 import dev.venatorvictor.equinox.client.clouds.CloudModel;
 import dev.venatorvictor.equinox.weather.Weather;
-import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
@@ -57,6 +57,8 @@ public final class DhClouds {
         static IDhApiRenderableBoxGroup group;
         static IDhApiLevelWrapper wrapper;
         static CloudModel.Sky sky;
+        static long filled = Long.MIN_VALUE;
+        static final int FILL_TICKS = 200;
         static final DhApiRenderableBoxGroupShading SHADING = new DhApiRenderableBoxGroupShading();
 
         static {
@@ -101,10 +103,13 @@ public final class DhClouds {
             }
             drawing = true;
             Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            CloudRenderer.schedule(level, camera.x, camera.z, CloudRenderer.radius(), false, CloudStatus.FANCY);
+            CloudRenderer.schedule(level, camera.x, camera.z, false);
             CloudModel.Sky built = CloudRenderer.pollSky();
-            if (built != null) {
+            // Boxes are remade every FILL_TICKS, or at once when the camera moved on (a new middle).
+            if (built != null && (sky == null || built.time() - filled >= FILL_TICKS || built.time() < filled
+                    || built.centerX() != sky.centerX() || built.centerZ() != sky.centerZ())) {
                 sky = built;
+                filled = built.time();
                 fill(level, built);
             }
         }
@@ -120,47 +125,18 @@ public final class DhClouds {
             double offX = Mth.lerp(partialTick, now[0], next[0]), offZ = Mth.lerp(partialTick, now[1], next[1]);
             float height = level.effects().getCloudHeight();
             if (Float.isNaN(height)) height = 192;
-            group.setOriginBlockPos(new DhApiVec3d(s.originX() * (double) CloudModel.CELL + offX, height,
-                    s.originZ() * (double) CloudModel.CELL + offZ));
+            group.setOriginBlockPos(new DhApiVec3d(offX, height, offZ));
         }
 
-        /** The sky as boxes: per layer, runs of equal cells along z joined. Colour: vanilla's cloud colour times the cell's grey. */
+        /** The sky as boxes (joined cells and heap cubes). Colour: vanilla's day cloud colour times the box's grey. */
         static void fill(ClientLevel level, CloudModel.Sky s) {
-            Vec3 color = level.getCloudColor(1);
-            int n = s.n(), radius = s.radius(), cell = CloudModel.CELL;
+            float[] day = CloudRenderer.dayColor(level, 1);
             List<DhApiRenderableBox> boxes = new ArrayList<>();
-            Color[] greys = new Color[CloudModel.GREYS];
-            for (CloudModel.Layer layer : s.layers()) {
-                int alpha = Math.round(layer.alpha * 255);
-                for (int i = 0; i < n; i++) {
-                    int j = 0;
-                    while (j < n) {
-                        int index = i * n + j;
-                        float b = layer.bottom[index], t = layer.top[index];
-                        if (t <= b) {
-                            j++;
-                            continue;
-                        }
-                        byte g = layer.grey[index];
-                        int end = j + 1;
-                        while (end < n) {
-                            int k = i * n + end;
-                            if (layer.bottom[k] != b || layer.top[k] != t || layer.grey[k] != g) break;
-                            end++;
-                        }
-                        int gi = g & 0xFF;
-                        Color c = greys[gi];
-                        if (c == null || c.getAlpha() != alpha) {
-                            float f = gi / (float) (CloudModel.GREYS - 1);
-                            c = greys[gi] = new Color(Mth.clamp((float) color.x * f, 0, 1), Mth.clamp((float) color.y * f, 0, 1),
-                                    Mth.clamp((float) color.z * f, 0, 1), alpha / 255F);
-                        }
-                        double x0 = (i - radius) * (double) cell, z0 = (j - radius) * (double) cell;
-                        boxes.add(new DhApiRenderableBox(new DhApiVec3d(x0, b, z0), new DhApiVec3d(x0 + cell, t, (end - radius) * (double) cell),
-                                c, EDhApiBlockMaterial.UNKNOWN));
-                        j = end;
-                    }
-                }
+            for (CloudMesher.Box box : CloudMesher.boxes(s)) {
+                float g = box.grey();
+                Color c = new Color(Mth.clamp(day[0] * g, 0, 1), Mth.clamp(day[1] * g, 0, 1), Mth.clamp(day[2] * g, 0, 1), box.alpha());
+                boxes.add(new DhApiRenderableBox(new DhApiVec3d(box.x0(), box.bottom(), box.z0()),
+                        new DhApiVec3d(box.x1(), box.top(), box.z1()), c, EDhApiBlockMaterial.UNKNOWN));
             }
             group.clear();
             group.addAll(boxes);
