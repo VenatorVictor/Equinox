@@ -421,7 +421,7 @@ public final class CloudGpu {
                 glUniform2i(uniform(program, "uCentre"), s.centerX(), s.centerZ());
                 glUniform2f(uniform(program, "uMapOrigin"), s.mapX0(), s.mapZ0());
                 glUniform1f(uniform(program, "uMapSpan"), (float) s.mapSize() * CloudSky.MAP_CELL);
-                double a = Math.atan2(s.windZ(), s.windX()) / (Math.PI * 2) * 16;
+                double a = Math.round(Math.atan2(s.windZ(), s.windX()) / (Math.PI * 2) * 16 * 1000) / 1000.0;
                 int ai = (int) Math.floor(a);
                 glUniform1i(uniform(program, "uAngle"), Math.floorMod(ai, 16));
                 glUniform1f(uniform(program, "uAngleF"), (float) (a - ai));

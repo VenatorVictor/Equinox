@@ -67,6 +67,15 @@ public final class CloudSky {
     }
 
     private final long seed;
+    /**
+     * Fair-weather sky held per map texel (wind space): the weather under a drifting cloud changes a little all the time,
+     * and fair clouds would follow it, so their edges never stood still. They keep their weather until it has really
+     * changed (HOLD); only where rain is falling or coming (storms forming) does the sky follow the weather freely.
+     */
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> held = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    private static final float HOLD = 0.25F;
+    /** The wind pattern angle held (one of 16), so streaks and rows don't change when the wind turns a little. */
+    private int patternAngle = -1;
 
     public CloudSky(long seed) {
         this.seed = seed;
@@ -103,6 +112,12 @@ public final class CloudSky {
         // (it used to bend at full rain and drop to dark in a narrow band at thunder)
         float t = Mth.clamp(c / Math.min(2, THUNDER_LEVEL + 0.3F), 0, 1);
         return 1 - 0.66F * t * t * (3 - 2 * t);
+    }
+
+    /** Daylight for heaps (0 night .. 1 day) at a time of day in ticks. */
+    public static float dayAt(long dayTime) {
+        long t = Math.floorMod(dayTime, 24000L);
+        return t < 12500 ? Mth.clamp(Math.min(t + 500, 12500 - t) / 1500F, 0, 1) : 0;
     }
 
     /** How warm the weather is for fair-weather heaps, 0..1. */
@@ -150,11 +165,17 @@ public final class CloudSky {
      * The sky around the camera (wind-space blocks camX, camZ) out to `reach` blocks. time, offset: the game time and
      * the storm map's offset; summer, day: 0..1; amount: fair-weather cloud amount (1 normal).
      */
-    public Sky build(Weather.Side side, long time, double[] offset, double camX, double camZ, int reach, float summer,
-                     float day, float amount) {
+    public synchronized Sky build(Weather.Side side, long time, double[] offset, double camX, double camZ, int reach, float summer,
+                     long dayTime, float amount) {
         StormField field = side.field;
         double angle = field.windAngle(Math.max(0, time) / StormField.STEP);
         float wx = (float) Math.cos(angle), wz = (float) Math.sin(angle);
+        // the pattern angle moves only when the wind has turned past halfway to the next of 16 angles, and then a whole step
+        double raw = Math.floorMod((long) Math.floor(angle / (Math.PI * 2) * 16 * 1000), 16000) / 1000.0;
+        if (patternAngle < 0 || Math.abs(Math.floorMod((long) Math.round((raw - patternAngle) * 1000) + 8000, 16000) - 8000) / 1000.0 > 0.75)
+            patternAngle = (int) Math.round(raw) & 15;
+        float pwx = (float) Math.cos(patternAngle * Math.PI * 2 / 16), pwz = (float) Math.sin(patternAngle * Math.PI * 2 / 16);
+        it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> keep = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         int cx = Mth.floor(camX), cz = Mth.floor(camZ);
 
         // ---- map of the layer clouds (texel corners on a fixed wind-space lattice, so it doesn't shift as you move)
@@ -180,10 +201,24 @@ public final class CloudSky {
                 float peak = c;
                 for (int k = 0; k < times.length; k++)
                     peak = Math.max(peak, side.cloudiness(mx + offsets[k][0], mz + offsets[k][1], times[k], offsets[k]));
+                float warm = warmth(side.grid.zone(x, z), summer);
+                long key = ((long) (mapAbsX0 / MAP_CELL + i) << 32) ^ ((mapAbsZ0 / MAP_CELL + j) & 0xFFFFFFFFL);
+                float[] fresh = {c, near, far, peak, warm}, old = held.get(key);
+                boolean storming = Math.max(c, Math.max(near, peak)) > 1;
+                if (!storming && old != null) {
+                    boolean same = true;
+                    for (int q = 0; q < fresh.length; q++) same &= Math.abs(fresh[q] - old[q]) <= HOLD;
+                    if (same) fresh = old;
+                }
+                keep.put(key, fresh);
+                c = fresh[0];
+                near = fresh[1];
+                far = fresh[2];
+                peak = fresh[3];
+                warm = fresh[4];
                 float thunder = smooth(THUNDER_LEVEL - 0.25F, THUNDER_LEVEL, peak);
                 float grow = Mth.clamp(c, 0, 1), rain = Mth.clamp(c - 1, 0, 1);
                 float frontal = 1 - thunder;
-                float warm = warmth(side.grid.zone(x, z), summer);
                 // Low deck: closes in and thickens as rain comes (thunderstorms keep gaps between their heaps).
                 float close = Math.max(grow * grow * (1 - 0.85F * thunder), rain * (1 - 0.7F * thunder));
                 float bottom = -16 * rain - 4 * grow;
@@ -202,13 +237,16 @@ public final class CloudSky {
                 map1[o + 3] = thunder;
             }
         }
-        Sky partial = new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, new float[0], 0, 0, 0, 0, new float[0], wx, wz);
+        held.clear();
+        held.putAll(keep);
+        Sky partial = new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, new float[0], 0, 0, 0, 0, new float[0], pwx, pwz);
 
         // ---- domes
         Domes domes = new Domes();
         stormSites(side, time, cx, cz, reach, wx, wz, partial, domes);
-        fairSites(side, time, offset, cx, cz, reach, summer, day, amount, partial, domes, BIG_SITE, 7, true);
-        fairSites(side, time, offset, cx, cz, reach, summer, day, amount, partial, domes, SMALL_SITE, 8, false);
+        java.util.Map<Long, double[]> births = new java.util.HashMap<>();
+        fairSites(side, time, cx, cz, reach, summer, dayTime, amount, domes, BIG_SITE, 7, true, births);
+        fairSites(side, time, cx, cz, reach, summer, dayTime, amount, domes, SMALL_SITE, 8, false, births);
 
         // ---- ground shadows
         int shadowReach = Math.min(reach, SHADOW_REACH);
@@ -217,7 +255,7 @@ public final class CloudSky {
         float[] shadow = shadows(partial, domes, shadowSize, shadowX0, shadowZ0);
 
         return new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, java.util.Arrays.copyOf(domes.data, domes.count * DOME_FLOATS),
-                domes.count, shadowSize, shadowX0, shadowZ0, shadow, wx, wz);
+                domes.count, shadowSize, shadowX0, shadowZ0, shadow, pwx, pwz);
     }
 
     /** Thunderstorm heaps: where the look-ahead says it will thunder, timed by when the rain comes to the site. */
@@ -329,8 +367,8 @@ public final class CloudSky {
      * Fair-weather heaps at jittered sites: each lives its own life (forms, lives, dissolves), more on warm summer days,
      * fewer as a deck closes in. big: cumulus (taller, congestus, where it's damp and warm); else small humilis.
      */
-    private void fairSites(Weather.Side side, long time, double[] offset, int cx, int cz, int reach, float summer,
-                           float day, float amount, Sky map, Domes out, int site, long salt, boolean big) {
+    private void fairSites(Weather.Side side, long time, int cx, int cz, int reach, float summer, long dayTime, float amount,
+                           Domes out, int site, long salt, boolean big, java.util.Map<Long, double[]> births) {
         if (amount <= 0) return;
         int s0x = Math.floorDiv(cx - reach - site, site), s1x = Math.floorDiv(cx + reach + site, site);
         int s0z = Math.floorDiv(cz - reach - site, site), s1z = Math.floorDiv(cz + reach + site, site);
@@ -338,17 +376,26 @@ public final class CloudSky {
             for (int sj = s0z; sj <= s1z; sj++) {
                 double ax = (si + 0.15 + 0.7 * hash01(si, sj, salt)) * site, az = (sj + 0.15 + 0.7 * hash01(si, sj, salt + 1)) * site;
                 float x = (float) (ax - cx), z = (float) (az - cz);
-                float deck = map.map(map.map0(), 0, x, z), thunder = map.map(map.map1(), 3, x, z), c = map.map(map.map0(), 3, x, z);
-                float warm = warmth(side.grid.zone(ax + offset[0], az + offset[1]), summer);
+                // its own life: forms (a tenth of it), holds its shape, dissolves (the last tenth); 6-12 game hours
+                // (5-10 minutes), offset per site
+                float life = 6000 + 6000 * hash01(si, sj, salt + 3);
+                double cycles = time / (double) life + hash01(si, sj, salt + 4);
+                float phase = (float) (cycles - Math.floor(cycles));
+                // whether it's there and how big is settled by the weather when it formed, so it keeps its shape for
+                // its whole life (weather that changes later shows in the next ones)
+                long birth = time - (long) (phase * life);
+                long birthStep = Math.floorDiv(birth, 200L) * 200L;
+                double[] off = births.computeIfAbsent(birthStep, t -> side.field.offset(t));
+                float c = side.cloudiness(ax + off[0], az + off[1], birthStep, off);
+                float thunder = smooth(THUNDER_LEVEL - 0.25F, THUNDER_LEVEL, c);
+                float grow = Mth.clamp(c, 0, 1), rain = Mth.clamp(c - 1, 0, 1);
+                float deck = Math.max(grow * grow * (1 - 0.85F * thunder), rain * (1 - 0.7F * thunder));
+                float warm = warmth(side.grid.zone(ax + off[0], az + off[1]), summer);
+                float day = dayAt(dayTime - (time - birthStep));
                 float presence = (big ? 0.25F + 0.55F * warm * (0.4F + 0.6F * day) : 0.3F + 0.4F * warm) * amount
                         * (1 - smooth(0.4F, 0.85F, deck)) * (1 - smooth(0.35F, 0.6F, thunder));
-                // as the weather turns, a heap shrinks away (or grows) instead of vanishing
                 float fade = smooth(0, 0.12F, presence - hash01(si, sj, salt + 2));
                 if (fade <= 0.02F) continue;
-                // its own life: forms (a tenth of it), holds its shape, dissolves (the last tenth); 6-12 game hours
-                // (5-10 minutes), offset per site, so its edges stay put most of the time
-                float life = 6000 + 6000 * hash01(si, sj, salt + 3);
-                float phase = (float) (((time / (double) life) + hash01(si, sj, salt + 4)) % 1.0);
                 float gate = smooth(0, 0.1F, phase) * (1 - smooth(0.9F, 1, phase)) * fade;
                 if (gate < 0.05F) continue;
                 float base = 4 * hash01(si, sj, salt + 5);

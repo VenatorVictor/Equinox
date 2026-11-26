@@ -127,12 +127,11 @@ public final class CloudRenderer {
         if (model == null || model.seed() != side.seed) model = new CloudSky(side.seed);
         CloudSky m = model;
         float summer = Mth.clamp(Climate.change(new float[] {0.5F, 1F, 0.5F, 0F}, 0), 0, 1);
-        long dayTime = Math.floorMod(level.getDayTime(), 24000L);
-        float day = dayTime < 12500 ? Mth.clamp(Math.min(dayTime + 500, 12500 - dayTime) / 1500F, 0, 1) : 0;
+        long dayTime = level.getDayTime();
         float amount = ClientConfig.CLOUD_AMOUNT.get().floatValue();
         int cube = ClientConfig.CLOUD_CUBE.get();
         pending = CompletableFuture.supplyAsync(() -> {
-            CloudSky.Sky built = m.build(side, time, now, wx, wz, reach, summer, day, amount);
+            CloudSky.Sky built = m.build(side, time, now, wx, wz, reach, summer, dayTime, amount);
             return new Built(built, new CloudField(built, cube, reach));
         }, BUILDER);
     }

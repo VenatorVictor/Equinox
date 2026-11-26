@@ -28,7 +28,7 @@ public final class CloudField {
     public CloudField(CloudSky.Sky sky, int cube, int reach) {
         this.sky = sky;
         this.cube = cube;
-        double a = Math.atan2(sky.windZ(), sky.windX()) / (Math.PI * 2) * 16;
+        double a = Math.round(Math.atan2(sky.windZ(), sky.windX()) / (Math.PI * 2) * 16 * 1000) / 1000.0;
         int ai = Mth.floor(a);
         angle = Math.floorMod(ai, 16);
         angleF = (float) (a - ai);
