@@ -120,7 +120,7 @@ The jar ends up in `build/libs/`. Needs Java 21.
 
 ## License
 
-Copyright (C) 2026 Victor Schramm
+Copyright (C) 2026 VenatorVictor
 
 Equinox is free software under the [GNU General Public License v3.0](LICENSE): you can share and change it, and
 anything you share that is built from it must be open source under the same licence.
