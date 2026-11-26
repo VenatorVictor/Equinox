@@ -23,7 +23,7 @@ the real date and clock. Every biome has its own °C year, snow falls and melts 
 temperature, and trees and plants live through the year: leaves turn and fall, cherries bloom, oaks grow acorns
 you can pick and plant. No library mods are needed.
 
-<img src="docs/images/banners/spring.png" alt="Features" width="100%">
+<img src="docs/images/banners/spring-strip.png" alt="Features" width="100%">
 
 ### Seasons
 - Four seasons of 3 months each: 48 days on average (a 192-day year); 24, 72 or 96 (a 384-day year) in the settings. 12 months of
@@ -90,14 +90,14 @@ you can pick and plant. No library mods are needed.
 - Distant Horizons: far terrain follows the colors and the snow.
 - A config screen with tabs, descriptions and the performance cost of each setting.
 
-<img src="docs/images/banners/summer.png" alt="Installation" width="100%">
+<img src="docs/images/banners/summer-strip.png" alt="Installation" width="100%">
 
 1. Install [NeoForge](https://neoforged.net/) for Minecraft 1.21.1.
 2. Put the Equinox jar in your `mods` folder, on both the server and the clients.
 
 Equinox replaces other seasons mods; don't run it next to one.
 
-<img src="docs/images/banners/autumn.png" alt="Commands" width="100%">
+<img src="docs/images/banners/autumn-strip.png" alt="Commands" width="100%">
 
 | Command | Who | What it does |
 |---|---|---|
@@ -105,7 +105,7 @@ Equinox replaces other seasons mods; don't run it next to one.
 | `/season set <season> [week]` | operators | Jumps to a season (or one of its weeks), keeping the time of day |
 | `/season add <days>` | operators | Moves the year forward (or back) by some days |
 
-<img src="docs/images/banners/winter.png" alt="Documentation" width="100%">
+<img src="docs/images/banners/winter-strip.png" alt="Documentation" width="100%">
 
 See the [wiki](https://github.com/VenatorVictor/Equinox/wiki) for the seasons, the calendar, the climate, config options,
 datapacks and the API.
