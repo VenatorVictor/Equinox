@@ -39,7 +39,7 @@ import static org.lwjgl.opengl.GL43C.*;
  */
 public final class CloudGpu {
     /** Cubes per chunk side, grid side with the border, faces a chunk can have, bytes per vertex. */
-    private static final int CHUNK = 32, GRID = CHUNK + 2, MAX_FACES = 1 << 16, VERTEX = 28;
+    private static final int CHUNK = 32, GRID = CHUNK + 2, MAX_FACES = 1 << 15, VERTEX = 28;
     /** Chunks being made at once, domes a chunk can see, blocks around a chunk whose domes it sees. */
     private static final int SLOTS = 4, MAX_LIST = 2048, MARGIN = 96;
     /** A chunk isn't remade sooner than this after its last make (nanoseconds), so cubes finish growing first. */

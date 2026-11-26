@@ -38,6 +38,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.DoubleValue CLOUD_AMOUNT;
     public static final ModConfigSpec.IntValue CLOUD_UPDATES;
     public static final ModConfigSpec.DoubleValue CLOUD_ANIMATION;
+    public static final ModConfigSpec.IntValue CLOUD_FOG;
     public static final ModConfigSpec.BooleanValue DH_CLOUDS;
 
     /**
@@ -128,7 +129,7 @@ public final class ClientConfig {
                         "frozen open water, and snow/ice saved while it was cold removed once it's warm.")
                 .define("snow_and_ice", true);
         BUILDER.pop().push("clouds");
-        STORM_CLOUDS = BUILDER.comment("With weather per region: 3D block clouds drawn from the storms, so clouds are where the rain is. Fair",
+        STORM_CLOUDS = BUILDER.comment("Equinox clouds. With weather per region: 3D block clouds drawn from the storms, so clouds are where the rain is. Fair",
                         "days have small and big heaps that form and dissolve; a coming front brings high streaks, then middle bands,",
                         "then a closing grey deck; thunderstorms gather heaps that climb into a tower (it reaches its top as the rain",
                         "starts) and spread an anvil. Lit by the sun through the cloud. Made on the graphics card (needs OpenGL 4.3;",
@@ -157,6 +158,9 @@ public final class ClientConfig {
         CLOUD_ANIMATION = BUILDER.comment("Cloud cubes grow out of their middle when they appear and shrink away when they go, over this many",
                         "seconds (0 = they just appear). Not with a shader pack (its own cloud shader draws them).")
                 .defineInRange("growing_seconds", 1.0, 0.0, 3.0);
+        CLOUD_FOG = BUILDER.comment("Inside a cloud, fog closes in to the cloud's colour: how far you still see deep inside, in blocks",
+                        "(0 = no fog, the cloud is hollow inside).")
+                .defineInRange("inside_fog_blocks", 48, 0, 128);
         DH_CLOUDS = BUILDER.comment("With Distant Horizons: the far clouds are drawn by it, so they sit behind far terrain (the near ones",
                         "are drawn the normal way). false: all clouds the normal way (far ones may show over far mountains).")
                 .define("distant_horizons_far_clouds", true);

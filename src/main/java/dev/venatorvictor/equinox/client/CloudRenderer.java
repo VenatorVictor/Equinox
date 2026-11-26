@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.venatorvictor.equinox.Equinox;
 import dev.venatorvictor.equinox.climate.Climate;
 import dev.venatorvictor.equinox.client.clouds.CloudExtras;
+import dev.venatorvictor.equinox.client.clouds.CloudField;
 import dev.venatorvictor.equinox.client.clouds.CloudGpu;
 import dev.venatorvictor.equinox.client.clouds.CloudSky;
 import dev.venatorvictor.equinox.client.dh.DhClouds;
@@ -47,7 +48,14 @@ public final class CloudRenderer {
         return thread;
     });
 
-    private static CompletableFuture<CloudSky.Sky> pending;
+    private record Built(CloudSky.Sky sky, CloudField field) {
+    }
+
+    private static CompletableFuture<Built> pending;
+    /** The density on the main processor for the latest sky (is the camera inside a cloud?). */
+    private static volatile CloudField field;
+    /** How far inside a cloud the camera is (0..1, eased per tick), and that cloud's storm level. */
+    private static float inside, insideStorm;
     private static long builtTime = Long.MIN_VALUE / 2, paletteTime = Long.MIN_VALUE / 2;
     private static int builtVersion = -1, builtReach = -1;
     private static double builtX, builtZ;
@@ -122,21 +130,69 @@ public final class CloudRenderer {
         long dayTime = Math.floorMod(level.getDayTime(), 24000L);
         float day = dayTime < 12500 ? Mth.clamp(Math.min(dayTime + 500, 12500 - dayTime) / 1500F, 0, 1) : 0;
         float amount = ClientConfig.CLOUD_AMOUNT.get().floatValue();
-        pending = CompletableFuture.supplyAsync(() -> m.build(side, time, now, wx, wz, reach, summer, day, amount), BUILDER);
+        int cube = ClientConfig.CLOUD_CUBE.get();
+        pending = CompletableFuture.supplyAsync(() -> {
+            CloudSky.Sky built = m.build(side, time, now, wx, wz, reach, summer, day, amount);
+            return new Built(built, new CloudField(built, cube, reach));
+        }, BUILDER);
     }
 
     /** A finished build, if one is ready. */
     private static CloudSky.Sky collect() {
         if (pending == null || !pending.isDone()) return null;
-        CloudSky.Sky built = null;
+        Built built = null;
         try {
             built = pending.getNow(null);
         } catch (Exception e) {
             Equinox.LOGGER.warn("Equinox: a cloud build failed", e);
         }
         pending = null;
-        if (built != null) sky = built;
-        return built;
+        if (built == null) return null;
+        sky = built.sky;
+        field = built.field;
+        return built.sky;
+    }
+
+    // ---- inside a cloud: fog
+
+    /** Client tick: how far inside a cloud the camera is (eased, so the fog comes and goes over about half a second). */
+    public static void tick(ClientLevel level) {
+        float target = 0;
+        CloudField f = field;
+        Weather.Side side = Weather.client();
+        float height = level.effects().getCloudHeight();
+        if (f != null && side != null && !Float.isNaN(height) && active(level) && ClientConfig.CLOUD_FOG.get() > 0) {
+            net.minecraft.world.phys.Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            double[] now = side.field.offset(level.getGameTime());
+            CloudSky.Sky s = f.sky();
+            float[] d = f.density((float) (camera.x - now[0] - s.centerX()), (float) (camera.y - height),
+                    (float) (camera.z - now[1] - s.centerZ()), new float[3]);
+            // from the cloud's edge to a few cubes deep
+            target = smooth(-1, 12, d[0]);
+            if (d[0] > -1) insideStorm = d[1];
+        }
+        inside += (target - inside) * 0.25F;
+        if (inside < 0.001F) inside = 0;
+    }
+
+    /** Game bus: fog closes in inside a cloud (not under water, lava or powder snow). */
+    public static void onFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
+        if (inside <= 0 || event.getType() != net.minecraft.world.level.material.FogType.NONE) return;
+        float deep = ClientConfig.CLOUD_FOG.get();
+        float far = Math.min(event.getFarPlaneDistance(), Mth.lerp(inside, event.getFarPlaneDistance(), deep));
+        float near = Math.min(event.getNearPlaneDistance(), Mth.lerp(inside, event.getNearPlaneDistance(), -deep * 0.25F));
+        event.setFarPlaneDistance(far);
+        event.setNearPlaneDistance(near);
+        event.setCanceled(true);
+    }
+
+    /** Game bus: inside a cloud the fog takes the cloud's colour. */
+    public static void onFogColor(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
+        if (inside <= 0) return;
+        float[] c = CloudExtras.colour(0.7F, insideStorm);
+        event.setRed(Mth.lerp(inside, event.getRed(), c[0]));
+        event.setGreen(Mth.lerp(inside, event.getGreen(), c[1]));
+        event.setBlue(Mth.lerp(inside, event.getBlue(), c[2]));
     }
 
     /** Toward the sun (or the moon, at night), from the time of day: vanilla's sun goes over from east to west. */
@@ -218,8 +274,9 @@ public final class CloudRenderer {
         FogRenderer.levelFogColor();
         float fogStart = RenderSystem.getShaderFogStart(), fogEnd = RenderSystem.getShaderFogEnd();
         FogShape fogShape = RenderSystem.getShaderFogShape();
-        RenderSystem.setShaderFogStart(reach * 0.55F);
-        RenderSystem.setShaderFogEnd(reach);
+        // inside a cloud the cloud's own cubes fade into the same fog as the world
+        RenderSystem.setShaderFogStart(Mth.lerp(inside, reach * 0.55F, Math.min(fogStart, reach * 0.55F)));
+        RenderSystem.setShaderFogEnd(Mth.lerp(inside, reach, Math.min(fogEnd, reach)));
         RenderSystem.setShaderFogShape(FogShape.CYLINDER);
         float glowUp = smooth(-0.05F, 0.2F, Mth.cos(timeOfDay * Mth.TWO_PI));
         float[] toSun = {-Mth.sin(timeOfDay * Mth.TWO_PI), Mth.cos(timeOfDay * Mth.TWO_PI), 0};
@@ -273,6 +330,8 @@ public final class CloudRenderer {
         builtReach = -1;
         model = null;
         sky = null;
+        field = null;
+        inside = 0;
         DhClouds.clear();
     }
 

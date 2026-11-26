@@ -49,16 +49,18 @@ public final class CloudField {
         for (int i = 0; i < binDomes.length; i++) binDomes[i] = lists.get(i).stream().mapToInt(Integer::intValue).toArray();
     }
 
+    public CloudSky.Sky sky() {
+        return sky;
+    }
+
     // ---- the same noise as the shader (32-bit unsigned maths in ints)
 
     static int hash3(int x, int y, int z, int salt) {
         int h = x * 0x8da6b343 ^ y * 0xd8163841 ^ z * 0xcb1ab31f ^ salt * 0x165667b1;
-        h ^= h >>> 16;
-        h *= 0x7feb352d;
-        h ^= h >>> 15;
-        h *= 0x846ca68b;
-        h ^= h >>> 16;
-        return h;
+        // the PCG generator's output step
+        int state = h * 747796405 + (int) 2891336453L;
+        int word = ((state >>> ((state >>> 28) + 4)) ^ state) * 277803737;
+        return (word >>> 22) ^ word;
     }
 
     static float u01(int h) {

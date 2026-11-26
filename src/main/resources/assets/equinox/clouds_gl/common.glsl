@@ -18,12 +18,10 @@ const float TWO_PI = 6.28318530718;
 
 uint hash3(ivec3 p, uint salt) {
     uint h = uint(p.x) * 0x8da6b343u ^ uint(p.y) * 0xd8163841u ^ uint(p.z) * 0xcb1ab31fu ^ salt * 0x165667b1u;
-    h ^= h >> 16;
-    h *= 0x7feb352du;
-    h ^= h >> 15;
-    h *= 0x846ca68bu;
-    h ^= h >> 16;
-    return h;
+    // the PCG generator's output step
+    uint state = h * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
 }
 
 float u01(uint h) {

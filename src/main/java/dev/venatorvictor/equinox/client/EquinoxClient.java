@@ -58,6 +58,8 @@ public final class EquinoxClient {
         modBus.addListener(RegisterSpriteSourceTypesEvent.class, dev.venatorvictor.equinox.client.textures.SnowStepTextures::register);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> tick());
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> ClientWeather.tick());
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog.class, CloudRenderer::onFog);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor.class, CloudRenderer::onFogColor);
         RenderBench.init();
         SnowAnimBench.init();
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, true, net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock.class, SnowAnimation::onUse);

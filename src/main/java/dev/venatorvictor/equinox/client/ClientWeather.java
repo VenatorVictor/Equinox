@@ -68,6 +68,7 @@ public final class ClientWeather {
         level.setThunderLevel(thunder);
         Weather.Side side = Weather.client();
         if (side != null) dev.venatorvictor.equinox.client.dh.DhClouds.tick(level);
+        CloudRenderer.tick(level);
         int keep = dev.venatorvictor.equinox.weather.ServerWeather.KEEP_RADIUS, span = 2 * keep + 1;
         if (side.grid.size() > span * span)
             side.grid.trim(Math.floorDiv(x, ClimateGrid.TILE_BLOCKS), Math.floorDiv(z, ClimateGrid.TILE_BLOCKS), keep);
