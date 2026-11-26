@@ -73,7 +73,7 @@ public final class CloudSky {
      * changed (HOLD); only where rain is falling or coming (storms forming) does the sky follow the weather freely.
      */
     private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> held = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
-    private static final float HOLD = 0.25F;
+    private static final float HOLD = 0.25F, STORM_HOLD = 0.1F;
     /** The wind pattern angle held (one of 16), so streaks and rows don't change when the wind turns a little. */
     private int patternAngle = -1;
 
@@ -108,10 +108,10 @@ public final class CloudSky {
 
     /** Vanilla-like grey of a cloud for its storm level (1 white); the thunder part lighter than vanilla's sky-wide one. */
     public static float grey(float c) {
-        // one smooth slope from white (fair) through grey (rain) to dark grey (thunder), same ends as before
-        // (it used to bend at full rain and drop to dark in a narrow band at thunder)
-        float t = Mth.clamp(c / Math.min(2, THUNDER_LEVEL + 0.3F), 0, 1);
-        return 1 - 0.66F * t * t * (3 - 2 * t);
+        // white (fair) -> grey (rain) -> dark grey (thunder): the first look, with its two sharp steps softened
+        float rain = 0.5F * Math.min(c, 1) + 0.5F * smooth(0.85F, 1.4F, c);
+        float thunder = smooth(THUNDER_LEVEL - 0.2F, THUNDER_LEVEL + 0.15F, c);
+        return (1 - 0.38F * rain) * (1 - 0.76F * 0.6F * thunder);
     }
 
     /** Daylight for heaps (0 night .. 1 day) at a time of day in ticks. */
@@ -204,10 +204,12 @@ public final class CloudSky {
                 float warm = warmth(side.grid.zone(x, z), summer);
                 long key = ((long) (mapAbsX0 / MAP_CELL + i) << 32) ^ ((mapAbsZ0 / MAP_CELL + j) & 0xFFFFFFFFL);
                 float[] fresh = {c, near, far, peak, warm}, old = held.get(key);
+                // storms (rain falling or coming) follow the weather more closely, but still not every small wobble
                 boolean storming = Math.max(c, Math.max(near, peak)) > 1;
-                if (!storming && old != null) {
+                if (old != null) {
+                    float hold = storming ? STORM_HOLD : HOLD;
                     boolean same = true;
-                    for (int q = 0; q < fresh.length; q++) same &= Math.abs(fresh[q] - old[q]) <= HOLD;
+                    for (int q = 0; q < fresh.length; q++) same &= Math.abs(fresh[q] - old[q]) <= hold;
                     if (same) fresh = old;
                 }
                 keep.put(key, fresh);

@@ -301,6 +301,23 @@ public final class Climate {
         if (above < -SURE) return Boolean.FALSE;
         return null;
     }
+    /** Width of the band (about 3 °C) where falling rain and snow mix, drawn only (blocks still freeze at the line). */
+    private static final float MIX_BAND = 3F / Celsius.PER_UNIT;
+
+    /**
+     * Drawing only: near the snow line some columns get snow and some rain (fixed per column), more snow the colder,
+     * so rain turns to snow over a band instead of along a sharp line.
+     */
+    public static Boolean rainDrawnAt(float low, int x, int y, int z) {
+        float above = low - SNOW_LINE - Math.max(0, y - 80) * PER_BLOCK;
+        if (Math.abs(above) >= MIX_BAND * 0.5F) return rainAt(low, y);
+        int h = x * 0x8da6b343 ^ z * 0xd8163841;
+        h = (h ^ (h >>> 15)) * 0x2c1b3c6d;
+        h ^= h >>> 12;
+        float r = (h & 0xFFFFFF) / (float) 0x1000000;
+        return above + (r - 0.5F) * MIX_BAND >= 0;
+    }
+
     /** The same in °C, on the daily mean: snow falls and water freezes below it. */
     public static final float SNOW_CELSIUS = 0.5F;
 

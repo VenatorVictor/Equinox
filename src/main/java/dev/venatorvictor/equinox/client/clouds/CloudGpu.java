@@ -47,7 +47,7 @@ public final class CloudGpu {
     public static final int PALETTE_W = 64, PALETTE_H = 32;
 
     private static Boolean supported;
-    private static int fill, light, faces, domeBuffer, map0, map1;
+    private static int fill, faces, domeBuffer, map0, map1;
     private static final Map<String, Integer> UNIFORMS = new HashMap<>();
     private static final Slot[] SLOT = new Slot[SLOTS];
     private static final Long2ObjectOpenHashMap<Chunk> CHUNKS = new Long2ObjectOpenHashMap<>();
@@ -59,8 +59,10 @@ public final class CloudGpu {
         final long key;
         final int level, cx, cz, cube;
         int vbo, vao, old, faces = -1;
-        /** hasOld: its last cubes are kept; going: it is being taken over (its cubes shrink away, then it's dropped). */
-        boolean hasOld, going;
+        /** hasOld: its last cubes are kept (to grow the ones that come and shrink the ones that go). */
+        boolean hasOld;
+        /** What its part of the sky looked like at its last make (domes, map, sun). */
+        long signature;
         long made;
         boolean wanted, building;
 
@@ -94,7 +96,7 @@ public final class CloudGpu {
     }
 
     private static final class Slot {
-        int list, grid, light, out, capacity = MAX_FACES;
+        int list, grid, out, capacity = MAX_FACES;
         long fence;
         Chunk target;
     }
@@ -113,13 +115,11 @@ public final class CloudGpu {
                     String common = read("common.glsl");
                     fill = program(common + read("fill.comp"));
                     faces = program(common + read("faces.comp"));
-                    light = program("#define LIGHT_PASS\n" + common + read("faces.comp"));
                     domeBuffer = glGenBuffers();
                     for (int i = 0; i < SLOTS; i++) {
                         Slot s = new Slot();
                         s.list = buffer(4L * (MAX_LIST + 1));
                         s.grid = buffer(4L * GRID * GRID * (256 / 4 + 2));
-                        s.light = buffer(8L * GRID * GRID * (256 / 4 + 2));
                         s.out = buffer(16L + (long) MAX_FACES * 4 * VERTEX);
                         SLOT[i] = s;
                     }
@@ -301,47 +301,25 @@ public final class CloudGpu {
         collect();
         want(camX, camZ, reach, nearCube, ring);
         boolean animate = animSeconds > 0;
-        long now = System.nanoTime(), animNanos = (long) (animSeconds * 1e9) + 100_000_000L;
-        boolean anyReady = false;
-        for (Chunk c : CHUNKS.values()) anyReady |= c.ready() && !c.going;
-        // Unwanted chunks (another cube size took over, or out of reach) go once every wanted chunk over them is ready:
-        // with growing on, the new piece's cubes grow while the old piece's cubes shrink away, then it's dropped.
-        List<Chunk> wanted = new ArrayList<>(), drop = new ArrayList<>(), going = new ArrayList<>();
+        long now = System.nanoTime();
+        // Unwanted chunks (another cube size took over, or out of reach) go once every wanted chunk over them is ready.
+        // A chunk made for the first time just appears (no growing: only cubes coming and going at a cloud's edges grow).
+        List<Chunk> wanted = new ArrayList<>(), drop = new ArrayList<>();
+        for (Chunk c : CHUNKS.values()) if (c.wanted) wanted.add(c);
         for (Chunk c : CHUNKS.values()) {
-            if (!c.wanted) continue;
-            wanted.add(c);
-            if (c.going) {
-                // wanted again (you came back) while shrinking: it grows back with its next make
-                c.going = false;
-                c.hasOld = false;
-                c.made = 0;
-            }
-        }
-        for (Chunk c : CHUNKS.values()) {
-            if (c.wanted) continue;
-            boolean inReach = distance(camX, camZ, c.x0(), c.z0(), c.span()) <= reach;
+            if (c.wanted || c.building) continue;
             boolean covered = true;
-            if (c.ready() && inReach)
+            if (c.ready() && distance(camX, camZ, c.x0(), c.z0(), c.span()) <= reach)
                 for (Chunk w : wanted) if (!w.ready() && w.overlaps(c)) {
                     covered = false;
                     break;
                 }
-            if (!covered || c.building) continue;
-            if (!animate || !c.ready() || !c.hasOld || c.faces <= 0) drop.add(c);
-            else if (!c.going) going.add(c);
-            else if (now - c.made > animNanos) drop.add(c);
+            if (covered) drop.add(c);
         }
         for (Chunk c : drop) free(c);
 
-        int started = 0;
-        for (Chunk c : going) {
-            Slot slot = freeSlot();
-            if (slot == null || started >= budget) break;
-            c.going = true;
-            build(slot, c, sun, full, stamp, 2, true);
-            started++;
-        }
-        for (; started < budget; started++) {
+        int started = 0, checked = 0;
+        while (started < budget && checked < budget * 16) {
             Slot slot = freeSlot();
             if (slot == null) break;
             Chunk best = null;
@@ -358,9 +336,16 @@ public final class CloudGpu {
                 }
             }
             if (best == null) break;
-            // a piece made for the first time grows in (unless the sky is just starting: then it's simply there)
-            int mode = animate && !best.hasOld && anyReady ? 1 : 0;
-            build(slot, best, sun, full, stamp, mode, animate && best.hasOld);
+            checked++;
+            // nothing in its part of the sky changed since its last make: keep it as it is (no work)
+            long signature = signature(best, sun, full);
+            if (best.ready() && best.made != 0 && signature == best.signature) {
+                best.made = now;
+                continue;
+            }
+            best.signature = signature;
+            build(slot, best, sun, full, stamp, 0, animate && best.hasOld);
+            started++;
         }
     }
 
@@ -370,6 +355,50 @@ public final class CloudGpu {
     }
 
     /** Starts making a chunk in a slot (two compute passes, then a fence). */
+    /** A hash of everything a chunk's make reads: the domes near it, the map over it, the sun, the pattern angle. */
+    private static long signature(Chunk chunk, float[] sun, boolean full) {
+        CloudSky.Sky s = sky;
+        int span = chunk.span();
+        float relX = (float) (chunk.x0() - s.centerX()), relZ = (float) (chunk.z0() - s.centerZ());
+        long h = 0x9E3779B97F4A7C15L * (chunk.cube + 1);
+        float[] d = s.domes();
+        for (int k = 0; k < s.domeCount(); k++) {
+            int o = k * CloudSky.DOME_FLOATS;
+            float r = Math.max(d[o + 4], d[o + 5]) + 16 + MARGIN;
+            if (d[o] + r < relX || d[o] - r > relX + span || d[o + 1] + r < relZ || d[o + 1] - r > relZ + span) continue;
+            // positions in absolute wind space (the sky's centre moves as you do)
+            h = mix(h, Math.round((d[o] + s.centerX()) * 64));
+            h = mix(h, Math.round((d[o + 1] + s.centerZ()) * 64));
+            for (int q = 2; q < CloudSky.DOME_FLOATS; q++) h = mix(h, Float.floatToIntBits(d[o + q]));
+        }
+        int n = s.mapSize();
+        int i0 = Math.max(0, (int) Math.floor((relX - s.mapX0() - MARGIN) / CloudSky.MAP_CELL) - 1);
+        int i1 = Math.min(n - 1, (int) Math.floor((relX + span - s.mapX0() + MARGIN) / CloudSky.MAP_CELL) + 1);
+        int j0 = Math.max(0, (int) Math.floor((relZ - s.mapZ0() - MARGIN) / CloudSky.MAP_CELL) - 1);
+        int j1 = Math.min(n - 1, (int) Math.floor((relZ + span - s.mapZ0() + MARGIN) / CloudSky.MAP_CELL) + 1);
+        long absI = Math.round(s.centerX() + s.mapX0()) / CloudSky.MAP_CELL, absJ = Math.round(s.centerZ() + s.mapZ0()) / CloudSky.MAP_CELL;
+        for (int j = j0; j <= j1; j++)
+            for (int i = i0; i <= i1; i++) {
+                int o = (j * n + i) * 4;
+                h = mix(h, (absI + i) * 31 + (absJ + j));
+                for (int q = 0; q < 4; q++) {
+                    h = mix(h, Float.floatToIntBits(s.map0()[o + q]));
+                    h = mix(h, Float.floatToIntBits(s.map1()[o + q]));
+                }
+            }
+        h = mix(h, Float.floatToIntBits(s.windX()));
+        h = mix(h, Float.floatToIntBits(s.windZ()));
+        // the sun's light is baked in: remade when it has moved a little
+        if (full) for (int q = 0; q < 3; q++) h = mix(h, Math.round(sun[q] * 40));
+        return h;
+    }
+
+    private static long mix(long h, long v) {
+        h ^= v * 0xC2B2AE3D27D4EB4FL;
+        h = Long.rotateLeft(h, 31) * 0x9E3779B97F4A7C15L;
+        return h;
+    }
+
     /** mode: 0 normal (useOld: compare with its last cubes), 1 all its cubes grow, 2 all its last cubes shrink away. */
     private static void build(Slot slot, Chunk chunk, float[] sun, boolean full, int stamp, int mode, boolean useOld) {
         CloudSky.Sky s = sky;
@@ -407,16 +436,14 @@ public final class CloudGpu {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, slot.out);
             boolean hasOld = mode == 2 || useOld && chunk.hasOld;
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, hasOld ? chunk.old : slot.grid);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, slot.light);
             GlStateManager._activeTexture(GL_TEXTURE0 + 1);
             GlStateManager._bindTexture(map1);
             GlStateManager._activeTexture(GL_TEXTURE0);
             GlStateManager._bindTexture(map0);
 
             int previous = glGetInteger(GL_CURRENT_PROGRAM);
-            // fill (which cubes), light (per cube), faces (light averaged per corner)
-            for (int pass = mode == 2 ? 1 : 0; pass < 3; pass++) {
-                int program = pass == 0 ? fill : pass == 1 ? light : faces;
+            for (int pass = mode == 2 ? 1 : 0; pass < 2; pass++) {
+                int program = pass == 0 ? fill : faces;
                 glUseProgram(program);
                 glUniform2i(uniform(program, "uCentre"), s.centerX(), s.centerZ());
                 glUniform2f(uniform(program, "uMapOrigin"), s.mapX0(), s.mapZ0());
@@ -432,13 +459,6 @@ public final class CloudGpu {
                 glUniform1f(uniform(program, "uBottom"), CloudSky.BOTTOM);
                 glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
                 if (pass == 0) {
-                    glDispatchCompute((GRID + 3) / 4, (layers + 2 + 3) / 4, (GRID + 3) / 4);
-                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                } else if (pass == 1) {
-                    glUniform3f(uniform(program, "uSun"), sun[0], sun[1], sun[2]);
-                    glUniform1i(uniform(program, "uLight"), full ? 1 : 0);
-                    glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
-                    glUniform1i(uniform(program, "uMode"), mode);
                     glDispatchCompute((GRID + 3) / 4, (layers + 2 + 3) / 4, (GRID + 3) / 4);
                     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                 } else {
@@ -480,13 +500,13 @@ public final class CloudGpu {
 
     /** Shader storage bindings 0-4 as they were (shader packs may use them). */
     private static int[] saveBindings() {
-        int[] saved = new int[6];
-        for (int i = 0; i < 6; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
+        int[] saved = new int[5];
+        for (int i = 0; i < 5; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
         return saved;
     }
 
     private static void restoreBindings(int[] saved) {
-        for (int i = 0; i < 6; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
+        for (int i = 0; i < 5; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
     }
 
     /** Finished chunks: their faces copied from the slot into the chunk's own buffer. */
@@ -519,7 +539,6 @@ public final class CloudGpu {
                     warnedFull = true;
                     Equinox.LOGGER.info("Equinox: a cloud chunk had {} faces, its build buffer grew", count);
                 }
-                if (!chunk.ready()) chunk.hasOld = false; // never shown: it still grows in
                 chunk.made = 0;
                 continue;
             }

@@ -191,7 +191,10 @@ public abstract class BiomeMixin implements ClimateBiome {
         if (equinox$plain == 0) equinox$plain = (byte) (((Biome) (Object) this).getModifiedClimateSettings().temperatureModifier()
                 == Biome.TemperatureModifier.NONE ? 1 : 2);
         if (equinox$plain != 1) return;
-        Boolean rain = Climate.rainAt(getBaseTemperature() + equinox$shiftAt(pos), pos.getY());
+        float low = getBaseTemperature() + equinox$shiftAt(pos);
+        // the client drawing rain and snow: they mix over a band near the snow line
+        Boolean rain = Thread.currentThread() == dev.venatorvictor.equinox.weather.Weather.clientThread
+                ? Climate.rainDrawnAt(low, pos.getX(), pos.getY(), pos.getZ()) : Climate.rainAt(low, pos.getY());
         if (rain != null) cir.setReturnValue(rain);
     }
 

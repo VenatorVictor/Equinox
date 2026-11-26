@@ -25,6 +25,18 @@ public final class ClientWeather {
     private static float rain, thunder;
     private static ClientLevel managed;
 
+    /** 1 under the cloud layer at the camera, 0 above it, fading through it. */
+    private static float underClouds(ClientLevel level, Vec3 camera) {
+        float height = level.effects().getCloudHeight();
+        dev.venatorvictor.equinox.client.clouds.CloudSky.Sky s = CloudRenderer.sky();
+        Weather.Side side = Weather.client();
+        if (Float.isNaN(height) || s == null || side == null || !CloudRenderer.active(level)) return 1;
+        double[] off = side.field.offset(level.getGameTime());
+        float x = (float) (camera.x - off[0] - s.centerX()), z = (float) (camera.z - off[1] - s.centerZ());
+        float base = height + s.map(s.map0(), 1, x, z), top = height + s.map(s.map0(), 2, x, z);
+        return 1 - Mth.clamp((float) (camera.y - base) / Math.max(4, top + 8 - base), 0, 1);
+    }
+
     public static void tick() {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
@@ -64,7 +76,8 @@ public final class ClientWeather {
         }
         rain += Mth.clamp(rainTarget - rain, -FADE, FADE);
         thunder += Mth.clamp(thunderTarget - thunder, -FADE, FADE);
-        level.setRainLevel(rain);
+        // rain and snow fall from under the clouds: none above them, fading out through the cloud
+        level.setRainLevel(rain * underClouds(level, camera));
         level.setThunderLevel(thunder);
         Weather.Side side = Weather.client();
         if (side != null) dev.venatorvictor.equinox.client.dh.DhClouds.tick(level);
