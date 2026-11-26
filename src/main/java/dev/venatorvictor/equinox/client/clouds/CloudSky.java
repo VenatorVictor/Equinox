@@ -223,37 +223,48 @@ public final class CloudSky {
     private void stormSites(Weather.Side side, long time, int cx, int cz, int reach, float wx, float wz, Sky map, Domes out) {
         int s0x = Math.floorDiv(cx - reach - STORM_SITE, STORM_SITE), s1x = Math.floorDiv(cx + reach + STORM_SITE, STORM_SITE);
         int s0z = Math.floorDiv(cz - reach - STORM_SITE, STORM_SITE), s1z = Math.floorDiv(cz + reach + STORM_SITE, STORM_SITE);
-        long[] times = new long[AHEAD_BACK + AHEAD_FORWARD + 1];
-        double[][] offsets = new double[times.length][];
-        for (int k = 0; k < times.length; k++) {
-            times[k] = Math.max(0, time + (long) (k - AHEAD_BACK) * AHEAD_STEP);
+        // Look-ahead samples on a fixed time grid (so they don't jump as time goes on), plus now itself.
+        long grid = Math.floorDiv(time, AHEAD_STEP) * AHEAD_STEP;
+        int n = AHEAD_BACK + AHEAD_FORWARD + 2;
+        long[] times = new long[n];
+        double[][] offsets = new double[n][];
+        for (int k = 0; k < n; k++) {
+            times[k] = k == AHEAD_BACK + 1 ? time : grid + (long) (k <= AHEAD_BACK ? k - AHEAD_BACK : k - AHEAD_BACK - 1) * AHEAD_STEP;
+            times[k] = Math.max(0, times[k]);
             offsets[k] = side.field.offset(times[k]);
         }
+        int now = AHEAD_BACK + 1;
+        float[] c = new float[n];
         for (int si = s0x; si <= s1x; si++) {
             for (int sj = s0z; sj <= s1z; sj++) {
                 double ax = (si + 0.2 + 0.6 * hash01(si, sj, 1)) * STORM_SITE, az = (sj + 0.2 + 0.6 * hash01(si, sj, 2)) * STORM_SITE;
                 float x = (float) (ax - cx), z = (float) (az - cz);
-                if (map.map(map.map1(), 3, x, z) < 0.5F) continue;
-                // When does rain reach this patch of sky? (it moves with the wind; wind-space positions stay put)
-                int now = AHEAD_BACK, first = -1, last = -1, runStart = now;
-                float level = 0;
-                boolean[] wet = new boolean[times.length];
-                for (int k = 0; k < times.length; k++) {
-                    float c = side.cloudiness(ax + offsets[k][0], az + offsets[k][1], times[k], offsets[k]);
-                    wet[k] = c > 1;
-                    if (k == now) level = c;
-                }
-                for (int k = now; k < wet.length; k++) if (wet[k]) { first = k; break; }
-                for (int k = now - 1; k >= 0; k--) if (wet[k]) { last = k; break; }
-                if (wet[now]) while (runStart > 0 && wet[runStart - 1]) runStart--;
+                float thunder = map.map(map.map1(), 3, x, z);
+                if (thunder < 0.3F) continue;
+                // When does rain reach this patch of sky? (it moves with the wind; wind-space positions stay put).
+                // Crossings are found between samples, so the stages move smoothly with time.
+                for (int k = 0; k < n; k++) c[k] = side.cloudiness(ax + offsets[k][0], az + offsets[k][1], times[k], offsets[k]);
+                float level = c[now];
                 float gather, climb, spread, melt;
-                if (wet[now]) {
+                if (level > 1) {
+                    float start = Float.MAX_VALUE;
+                    for (int k = now; k > 0; k--) if (c[k - 1] <= 1) {
+                        start = cross(times[k - 1], c[k - 1], times[k], c[k]);
+                        break;
+                    }
                     gather = climb = 1;
-                    spread = smooth(0, SPREAD, (now - runStart) * AHEAD_STEP);
+                    spread = start == Float.MAX_VALUE ? 1 : smooth(0, SPREAD, time - start);
                     melt = 0;
                 } else {
-                    float until = first < 0 ? Float.MAX_VALUE : (first - now) * AHEAD_STEP;
-                    float since = last < 0 ? Float.MAX_VALUE : (now - last) * AHEAD_STEP;
+                    float until = Float.MAX_VALUE, since = Float.MAX_VALUE;
+                    for (int k = now + 1; k < n; k++) if (c[k] > 1) {
+                        until = cross(times[k - 1], c[k - 1], times[k], c[k]) - time;
+                        break;
+                    }
+                    for (int k = now - 1; k >= 0; k--) if (c[k] > 1) {
+                        since = time - cross(times[k], c[k], times[k + 1], c[k + 1]);
+                        break;
+                    }
                     if (until <= since) {
                         // gathering: heaps over GATHER ticks, the tower's climb ends as the rain starts
                         gather = 1 - smooth(0, GATHER, until - CLIMB);
@@ -264,11 +275,19 @@ public final class CloudSky {
                         melt = smooth(0, MELT, since);
                     }
                 }
+                // fades with the thunder outlook instead of vanishing
+                melt = Math.max(melt, 1 - smooth(0.3F, 0.6F, thunder));
                 if (gather < 0.02F || melt > 0.98F) continue;
                 level = Math.max(level, 0.4F + 0.6F * gather + 0.6F * climb);
                 tower(si, sj, x, z, gather, climb, spread, melt, level, wx, wz, out);
             }
         }
+    }
+
+    /** When the storm level crosses 1 (the rain line) between two samples (ticks). */
+    private static float cross(long t0, float c0, long t1, float c1) {
+        float f = Math.abs(c1 - c0) < 1e-4F ? 0.5F : Mth.clamp((1 - c0) / (c1 - c0), 0, 1);
+        return t0 + (t1 - t0) * f;
     }
 
     /** One storm's puffs: a wide body, a tower of stacked puffs narrowing upward, the anvil, an overshooting top. */
@@ -319,14 +338,16 @@ public final class CloudSky {
                 double ax = (si + 0.15 + 0.7 * hash01(si, sj, salt)) * site, az = (sj + 0.15 + 0.7 * hash01(si, sj, salt + 1)) * site;
                 float x = (float) (ax - cx), z = (float) (az - cz);
                 float deck = map.map(map.map0(), 0, x, z), thunder = map.map(map.map1(), 3, x, z), c = map.map(map.map0(), 3, x, z);
-                if (thunder > 0.5F || deck > 0.85F) continue;
                 float warm = warmth(side.grid.zone(ax + offset[0], az + offset[1]), summer);
-                float presence = (big ? 0.25F + 0.55F * warm * (0.4F + 0.6F * day) : 0.3F + 0.4F * warm) * amount * (1 - smooth(0.4F, 0.85F, deck));
-                if (hash01(si, sj, salt + 2) > presence) continue;
+                float presence = (big ? 0.25F + 0.55F * warm * (0.4F + 0.6F * day) : 0.3F + 0.4F * warm) * amount
+                        * (1 - smooth(0.4F, 0.85F, deck)) * (1 - smooth(0.35F, 0.6F, thunder));
+                // as the weather turns, a heap shrinks away (or grows) instead of vanishing
+                float fade = smooth(0, 0.12F, presence - hash01(si, sj, salt + 2));
+                if (fade <= 0.02F) continue;
                 // its own life: forms, lives, dissolves (1-3 game hours), offset per site
                 float life = 1000 + 2000 * hash01(si, sj, salt + 3);
                 float phase = (float) (((time / (double) life) + hash01(si, sj, salt + 4)) % 1.0);
-                float gate = smooth(0, 0.2F, phase) * (1 - smooth(0.75F, 1, phase));
+                float gate = smooth(0, 0.2F, phase) * (1 - smooth(0.75F, 1, phase)) * fade;
                 if (gate < 0.05F) continue;
                 float base = 4 * hash01(si, sj, salt + 5);
                 if (big) {

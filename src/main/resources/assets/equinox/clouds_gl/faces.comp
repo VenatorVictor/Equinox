@@ -5,6 +5,7 @@
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(std430, binding = 2) readonly buffer Grid { uint grid[]; };
 layout(std430, binding = 3) buffer Out { uint faceCount; uint pad0; uint pad1; uint pad2; uint verts[]; };
+layout(std430, binding = 4) readonly buffer Old { uint old[]; }; // this chunk's cubes last time
 
 uniform vec3 uChunk;
 uniform ivec3 uChunkCell;
@@ -14,6 +15,8 @@ uniform vec3 uSun;         // toward the sun (the moon at night)
 uniform int uLight;        // 1 full (sun through the cloud), 0 simple
 uniform uint uMaxFaces;
 uniform vec2 uPalette;     // palette size (texels)
+uniform int uHasOld;       // 1: there was a last time (cubes that came or went are animated)
+uniform uint uStamp;       // now, in 2-tick steps (0..1023)
 
 const ivec3 DIRS[6] = ivec3[6](ivec3(0, 1, 0), ivec3(0, -1, 0), ivec3(-1, 0, 0), ivec3(1, 0, 0), ivec3(0, 0, -1), ivec3(0, 0, 1));
 const float SHADE[6] = float[6](1.0, 0.7, 0.9, 0.9, 0.8, 0.8);
@@ -30,16 +33,30 @@ uint at(ivec3 g) {
     return grid[uint((g.y * 34 + g.z) * 34 + g.x)];
 }
 
+uint was(ivec3 g) {
+    return uHasOld == 1 ? old[uint((g.y * 34 + g.z) * 34 + g.x)] : at(g);
+}
+
+// a cube there now and last time: it hides its neighbours' faces (one that comes or goes doesn't, so nothing opens
+// a hole while it grows or shrinks)
+bool settled(ivec3 g) {
+    return (at(g) & 1u) != 0u && (was(g) & 1u) != 0u;
+}
+
 void main() {
     ivec3 c = ivec3(gl_GlobalInvocationID);
     if (c.x >= 32 || c.z >= 32 || c.y >= uLayers) return;
     ivec3 g = c + 1;
-    uint here = at(g);
-    if ((here & 1u) == 0u) return;
+    uint now = at(g), before = was(g);
+    bool on = (now & 1u) != 0u, wasOn = (before & 1u) != 0u;
+    if (!on && !wasOn) return;
+    // 0 settled, 1 growing (new), 2 going (gone now)
+    uint state = on && wasOn ? 0u : on ? 1u : 2u;
+    uint here = on ? now : before;
     uint open = 0u;
     int count = 0;
     for (int i = 0; i < 6; i++) {
-        if ((at(g + DIRS[i]) & 1u) == 0u) {
+        if (!settled(g + DIRS[i])) {
             open |= 1u << uint(i);
             count++;
         }
@@ -84,7 +101,8 @@ void main() {
         float facing = max(dot(n, uSun), 0.0);
         float light = clamp(0.22 * sky + 0.12 * openness + 0.66 * through * (0.3 + 0.7 * facing) + tone, 0.0, 1.0);
         float u = (light * (uPalette.x - 1.0) + 0.5) / uPalette.x;
-        uint uvU = floatBitsToUint(u), uvV = floatBitsToUint(v);
+        float code = state == 0u ? 0.0 : state == 1u ? 1.0 + float(uStamp) : 1025.0 + float(uStamp);
+        uint uvV = floatBitsToUint(v + code);
         uint colour = packUnorm4x8(vec4(SHADE[i], SHADE[i], SHADE[i], alpha));
         uint normal = packSnorm4x8(vec4(n, 0.0));
         uint o = slot * 28u;
@@ -94,7 +112,8 @@ void main() {
             verts[b] = floatBitsToUint(pos.x);
             verts[b + 1u] = floatBitsToUint(pos.y);
             verts[b + 2u] = floatBitsToUint(pos.z);
-            verts[b + 3u] = uvU;
+            vec3 side = CORNERS[i * 4 + k];
+            verts[b + 3u] = floatBitsToUint(u + side.x + 2.0 * side.y + 4.0 * side.z);
             verts[b + 4u] = uvV;
             verts[b + 5u] = colour;
             verts[b + 6u] = normal;

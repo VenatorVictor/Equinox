@@ -55,8 +55,21 @@ public final class CloudRenderer {
     private static CloudSky model;
     /** The latest sky (for the far clouds too). */
     private static volatile CloudSky.Sky sky;
+    /** The game's cloud shader plus cubes growing and shrinking (not used under a shader pack). */
+    private static ShaderInstance growing;
     private static Boolean shaderApi;
     private static java.lang.invoke.MethodHandle packInUse;
+
+    /** Mod bus: our cloud shader. */
+    public static void registerShaders(net.neoforged.neoforge.client.event.RegisterShadersEvent event) {
+        try {
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Equinox.MOD_ID, "clouds_growing"),
+                    com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL), shader -> growing = shader);
+        } catch (java.io.IOException e) {
+            Equinox.LOGGER.warn("Equinox: the growing-cloud shader didn't load, cubes will just appear", e);
+        }
+    }
 
     /** Our clouds take over from vanilla's here (weather per region on, setting on, storms known, compute shaders). */
     public static boolean active(ClientLevel level) {
@@ -181,15 +194,19 @@ public final class CloudRenderer {
         float timeOfDay = level.getTimeOfDay(partialTick);
         float[] sun = sun(timeOfDay);
         int reach = nearReach();
+        boolean pack = shaderPack();
+        // cubes grow and shrink with our shader; under a shader pack the pack's own cloud shader draws them (no growing)
+        float animSeconds = pack || growing == null ? 0 : ClientConfig.CLOUD_ANIMATION.get().floatValue();
         CloudGpu.update(camX - offX, camZ - offZ, reach, ClientConfig.CLOUD_CUBE.get(), ring(), ClientConfig.CLOUD_UPDATES.get(),
-                sun, ClientConfig.CLOUD_LIGHTING.get() == ClientConfig.CloudLighting.FULL);
+                sun, ClientConfig.CLOUD_LIGHTING.get() == ClientConfig.CloudLighting.FULL, (int) (time / 2 & 1023), animSeconds);
+        float animTime = (float) ((time / 2 & 1023) + ((time & 1) + partialTick) / 2);
         if (time - paletteTime >= 10 || time < paletteTime) {
             paletteTime = time;
             CloudExtras.palette(timeOfDay);
         }
 
         // ground shadows first (they darken the picture under the clouds), only without a shader pack
-        if (ClientConfig.CLOUD_SHADOWS.get() && !Minecraft.useShaderTransparency() && !shaderPack()) {
+        if (ClientConfig.CLOUD_SHADOWS.get() && !Minecraft.useShaderTransparency() && !pack) {
             float[] toward = {-Mth.sin(timeOfDay * Mth.TWO_PI), Mth.cos(timeOfDay * Mth.TWO_PI), 0};
             float rainy = 1 - 0.6F * level.getRainLevel(partialTick);
             // underground (no sky where the camera is) the view isn't under the clouds
@@ -206,7 +223,13 @@ public final class CloudRenderer {
         RenderSystem.setShaderFogShape(FogShape.CYLINDER);
         float glowUp = smooth(-0.05F, 0.2F, Mth.cos(timeOfDay * Mth.TWO_PI));
         float[] toSun = {-Mth.sin(timeOfDay * Mth.TWO_PI), Mth.cos(timeOfDay * Mth.TWO_PI), 0};
-        CloudGpu.Tint tint = (x, y, z) -> {
+        ShaderInstance[] used = new ShaderInstance[1];
+        CloudGpu.Tint tint = (x, y, z, cube) -> {
+            if (used[0] == growing && growing != null) {
+                growing.safeGetUniform("AnimTime").set(animTime);
+                growing.safeGetUniform("AnimLength").set(Math.max(0.5F, animSeconds * 10));
+                growing.safeGetUniform("Cube").set((float) cube);
+            }
             // light through the clouds toward the sun: brighter looking toward it
             float len = Mth.sqrt(x * x + y * y + z * z);
             float facing = len < 1 ? 0 : Math.max(0, (x * toSun[0] + y * toSun[1] + z * toSun[2]) / len);
@@ -218,8 +241,10 @@ public final class CloudRenderer {
         for (int pass = status == CloudStatus.FANCY ? 0 : 1; pass < 2; pass++) {
             RenderType type = pass == 0 ? RenderType.cloudsDepthOnly() : RenderType.clouds();
             type.setupRenderState();
+            if (animSeconds > 0) RenderSystem.setShader(() -> growing);
             RenderSystem.setShaderTexture(0, CloudExtras.PALETTE);
             ShaderInstance shader = RenderSystem.getShader();
+            used[0] = shader;
             if (shader != null) CloudGpu.draw(frustumMatrix, projectionMatrix, camX, camY, camZ, offX, offZ, height, shader, tint);
             type.clearRenderState();
         }

@@ -37,6 +37,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue DISTANT_RAIN;
     public static final ModConfigSpec.DoubleValue CLOUD_AMOUNT;
     public static final ModConfigSpec.IntValue CLOUD_UPDATES;
+    public static final ModConfigSpec.DoubleValue CLOUD_ANIMATION;
     public static final ModConfigSpec.BooleanValue DH_CLOUDS;
 
     /**
@@ -153,6 +154,9 @@ public final class ClientConfig {
         CLOUD_UPDATES = BUILDER.comment("Cloud pieces remade per frame as the sky changes. Higher = clouds follow the weather sooner, more work",
                         "for the graphics card.")
                 .defineInRange("updates_per_frame", 2, 1, 8);
+        CLOUD_ANIMATION = BUILDER.comment("Cloud cubes grow out of their middle when they appear and shrink away when they go, over this many",
+                        "seconds (0 = they just appear). Not with a shader pack (its own cloud shader draws them).")
+                .defineInRange("growing_seconds", 1.0, 0.0, 3.0);
         DH_CLOUDS = BUILDER.comment("With Distant Horizons: the far clouds are drawn by it, so they sit behind far terrain (the near ones",
                         "are drawn the normal way). false: all clouds the normal way (far ones may show over far mountains).")
                 .define("distant_horizons_far_clouds", true);

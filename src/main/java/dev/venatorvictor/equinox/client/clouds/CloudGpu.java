@@ -42,8 +42,8 @@ public final class CloudGpu {
     private static final int CHUNK = 32, GRID = CHUNK + 2, MAX_FACES = 1 << 16, VERTEX = 28;
     /** Chunks being made at once, domes a chunk can see, blocks around a chunk whose domes it sees. */
     private static final int SLOTS = 4, MAX_LIST = 2048, MARGIN = 96;
-    /** A chunk isn't remade sooner than this after its last make (nanoseconds). */
-    private static final long MIN_AGE = 400_000_000L;
+    /** A chunk isn't remade sooner than this after its last make (nanoseconds), so cubes finish growing first. */
+    private static long minAge = 400_000_000L;
     public static final int PALETTE_W = 64, PALETTE_H = 32;
 
     private static Boolean supported;
@@ -58,7 +58,8 @@ public final class CloudGpu {
     static final class Chunk {
         final long key;
         final int level, cx, cz, cube;
-        int vbo, vao, faces = -1;
+        int vbo, vao, old, faces = -1;
+        boolean hasOld;
         long made;
         boolean wanted, building;
 
@@ -278,8 +279,10 @@ public final class CloudGpu {
      * Once a frame: collects finished chunks, drops chunks no longer needed (once what replaces them is ready) and
      * starts making up to `budget` chunks: missing ones nearest first, then the oldest. camX, camZ: wind space.
      */
-    public static void update(double camX, double camZ, int reach, int nearCube, int ring, int budget, float[] sun, boolean full) {
+    public static void update(double camX, double camZ, int reach, int nearCube, int ring, int budget, float[] sun, boolean full,
+                              int stamp, float animSeconds) {
         if (sky == null) return;
+        minAge = (long) ((Math.max(0.4F, animSeconds + 0.2F)) * 1e9);
         collect();
         want(camX, camZ, reach, nearCube, ring);
         // drop unwanted chunks once every wanted chunk over them is ready
@@ -304,7 +307,7 @@ public final class CloudGpu {
                 if (c.building) continue;
                 double score;
                 if (!c.ready()) score = distance(camX, camZ, c.x0(), c.z0(), c.span()) - 1e9;
-                else if (now - c.made < MIN_AGE) continue;
+                else if (now - c.made < minAge) continue;
                 else score = c.made - now;
                 if (score < bestScore) {
                     bestScore = score;
@@ -312,7 +315,7 @@ public final class CloudGpu {
                 }
             }
             if (best == null) break;
-            build(slot, best, sun, full);
+            build(slot, best, sun, full, stamp, animSeconds > 0);
         }
     }
 
@@ -322,7 +325,7 @@ public final class CloudGpu {
     }
 
     /** Starts making a chunk in a slot (two compute passes, then a fence). */
-    private static void build(Slot slot, Chunk chunk, float[] sun, boolean full) {
+    private static void build(Slot slot, Chunk chunk, float[] sun, boolean full, int stamp, boolean animate) {
         CloudSky.Sky s = sky;
         int cube = chunk.cube, layers = (int) (CloudSky.TOP - CloudSky.BOTTOM) / cube, span = chunk.span();
         float relX = (float) (chunk.x0() - s.centerX()), relZ = (float) (chunk.z0() - s.centerZ());
@@ -356,6 +359,8 @@ public final class CloudGpu {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, slot.list);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, slot.grid);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, slot.out);
+            boolean hasOld = animate && chunk.hasOld;
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, hasOld ? chunk.old : slot.grid);
             GlStateManager._activeTexture(GL_TEXTURE0 + 1);
             GlStateManager._bindTexture(map1);
             GlStateManager._activeTexture(GL_TEXTURE0);
@@ -385,11 +390,27 @@ public final class CloudGpu {
                     glUniform1i(uniform(program, "uLight"), full ? 1 : 0);
                     glUniform1ui(uniform(program, "uMaxFaces"), MAX_FACES);
                     glUniform2f(uniform(program, "uPalette"), PALETTE_W, PALETTE_H);
+                    glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
+                    glUniform1ui(uniform(program, "uStamp"), stamp & 1023);
                     glDispatchCompute(CHUNK / 4, (layers + 3) / 4, CHUNK / 4);
                     glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
                 }
             }
             glUseProgram(previous);
+            // keep this make's cubes, to see next time which came and went
+            long gridBytes = 4L * GRID * GRID * (layers + 2);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            if (chunk.old == 0) {
+                chunk.old = glGenBuffers();
+                glBindBuffer(GL_COPY_WRITE_BUFFER, chunk.old);
+                glBufferData(GL_COPY_WRITE_BUFFER, gridBytes, GL_DYNAMIC_COPY);
+            }
+            glBindBuffer(GL_COPY_READ_BUFFER, slot.grid);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, chunk.old);
+            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, gridBytes);
+            glBindBuffer(GL_COPY_READ_BUFFER, 0);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+            chunk.hasOld = true;
         } finally {
             restoreBindings(saved);
         }
@@ -398,15 +419,15 @@ public final class CloudGpu {
         chunk.building = true;
     }
 
-    /** Shader storage bindings 0-3 as they were (shader packs may use them). */
+    /** Shader storage bindings 0-4 as they were (shader packs may use them). */
     private static int[] saveBindings() {
-        int[] saved = new int[4];
-        for (int i = 0; i < 4; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
+        int[] saved = new int[5];
+        for (int i = 0; i < 5; i++) saved[i] = glGetIntegeri(GL_SHADER_STORAGE_BUFFER_BINDING, i);
         return saved;
     }
 
     private static void restoreBindings(int[] saved) {
-        for (int i = 0; i < 4; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
+        for (int i = 0; i < 5; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, saved[i]);
     }
 
     /** Finished chunks: their faces copied from the slot into the chunk's own buffer. */
@@ -465,15 +486,16 @@ public final class CloudGpu {
         for (Slot s : SLOT) if (s.target == c) s.target = null;
         if (c.vbo != 0) glDeleteBuffers(c.vbo);
         if (c.vao != 0) glDeleteVertexArrays(c.vao);
-        c.vbo = c.vao = 0;
+        if (c.old != 0) glDeleteBuffers(c.old);
+        c.vbo = c.vao = c.old = 0;
     }
 
     // ---- drawing
 
     /** Something to know per chunk while drawing: its corner relative to the camera (blocks). */
     public interface Tint {
-        /** Sets the shader colour for a chunk whose middle is at this camera-relative position. */
-        void apply(float x, float y, float z);
+        /** Sets the shader colour and uniforms for a chunk whose middle is at this camera-relative position. */
+        void apply(float x, float y, float z, int cube);
     }
 
     /**
@@ -489,7 +511,7 @@ public final class CloudGpu {
             if (!c.ready() || c.faces <= 0) continue;
             float x = (float) (c.x0() + offX - camX), z = (float) (c.z0() + offZ - camZ);
             if (!frustum.testAab(x, y0, z, x + c.span(), y1, z + c.span())) continue;
-            tint.apply(x + c.span() * 0.5F, (y0 + y1) * 0.5F, z + c.span() * 0.5F);
+            tint.apply(x + c.span() * 0.5F, (y0 + y1) * 0.5F, z + c.span() * 0.5F, c.cube);
             Matrix4f pose = new Matrix4f(view).translate(x, (float) (height - camY), z);
             shader.setDefaultUniforms(VertexFormat.Mode.QUADS, pose, projection, Minecraft.getInstance().getWindow());
             shader.apply();

@@ -330,6 +330,8 @@
   "equinox.settings.cloud_shadows.desc": "As nuvens fazem sombra no chão embaixo delas, seguindo o sol. Não com um shader pack (ele faz as próprias) nem com gráficos Fabulosos.",
   "equinox.settings.distant_rain.name": "Chuva distante",
   "equinox.settings.distant_rain.desc": "Véus cinza de chuva embaixo das nuvens distantes que chovem, para ver de longe onde está chovendo. Perto de você cai a chuva do próprio jogo.",
+  "equinox.settings.cloud_animation.name": "Crescimento das nuvens",
+  "equinox.settings.cloud_animation.desc": "Os cubos das nuvens crescem a partir do meio quando aparecem e encolhem quando somem, durante esses segundos, então as nuvens se formam e derretem suavemente.\nDesligado: os cubos só aparecem e somem. Não com um shader pack (o shader de nuvens dele as desenha).",
   "equinox.settings.dh_clouds.name": "Nuvens distantes nos LODs",
   "equinox.settings.dh_clouds.desc": "O Distant Horizons desenha as nuvens distantes, para ficarem atrás do terreno distante; as próximas, dentro da sua distância de renderização, são desenhadas do jeito normal.\nDesligado: todas do jeito normal (as distantes podem aparecer na frente de montanhas distantes).",
   "equinox.settings.cloud_cube.name": "Cubos das nuvens próximas",

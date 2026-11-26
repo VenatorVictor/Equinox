@@ -60,6 +60,11 @@ public final class CloudExtras {
             palette = new DynamicTexture(CloudGpu.PALETTE_W, CloudGpu.PALETTE_H, false);
             palette.setFilter(true, false);
             Minecraft.getInstance().getTextureManager().register(PALETTE, palette);
+            // repeat: the cubes' animation codes ride in the whole-number part of the texture coordinates
+            GlStateManager._bindTexture(palette.getId());
+            GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            GlStateManager._bindTexture(0);
         }
         NativeImage image = palette.getPixels();
         for (int v = 0; v < CloudGpu.PALETTE_H; v++) {
@@ -185,7 +190,7 @@ public final class CloudExtras {
         float day = Mth.clamp(Mth.cos(timeOfDay * Mth.TWO_PI) * 2 + 0.5F, 0, 1) * 0.85F + 0.15F;
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         int n = sky.mapSize();
-        float half = CloudSky.MAP_CELL * 0.6F;
+        float half = CloudSky.MAP_CELL * 0.9F;
         float bottom = (float) (ground - camY);
         for (int j = 0; j < n; j++) {
             for (int i = 0; i < n; i++) {
@@ -198,16 +203,17 @@ public final class CloudExtras {
                 float fade = smooth(near, near + 100, dist) * (1 - smooth(reach * 0.7F, reach, dist));
                 if (fade <= 0.01F) continue;
                 float rain = Mth.clamp(storm - 1, 0, 1);
-                float alpha = 0.32F * Mth.clamp(rain * 2.5F, 0, 1) * fade;
-                float g = CloudSky.grey(storm) * day;
+                float alpha = ALPHA * Mth.clamp(rain * 2.5F, 0, 1) * fade;
                 float top = (float) (height + sky.map0()[o + 1] - camY);
                 if (top <= bottom) continue;
+                // light bluish grey, a little darker under a darker storm (fits rain and snow)
+                float g = Mth.lerp(0.35F, 1, CloudSky.grey(storm)) * day;
+                float r = g * VEIL[0], gg = g * VEIL[1], b = g * VEIL[2];
                 float sx = -z / dist * half, sz = x / dist * half;
-                float r = g * 0.70F, gg = g * 0.73F, b = g * 0.80F;
-                builder.addVertex(x - sx, bottom, z - sz).setColor(r, gg, b, alpha * 0.35F);
-                builder.addVertex(x + sx, bottom, z + sz).setColor(r, gg, b, alpha * 0.35F);
-                builder.addVertex(x + sx, top, z + sz).setColor(r, gg, b, alpha);
-                builder.addVertex(x - sx, top, z - sz).setColor(r, gg, b, alpha);
+                // soft all round: clear at the sides and the top edge, strongest a little under the base, thinner at the ground
+                float mid = top - (top - bottom) * 0.15F;
+                veil(builder, x, z, sx, sz, top, mid, r, gg, b, 0, alpha);
+                veil(builder, x, z, sx, sz, mid, bottom, r, gg, b, alpha, alpha * 0.3F);
             }
         }
         MeshData mesh = builder.build();
@@ -229,6 +235,23 @@ public final class CloudExtras {
         RenderSystem.disableBlend();
         stack.popMatrix();
         RenderSystem.applyModelViewMatrix();
+    }
+
+    /** Distant rain: how see-through at most, its colour (times the day light). */
+    private static final float ALPHA = 0.24F;
+    private static final float[] VEIL = {0.80F, 0.85F, 0.94F};
+
+    /** One band of a veil from y0 down to y1: two quads, clear at the sides, alpha a0 at y0 and a1 at y1 in the middle. */
+    private static void veil(BufferBuilder builder, float x, float z, float sx, float sz, float y0, float y1, float r, float g,
+                             float b, float a0, float a1) {
+        builder.addVertex(x - sx, y1, z - sz).setColor(r, g, b, 0F);
+        builder.addVertex(x, y1, z).setColor(r, g, b, a1);
+        builder.addVertex(x, y0, z).setColor(r, g, b, a0);
+        builder.addVertex(x - sx, y0, z - sz).setColor(r, g, b, 0F);
+        builder.addVertex(x, y1, z).setColor(r, g, b, a1);
+        builder.addVertex(x + sx, y1, z + sz).setColor(r, g, b, 0F);
+        builder.addVertex(x + sx, y0, z + sz).setColor(r, g, b, 0F);
+        builder.addVertex(x, y0, z).setColor(r, g, b, a0);
     }
 
     /** Everything dropped (leaving a world). */

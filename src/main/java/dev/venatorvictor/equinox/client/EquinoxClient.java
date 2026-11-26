@@ -40,6 +40,7 @@ public final class EquinoxClient {
         container.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class, dev.venatorvictor.equinox.client.config.SettingsScreen::new);
         dhLoaded = ModList.get().isLoaded("distanthorizons");
         // LOWEST so our leaf colors replace vanilla's (and any other mod's).
+        modBus.addListener(net.neoforged.neoforge.client.event.RegisterShadersEvent.class, CloudRenderer::registerShaders);
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerLeaves);
         modBus.addListener(EventPriority.LOWEST, RegisterColorHandlersEvent.Block.class, SeasonColors::registerPlants);
         modBus.addListener(RegisterColorHandlersEvent.ColorResolvers.class, dev.venatorvictor.equinox.client.colors.TreeColors::registerResolvers);

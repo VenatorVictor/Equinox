@@ -109,6 +109,8 @@ final class Settings {
                 .cost(Cost.LOW));
         all.add(client(ClientConfig.DISTANT_RAIN, "distant_rain").tab(CLIMATE, null)
                 .cost(Cost.LOW));
+        all.add(client(ClientConfig.CLOUD_ANIMATION, "cloud_animation").tab(CLIMATE, null)
+                .cost(Cost.LOW).range(0, 3, 0.25).label((v, x) -> off(v, String.format(Locale.ROOT, "%.2f s", v))));
         all.add(server(Config.BLEND_RADIUS, "blend_radius").tab(CLIMATE, "blending")
                 .cost(Cost.MEDIUM)
                 .range(0, 512, 16).label((v, x) -> off(v, u("blocks", (int) v))));
