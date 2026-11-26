@@ -73,6 +73,11 @@ final class Settings {
                     int month = x.daysPerSeason() / 3;
                     return fit == (int) v ? u("week_days", days(v), month / fit) : u("week_days_fitted", days(v), days(fit), month / fit);
                 }));
+        all.add(client(ClientConfig.HUD_POSITION, "hud_position").tab(SEASONS, null)
+                .choice(ClientConfig.HudPosition.TOP_LEFT, "top_left").choice(ClientConfig.HudPosition.TOP_CENTER, "top_center")
+                .choice(ClientConfig.HudPosition.TOP_RIGHT, "top_right").choice(ClientConfig.HudPosition.BOTTOM_LEFT, "bottom_left")
+                .choice(ClientConfig.HudPosition.BOTTOM_RIGHT, "bottom_right").choice(ClientConfig.HudPosition.ABOVE_HOTBAR, "above_hotbar")
+                .cost(Cost.NONE));
         all.add(server(Config.REAL_TIME, "real_time").tab(SEASONS, "real_time")
                 .cost(Cost.NONE));
         all.add(server(Config.TIME_ZONE, "time_zone").tab(SEASONS, null)

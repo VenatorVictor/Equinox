@@ -6,6 +6,7 @@ import dev.venatorvictor.equinox.calendar.Calendar;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import dev.venatorvictor.equinox.client.ClientConfig;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
@@ -35,7 +36,7 @@ public final class CalendarClient {
                 event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath("equinox", "calendar"), CalendarClient::hud));
     }
 
-    /** Held in either hand: the calendar icon, month, season and year on top, the day below (top left). */
+    /** Held in either hand: the calendar icon, month, season and year on top, the day below (where hud_position says). */
     private static void hud(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
@@ -48,8 +49,18 @@ public final class CalendarClient {
         String a = I18n.get("equinox.calendar.hud.top", CalendarLook.month(d.month(today)), CalendarLook.season(d.season(today)), d.year(today));
         String b = I18n.get("equinox.calendar.hud.day", d.dayOfMonth(today) + 1);
         int w = 4 + 16 + 4 + Math.max(mc.font.width(a), mc.font.width(b)) + 5;
-        int x = 2, y = 2;
-        g.fill(x, y, x + w, y + 24, 0x96000000);
+        int h = 24, sw = g.guiWidth(), sh = g.guiHeight();
+        int x = switch (ClientConfig.HUD_POSITION.get()) {
+            case TOP_LEFT, BOTTOM_LEFT -> 2;
+            case TOP_RIGHT, BOTTOM_RIGHT -> sw - w - 2;
+            case TOP_CENTER, ABOVE_HOTBAR -> (sw - w) / 2;
+        };
+        int y = switch (ClientConfig.HUD_POSITION.get()) {
+            case TOP_LEFT, TOP_CENTER, TOP_RIGHT -> 2;
+            case BOTTOM_LEFT, BOTTOM_RIGHT -> sh - h - 2;
+            case ABOVE_HOTBAR -> sh - 51 - h;   // above the armor row (49 px up) and the air bubbles
+        };
+        g.fill(x, y, x + w, y + h, 0x96000000);
         g.renderItem(held, x + 4, y + 4);
         g.drawString(mc.font, a, x + 24, y + 3, 0xFFFFFFFF, true);
         g.drawString(mc.font, b, x + 24, y + 13, 0xFFBEBEBE, true);

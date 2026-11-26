@@ -28,24 +28,20 @@ No library mods are needed.
 
 ### Seasons
 - Four seasons that begin on the equinoxes and solstices. A new world starts on the spring equinox.
-- A season lasts 48 days by default (a 192-day year), or 24, 72 or 96 days in the settings.
+- A season lasts 48 days by default (a 192-day year); configurable.
 - As on Earth, the seasons are slightly uneven: spring and summer run a little longer. With 48-day seasons they
   start on March 10, June 11, September 12 and December 11.
 - Summer days are long and winter days short, depending on the latitude setting. A negative latitude puts the world
   in the southern hemisphere, where spring starts in September.
 - No two years are the same: seasons and days come out randomly warmer or colder.
-- The day, the season and the colors change at midnight; the year changes on January 1.
 
 ### Calendar
-- 12 months of equal length, divided into weeks of 2 to 8 days.
+- 12 months of equal length, divided into weeks of 4 days by default; configurable.
 - As in real life, the moon's cycle is a little shorter than a month, so the full moon falls on a different day each
-  month. The phase changes at noon, never while the moon is in the sky.
-- The calendar item can hang on a wall, where its season strip and month dots follow the date, or be opened to read
-  its pages.
-- The month page shows the days by week, with today framed, past days crossed out, and the new and full moons,
-  equinoxes and solstices marked. Click a day to see its moon phase, day length and the next equinox or solstice.
-- A moon page lists the 8 phases and their days, and an events page lists the year's equinoxes and solstices.
-- Held in your hand, it shows the month, season, year and day in the top-left corner.
+  month.
+- The calendar item keeps track of the season, month, day, day length, moon phase and the equinoxes and solstices.
+  Hang it on a wall or open it to see the month, then click a day for its details.
+- Held in your hand, it shows the date on screen; its position is configurable.
 
 ### Real time
 - Off by default. When on, the world follows the real clock and date: a day lasts 24 hours, the seasons start on the
@@ -57,13 +53,14 @@ No library mods are needed.
 - Every biome has its own temperature through the year, in °C: mild coasts, a cold north, deserts, rainy and dry
   tropics. The Nether and the End have their own.
 - Neighboring biomes blend into each other, and winter fades out toward jungles and deserts.
-- Geothermal patches (hot ground and steaming pools) stay above freezing all winter.
+- Hot springs stay above freezing all winter.
 - Other mods can read the air and water temperature through the API.
 
 ### Snow
 - Snow builds up while it snows and melts in the rain.
 - It settles in grass, flowers and plants, on fences, gates and walls, in a thin layer on stairs and slabs, and on
-  crops and leaves, with an animation as it appears and melts.
+  crops and leaves.
+- Snow appears and melts with an animation.
 - Lakes and rivers freeze over while it snows.
 - The snow cover is worked out a little at a time, so it doesn't slow the game down.
 
@@ -92,7 +89,7 @@ No library mods are needed.
 
 ### More
 - Far terrain in Distant Horizons follows the colors and the snow.
-- A settings screen with tabs, a description for every option and its performance cost.
+- Lots of settings, each showing its performance cost.
 
 <img src="docs/images/banners/summer-strip.png" alt="Installation" width="100%">
 
@@ -108,6 +105,10 @@ Don't use Equinox together with another seasons mod.
 | `/season` or `/season get` | everyone | Shows the season, the climate and the temperature where you stand |
 | `/season set <season> [week]` | operators | Jumps to a season (or one of its weeks) without changing the time of day |
 | `/season add <days>` | operators | Moves the year forward (or back) by a number of days |
+
+Equinox counts the date from the world's day counter, so vanilla `/time set` (`day`, `noon`, `night`...) now only
+moves the clock within today, instead of sending the world back to the first day of spring. Use `/season set` or
+`/season add` to change the date.
 
 <img src="docs/images/banners/winter-strip.png" alt="Documentation" width="100%">
 

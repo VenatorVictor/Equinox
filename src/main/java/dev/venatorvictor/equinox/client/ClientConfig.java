@@ -27,6 +27,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.IntValue SNOW_ANIMATION_DISTANCE;
     public static final ModConfigSpec.EnumValue<SnowLook> SNOW_LOOK;
     public static final ModConfigSpec.IntValue REDRAW_SECONDS;
+    public static final ModConfigSpec.EnumValue<HudPosition> HUD_POSITION;
 
     /**
      * Tree colors: REPLACE = each tree's own colors and timing, mixed over the original; FILTER = the same, keeping
@@ -36,6 +37,9 @@ public final class ClientConfig {
 
     /** What makes snowy textures and LOD snow fade in (4 steps). */
     public enum SnowLook { GROUND, CALENDAR }
+
+    /** Where the held calendar's date box sits on the screen. */
+    public enum HudPosition { TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, ABOVE_HOTBAR }
 
     /** Colors of crops that don't grow. BEIGE_ORANGE: winter beige and autumn dry orange. */
     public enum CropColors { DEFAULT, BEIGE_ORANGE }
@@ -106,6 +110,10 @@ public final class ClientConfig {
         DH_SNOW = BUILDER.comment("Seasonal snow and ice on LODs: snow where real snow would lie (same temperature and first-snow rules),",
                         "frozen open water, and snow/ice saved while it was cold removed once it's warm.")
                 .define("snow_and_ice", true);
+        BUILDER.pop().push("calendar");
+        HUD_POSITION = BUILDER.comment("Where the date box shows while you hold a calendar: TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT,",
+                        "BOTTOM_RIGHT, or ABOVE_HOTBAR (centered just above the health and food bars).")
+                .defineEnum("hud_position", HudPosition.TOP_LEFT);
         BUILDER.pop();
     }
 
