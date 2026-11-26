@@ -17,6 +17,7 @@ uniform uint uMaxFaces;
 uniform vec2 uPalette;     // palette size (texels)
 uniform int uHasOld;       // 1: there was a last time (cubes that came or went are animated)
 uniform uint uStamp;       // now, in 2-tick steps (0..1023)
+uniform int uMode;         // 0 normal; 1 all grow (a new piece taking over); 2 all go (a piece being taken over)
 
 const ivec3 DIRS[6] = ivec3[6](ivec3(0, 1, 0), ivec3(0, -1, 0), ivec3(-1, 0, 0), ivec3(1, 0, 0), ivec3(0, 0, -1), ivec3(0, 0, 1));
 const float SHADE[6] = float[6](1.0, 0.7, 0.9, 0.9, 0.8, 0.8);
@@ -30,17 +31,25 @@ const vec3 CORNERS[24] = vec3[24](
     vec3(0, 0, 1), vec3(1, 0, 1), vec3(1, 1, 1), vec3(0, 1, 1));
 
 uint at(ivec3 g) {
-    return grid[uint((g.y * 34 + g.z) * 34 + g.x)];
+    return uMode == 2 ? 0u : grid[uint((g.y * 34 + g.z) * 34 + g.x)];
 }
 
 uint was(ivec3 g) {
-    return uHasOld == 1 ? old[uint((g.y * 34 + g.z) * 34 + g.x)] : at(g);
+    if (uMode == 1) return 0u;
+    return uMode == 2 || uHasOld == 1 ? old[uint((g.y * 34 + g.z) * 34 + g.x)] : at(g);
 }
 
-// a cube there now and last time: it hides its neighbours' faces (one that comes or goes doesn't, so nothing opens
-// a hole while it grows or shrinks)
-bool settled(ivec3 g) {
+// Whether a neighbour hides this cube's face. Normally a cube there now and last time (one that comes or goes doesn't,
+// so nothing opens a hole while it grows or shrinks); when a whole piece grows or goes, its own cubes.
+bool hides(ivec3 g) {
+    if (uMode == 1) return (at(g) & 1u) != 0u;
+    if (uMode == 2) return (was(g) & 1u) != 0u;
     return (at(g) & 1u) != 0u && (was(g) & 1u) != 0u;
+}
+
+// the cubes as they stand (for light from above)
+uint shown(ivec3 g) {
+    return uMode == 2 ? was(g) : at(g);
 }
 
 void main() {
@@ -56,7 +65,7 @@ void main() {
     uint open = 0u;
     int count = 0;
     for (int i = 0; i < 6; i++) {
-        if (!settled(g + DIRS[i])) {
+        if (!hides(g + DIRS[i])) {
             open |= 1u << uint(i);
             count++;
         }
@@ -70,7 +79,7 @@ void main() {
 
     // sky from above: cubes over this one in the column
     int above = 0;
-    for (int k = 1; k <= 6; k++) if (g.y + k <= uLayers && (at(g + ivec3(0, k, 0)) & 1u) != 0u) above++;
+    for (int k = 1; k <= 6; k++) if (g.y + k <= uLayers && (shown(g + ivec3(0, k, 0)) & 1u) != 0u) above++;
     float sky = 1.0 - float(above) / 6.0;
     float through;
     if (uLight == 1) {

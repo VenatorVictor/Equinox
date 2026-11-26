@@ -59,7 +59,8 @@ public final class CloudGpu {
         final long key;
         final int level, cx, cz, cube;
         int vbo, vao, old, faces = -1;
-        boolean hasOld;
+        /** hasOld: its last cubes are kept; going: it is being taken over (its cubes shrink away, then it's dropped). */
+        boolean hasOld, going;
         long made;
         boolean wanted, building;
 
@@ -285,20 +286,48 @@ public final class CloudGpu {
         minAge = (long) ((Math.max(0.4F, animSeconds + 0.2F)) * 1e9);
         collect();
         want(camX, camZ, reach, nearCube, ring);
-        // drop unwanted chunks once every wanted chunk over them is ready
-        List<Chunk> wanted = new ArrayList<>(), drop = new ArrayList<>();
-        for (Chunk c : CHUNKS.values()) if (c.wanted) wanted.add(c);
+        boolean animate = animSeconds > 0;
+        long now = System.nanoTime(), animNanos = (long) (animSeconds * 1e9) + 100_000_000L;
+        boolean anyReady = false;
+        for (Chunk c : CHUNKS.values()) anyReady |= c.ready() && !c.going;
+        // Unwanted chunks (another cube size took over, or out of reach) go once every wanted chunk over them is ready:
+        // with growing on, the new piece's cubes grow while the old piece's cubes shrink away, then it's dropped.
+        List<Chunk> wanted = new ArrayList<>(), drop = new ArrayList<>(), going = new ArrayList<>();
+        for (Chunk c : CHUNKS.values()) {
+            if (!c.wanted) continue;
+            wanted.add(c);
+            if (c.going) {
+                // wanted again (you came back) while shrinking: it grows back with its next make
+                c.going = false;
+                c.hasOld = false;
+                c.made = 0;
+            }
+        }
         for (Chunk c : CHUNKS.values()) {
             if (c.wanted) continue;
+            boolean inReach = distance(camX, camZ, c.x0(), c.z0(), c.span()) <= reach;
             boolean covered = true;
-            if (c.ready() && distance(camX, camZ, c.x0(), c.z0(), c.span()) <= reach)
-                for (Chunk w : wanted) if (!w.ready() && w.overlaps(c)) { covered = false; break; }
-            if (covered) drop.add(c);
+            if (c.ready() && inReach)
+                for (Chunk w : wanted) if (!w.ready() && w.overlaps(c)) {
+                    covered = false;
+                    break;
+                }
+            if (!covered || c.building) continue;
+            if (!animate || !c.ready() || !c.hasOld || c.faces <= 0) drop.add(c);
+            else if (!c.going) going.add(c);
+            else if (now - c.made > animNanos) drop.add(c);
         }
         for (Chunk c : drop) free(c);
 
-        long now = System.nanoTime();
-        for (int n = 0; n < budget; n++) {
+        int started = 0;
+        for (Chunk c : going) {
+            Slot slot = freeSlot();
+            if (slot == null || started >= budget) break;
+            c.going = true;
+            build(slot, c, sun, full, stamp, 2, true);
+            started++;
+        }
+        for (; started < budget; started++) {
             Slot slot = freeSlot();
             if (slot == null) break;
             Chunk best = null;
@@ -306,7 +335,7 @@ public final class CloudGpu {
             for (Chunk c : wanted) {
                 if (c.building) continue;
                 double score;
-                if (!c.ready()) score = distance(camX, camZ, c.x0(), c.z0(), c.span()) - 1e9;
+                if (!c.ready() || c.made == 0) score = distance(camX, camZ, c.x0(), c.z0(), c.span()) - 1e9;
                 else if (now - c.made < minAge) continue;
                 else score = c.made - now;
                 if (score < bestScore) {
@@ -315,7 +344,9 @@ public final class CloudGpu {
                 }
             }
             if (best == null) break;
-            build(slot, best, sun, full, stamp, animSeconds > 0);
+            // a piece made for the first time grows in (unless the sky is just starting: then it's simply there)
+            int mode = animate && !best.hasOld && anyReady ? 1 : 0;
+            build(slot, best, sun, full, stamp, mode, animate && best.hasOld);
         }
     }
 
@@ -325,7 +356,8 @@ public final class CloudGpu {
     }
 
     /** Starts making a chunk in a slot (two compute passes, then a fence). */
-    private static void build(Slot slot, Chunk chunk, float[] sun, boolean full, int stamp, boolean animate) {
+    /** mode: 0 normal (useOld: compare with its last cubes), 1 all its cubes grow, 2 all its last cubes shrink away. */
+    private static void build(Slot slot, Chunk chunk, float[] sun, boolean full, int stamp, int mode, boolean useOld) {
         CloudSky.Sky s = sky;
         int cube = chunk.cube, layers = (int) (CloudSky.TOP - CloudSky.BOTTOM) / cube, span = chunk.span();
         float relX = (float) (chunk.x0() - s.centerX()), relZ = (float) (chunk.z0() - s.centerZ());
@@ -359,7 +391,7 @@ public final class CloudGpu {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, slot.list);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, slot.grid);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, slot.out);
-            boolean hasOld = animate && chunk.hasOld;
+            boolean hasOld = mode == 2 || useOld && chunk.hasOld;
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, hasOld ? chunk.old : slot.grid);
             GlStateManager._activeTexture(GL_TEXTURE0 + 1);
             GlStateManager._bindTexture(map1);
@@ -367,7 +399,7 @@ public final class CloudGpu {
             GlStateManager._bindTexture(map0);
 
             int previous = glGetInteger(GL_CURRENT_PROGRAM);
-            for (int pass = 0; pass < 2; pass++) {
+            for (int pass = mode == 2 ? 1 : 0; pass < 2; pass++) {
                 int program = pass == 0 ? fill : faces;
                 glUseProgram(program);
                 glUniform2i(uniform(program, "uCentre"), s.centerX(), s.centerZ());
@@ -392,25 +424,28 @@ public final class CloudGpu {
                     glUniform2f(uniform(program, "uPalette"), PALETTE_W, PALETTE_H);
                     glUniform1i(uniform(program, "uHasOld"), hasOld ? 1 : 0);
                     glUniform1ui(uniform(program, "uStamp"), stamp & 1023);
+                    glUniform1i(uniform(program, "uMode"), mode);
                     glDispatchCompute(CHUNK / 4, (layers + 3) / 4, CHUNK / 4);
                     glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
                 }
             }
             glUseProgram(previous);
-            // keep this make's cubes, to see next time which came and went
+            // keep this make's cubes, to see next time which came and went (not when it's going: it keeps its last)
             long gridBytes = 4L * GRID * GRID * (layers + 2);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            if (chunk.old == 0) {
-                chunk.old = glGenBuffers();
+            if (mode != 2) {
+                glMemoryBarrier(GL_ALL_BARRIER_BITS);
+                if (chunk.old == 0) {
+                    chunk.old = glGenBuffers();
+                    glBindBuffer(GL_COPY_WRITE_BUFFER, chunk.old);
+                    glBufferData(GL_COPY_WRITE_BUFFER, gridBytes, GL_DYNAMIC_COPY);
+                }
+                glBindBuffer(GL_COPY_READ_BUFFER, slot.grid);
                 glBindBuffer(GL_COPY_WRITE_BUFFER, chunk.old);
-                glBufferData(GL_COPY_WRITE_BUFFER, gridBytes, GL_DYNAMIC_COPY);
+                glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, gridBytes);
+                glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+                chunk.hasOld = true;
             }
-            glBindBuffer(GL_COPY_READ_BUFFER, slot.grid);
-            glBindBuffer(GL_COPY_WRITE_BUFFER, chunk.old);
-            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, gridBytes);
-            glBindBuffer(GL_COPY_READ_BUFFER, 0);
-            glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-            chunk.hasOld = true;
         } finally {
             restoreBindings(saved);
         }
