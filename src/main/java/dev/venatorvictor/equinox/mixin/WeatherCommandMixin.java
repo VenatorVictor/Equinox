@@ -34,6 +34,8 @@ public abstract class WeatherCommandMixin {
         if (!Weather.on(level)) return;
         int duration = time != -1 ? time : (thunder ? ServerLevel.THUNDER_DURATION : ServerLevel.RAIN_DURATION).sample(level.getRandom());
         Vec3 pos = source.getPosition();
+        // a newer command wins: an earlier /weather clear (or a world-wide rain from an older version) ends
+        ServerWeather.command(level, 0, 0, false, false);
         ServerWeather.forceStorm(level, pos.x, pos.z, duration, thunder);
         int minutes = Math.round(Weather.FORCED_BUILD / 1200F * 10) ;
         source.sendSuccess(() -> Component.translatable(thunder ? "commands.equinox.weather.thunder_here" : "commands.equinox.weather.rain_here",
