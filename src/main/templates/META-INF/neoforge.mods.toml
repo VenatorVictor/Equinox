@@ -7,6 +7,8 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="venatorvictor"
+logoFile="equinox_logo.png"
+logoBlur=false
 description='''§fThe whole world follows the year: §aSpring§f, §eSummer§f, §6Autumn§f and §bWinter§f.
 
 §a§lSeasons and calendar
