@@ -75,6 +75,14 @@ GRASS = [
     "minecraft:block/bush",
 ]
 
+# Optional local file local_plants.py next to this script (not in the repo): more plants for the addon pack.
+_LOCAL = Path(__file__).with_name("local_plants.py")
+if _LOCAL.exists():
+    _extra = {}
+    exec(compile(_LOCAL.read_text(), str(_LOCAL), "exec"), _extra)
+    BLOOM.update(_extra.get("BLOOM", {}))
+    GRASS.extend(_extra.get("GRASS", []))
+
 # Crops: green parts in the grass color, the rest (ripe wheat, carrots) as it is, snow on top.
 # Snow: crops get it on top whenever it lies there and they're under open sky; every other plant only when it sits
 # inside a snow mod's snow layer (otherwise it just keeps its color).

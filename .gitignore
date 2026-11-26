@@ -10,3 +10,5 @@ runs/
 .vscode/
 out/
 bin/
+# Local only: other mods' plants for the addon pack
+packsrc/local_plants.py
