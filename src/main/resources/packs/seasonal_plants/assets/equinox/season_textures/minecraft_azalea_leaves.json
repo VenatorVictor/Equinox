@@ -47,10 +47,7 @@
       "start": "autumn_week_3",
       "end": "autumn_week_5",
       "textures": {
-        "all": "equinox:block/trees/azalea_leaves_turning"
-      },
-      "tint": {
-        "all": -1
+        "all": "minecraft:block/azalea_leaves"
       }
     },
     {

@@ -18,26 +18,14 @@
       "start": "spring_week_6",
       "end": "spring_week_6",
       "textures": {
-        "all": "equinox:leaf_fall/flowering_azalea_bud/stage_2"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
-      },
-      "under_tint": {
-        "all": -1
+        "all": "minecraft:block/azalea_leaves"
       }
     },
     {
       "start": "spring_week_7",
       "end": "spring_week_8",
       "textures": {
-        "all": "equinox:leaf_fall/flowering_azalea_half_open/stage_1"
-      },
-      "under_textures": {
-        "all": "equinox:block/trees/azalea_leaves_bare_v3_2"
-      },
-      "under_tint": {
-        "all": -1
+        "all": "minecraft:block/azalea_leaves"
       }
     },
     {
@@ -51,10 +39,7 @@
       "start": "autumn_week_3",
       "end": "autumn_week_5",
       "textures": {
-        "all": "equinox:block/trees/azalea_leaves_turning"
-      },
-      "tint": {
-        "all": -1
+        "all": "minecraft:block/azalea_leaves"
       }
     },
     {
