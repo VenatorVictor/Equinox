@@ -99,10 +99,16 @@ final class Settings {
         // ---- Climate
         all.add(server(Config.REGIONAL_WEATHER, "regional_weather").tab(CLIMATE, "weather")
                 .cost(Cost.NONE));
-        all.add(client(ClientConfig.STORM_CLOUDS, "storm_clouds").tab(CLIMATE, null)
-                .cost(Cost.LOW));
+        all.add(client(ClientConfig.STORM_CLOUDS, "storm_clouds").tab(CLIMATE, "clouds")
+                .cost(Cost.MEDIUM));
         all.add(client(ClientConfig.CLOUD_DISTANCE, "cloud_distance").tab(CLIMATE, null)
-                .cost(Cost.LOW).range(384, 2304, 96).label((v, x) -> u("blocks", (int) v)));
+                .cost(Cost.MEDIUM).range(384, 2304, 96).label((v, x) -> u("blocks", (int) v)));
+        all.add(client(ClientConfig.CLOUD_AMOUNT, "cloud_amount").tab(CLIMATE, null)
+                .cost(Cost.LOW).scale(100).range(0, 200, 10).label((v, x) -> off(v, (int) v + "%")));
+        all.add(client(ClientConfig.CLOUD_SHADOWS, "cloud_shadows").tab(CLIMATE, null)
+                .cost(Cost.LOW));
+        all.add(client(ClientConfig.DISTANT_RAIN, "distant_rain").tab(CLIMATE, null)
+                .cost(Cost.LOW));
         all.add(server(Config.BLEND_RADIUS, "blend_radius").tab(CLIMATE, "blending")
                 .cost(Cost.MEDIUM)
                 .range(0, 512, 16).label((v, x) -> off(v, u("blocks", (int) v))));
@@ -202,6 +208,8 @@ final class Settings {
                 .cost(Cost.MEDIUM));
         all.add(client(ClientConfig.DH_SNOW, "dh_snow").tab(DH, null)
                 .cost(Cost.MEDIUM));
+        all.add(client(ClientConfig.DH_CLOUDS, "dh_clouds").tab(DH, null)
+                .cost(Cost.LOW));
         all.add(server(Config.DH_BLEND_DISTANCE, "dh_blend_distance").tab(DH, "server")
                 .cost(Cost.HIGH)
                 .range(0, 16384, 256).label((v, x) -> off(v, u("blocks_chunks", (int) v, (int) v / 16))));
@@ -231,6 +239,19 @@ final class Settings {
         all.add(client(ClientConfig.SNOW_ANIMATION_DISTANCE, "snow_animation_distance").tab(PERFORMANCE, null)
                 .cost(Cost.LOW)
                 .range(4, 256, 4).label((v, x) -> u("blocks", (int) v)));
+        all.add(client(ClientConfig.CLOUD_CUBE, "cloud_cube").tab(PERFORMANCE, "clouds")
+                .choice(4, "4_blocks").choice(8, "8_blocks")
+                .cost(Cost.HIGH));
+        all.add(client(ClientConfig.CLOUD_DETAIL, "cloud_detail").tab(PERFORMANCE, null)
+                .choice(ClientConfig.CloudDetail.LOW, "low").choice(ClientConfig.CloudDetail.MEDIUM, "medium")
+                .choice(ClientConfig.CloudDetail.HIGH, "high")
+                .cost(Cost.HIGH));
+        all.add(client(ClientConfig.CLOUD_LIGHTING, "cloud_lighting").tab(PERFORMANCE, null)
+                .choice(ClientConfig.CloudLighting.FULL, "full").choice(ClientConfig.CloudLighting.SIMPLE, "simple")
+                .cost(Cost.MEDIUM));
+        all.add(client(ClientConfig.CLOUD_UPDATES, "cloud_updates").tab(PERFORMANCE, null)
+                .cost(Cost.MEDIUM)
+                .range(1, 8, 1).label((v, x) -> u("per_frame", (int) v)));
         return List.copyOf(all);
     }
 

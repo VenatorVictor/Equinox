@@ -1,0 +1,25 @@
+// Pass 1: which cubes of a chunk are cloud (with a one-cube border, for the faces), their storm level and kind.
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(std430, binding = 2) writeonly buffer Grid { uint grid[]; };
+
+uniform vec3 uChunk;       // the chunk's corner, relative to the centre (y 0)
+uniform ivec3 uChunkCell;  // the chunk's corner in cubes, wind space (for each cube's own threshold)
+uniform int uLayers;
+uniform float uBottom;
+
+void main() {
+    ivec3 g = ivec3(gl_GlobalInvocationID);
+    if (g.x >= 34 || g.z >= 34 || g.y >= uLayers + 2) return;
+    uint index = uint((g.y * 34 + g.z) * 34 + g.x);
+    ivec3 cell = g - 1;
+    if (cell.y < 0 || cell.y >= uLayers) {
+        grid[index] = 0u;
+        return;
+    }
+    float s = float(uCube);
+    vec3 p = uChunk + vec3((float(cell.x) + 0.5) * s, uBottom + (float(cell.y) + 0.5) * s, (float(cell.z) + 0.5) * s);
+    vec3 d = density(p, absBlock(p));
+    // each cube's own threshold: as a cloud grows or melts, its cubes come and go one by one (like snow)
+    float threshold = (u01(hash3(uChunkCell + cell, 11u)) - 0.5) * 0.5 * s;
+    grid[index] = d.x > threshold ? 1u | (uint(clamp(d.y, 0.0, 2.0) * 100.0) << 8) | (uint(d.z) << 16) : 0u;
+}

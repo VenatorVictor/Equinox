@@ -14,8 +14,11 @@ import net.minecraft.world.level.Level;
 public final class Weather {
     /** Vanilla's share of the time it thunders (thunder 3 600-15 600 ticks, none 12 000-180 000): the storm core. */
     public static final float THUNDER_SHARE = 9600F / (9600F + 96000F);
-    /** A column rains where the strength is above its own random number below this: a ragged storm edge. */
-    public static final float EDGE = 0.1F;
+    /**
+     * A column rains where the strength is above its own random number below this: a ragged, soft storm edge (each
+     * column its own chance, fixed, so the edge only moves when the storm does).
+     */
+    public static final float EDGE = 0.22F;
     /** /weather rain: rain everywhere it can, without thunder. */
     private static final float RAIN_OVERRIDE = 0.5F;
     /** Lattice spacing (blocks) and time step (ticks) of the strength cache. */
@@ -33,7 +36,8 @@ public final class Weather {
      */
     public static final double FORCED_RADIUS = 1200;
     private static final float FORCED_STRENGTH = 0.6F;
-    public static final int FORCED_BUILD = 1800;
+    /** About 2 game hours, like a real storm forming (the clouds' tower reaches its top as the rain starts). */
+    public static final int FORCED_BUILD = 2000;
     private static final int FORCED_FADE = 600;
 
     /**

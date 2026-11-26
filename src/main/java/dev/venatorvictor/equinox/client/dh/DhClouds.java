@@ -10,28 +10,33 @@ import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBox;
 import com.seibel.distanthorizons.api.objects.render.DhApiRenderableBoxGroupShading;
 import dev.venatorvictor.equinox.Equinox;
 import dev.venatorvictor.equinox.client.CloudRenderer;
-import dev.venatorvictor.equinox.client.clouds.CloudMesher;
-import dev.venatorvictor.equinox.client.clouds.CloudModel;
+import dev.venatorvictor.equinox.client.ClientConfig;
+import dev.venatorvictor.equinox.client.clouds.CloudExtras;
+import dev.venatorvictor.equinox.client.clouds.CloudField;
+import dev.venatorvictor.equinox.client.clouds.CloudSky;
 import dev.venatorvictor.equinox.weather.Weather;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * With Distant Horizons: our clouds go to its box renderer (its public API), so they sit right behind LOD terrain
- * (vanilla-path clouds would draw over far mountains), and its own clouds are switched off while ours are on.
- * Same sky as the vanilla path (CloudModel), rows of equal cells joined into one box.
+ * With Distant Horizons: the far clouds go to its box renderer (its public API), so they sit right behind LOD terrain
+ * (clouds drawn the normal way would draw over far mountains); the near ones, within the game's own view, are drawn
+ * the normal way (CloudRenderer). Its own clouds are switched off while ours are on. The far boxes come from the same
+ * sky and density as the cubes (CloudField), in 16-block cells, remade every FILL_TICKS on our cloud thread.
  */
 public final class DhClouds {
     private static final boolean LOADED = ModList.get().isLoaded("distanthorizons");
 
-    /** Our clouds are being drawn by Distant Horizons now (the vanilla path draws none). */
+    /** Distant Horizons draws our far clouds now. */
     public static boolean drawing() {
         return LOADED && Impl.drawing;
     }
@@ -56,9 +61,18 @@ public final class DhClouds {
         static boolean drawing, failed, dhCloudsOff;
         static IDhApiRenderableBoxGroup group;
         static IDhApiLevelWrapper wrapper;
-        static CloudModel.Sky sky;
+        static CloudSky.Sky filledSky, shownSky;
         static long filled = Long.MIN_VALUE;
-        static final int FILL_TICKS = 200;
+        static CompletableFuture<List<DhApiRenderableBox>> pending;
+        static CloudSky.Sky pendingSky;
+        static final int FILL_TICKS = 200, CELL = 16;
+        static final float[] ALPHA = {1F, 0.85F, 0.55F};
+        static final ExecutorService BUILDER = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "Equinox far clouds");
+            thread.setDaemon(true);
+            thread.setPriority(Thread.MIN_PRIORITY);
+            return thread;
+        });
         static final DhApiRenderableBoxGroupShading SHADING = new DhApiRenderableBoxGroupShading();
 
         static {
@@ -71,13 +85,20 @@ public final class DhClouds {
 
         static void tick(ClientLevel level) {
             IDhApiConfig configs = DhApi.Delayed.configs;
-            boolean ready = !failed && level != null && CloudRenderer.active(level) && configs != null
+            boolean ours = !failed && level != null && CloudRenderer.active(level) && configs != null;
+            // Distant Horizons' own clouds stay off while ours are on
+            if (ours && !dhCloudsOff) {
+                configs.graphics().genericRendering().cloudRenderingEnabled().setValue(false);
+                dhCloudsOff = true;
+            }
+            boolean ready = ours && ClientConfig.DH_CLOUDS.get()
                     && DhApi.Delayed.customRenderObjectFactory != null && DhApi.Delayed.worldProxy != null
                     && DhApi.Delayed.worldProxy.worldLoaded()
                     && Boolean.TRUE.equals(configs.graphics().renderingEnabled().getValue())
                     && Boolean.TRUE.equals(configs.graphics().genericRendering().renderingEnabled().getValue());
             if (!ready) {
                 remove();
+                if (!ours) restoreDh();
                 return;
             }
             IDhApiLevelWrapper current = DhApi.Delayed.worldProxy.getSinglePlayerLevel();
@@ -97,27 +118,45 @@ public final class DhClouds {
                 group.setPreRenderFunc(param -> place(param.partialTicks));
                 wrapper.getRenderRegister().add(group);
             }
-            if (!dhCloudsOff) {
-                configs.graphics().genericRendering().cloudRenderingEnabled().setValue(false);
-                dhCloudsOff = true;
-            }
             drawing = true;
-            Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            CloudRenderer.schedule(level, camera.x, camera.z, false);
-            CloudModel.Sky built = CloudRenderer.pollSky();
-            // Boxes are remade every FILL_TICKS, or at once when the camera moved on (a new middle).
-            if (built != null && (sky == null || built.time() - filled >= FILL_TICKS || built.time() < filled
-                    || built.centerX() != sky.centerX() || built.centerZ() != sky.centerZ())) {
-                sky = built;
-                filled = built.time();
-                fill(level, built);
+            // finished boxes go in; a new fill every FILL_TICKS (or when the sky's centre moved)
+            if (pending != null && pending.isDone()) {
+                List<DhApiRenderableBox> boxes = pending.getNow(null);
+                pending = null;
+                if (boxes != null) {
+                    group.clear();
+                    group.addAll(boxes);
+                    group.triggerBoxChange();
+                    shownSky = pendingSky;
+                }
+            }
+            CloudSky.Sky sky = CloudRenderer.sky();
+            if (pending == null && sky != null && (filledSky == null || sky.time() - filled >= FILL_TICKS || sky.time() < filled
+                    || Math.abs(sky.centerX() - filledSky.centerX()) > 256 || Math.abs(sky.centerZ() - filledSky.centerZ()) > 256)) {
+                filledSky = sky;
+                filled = sky.time();
+                float inner = CloudRenderer.nearReach() - CELL, outer = CloudRenderer.reach();
+                pendingSky = sky;
+                pending = CompletableFuture.supplyAsync(() -> boxes(sky, inner, outer), BUILDER);
             }
         }
 
-        /** Moves the boxes with the wind (render thread, every frame). */
+        /** The far clouds as boxes, coloured from the palette (light, storm grey). */
+        static List<DhApiRenderableBox> boxes(CloudSky.Sky sky, float inner, float outer) {
+            List<DhApiRenderableBox> boxes = new ArrayList<>();
+            for (CloudField.Box box : new CloudField(sky, CELL, (int) outer + CELL).boxes(inner, outer)) {
+                float[] c = CloudExtras.colour(box.light(), box.storm());
+                Color colour = new Color(Mth.clamp(c[0], 0, 1), Mth.clamp(c[1], 0, 1), Mth.clamp(c[2], 0, 1), ALPHA[box.kind()]);
+                boxes.add(new DhApiRenderableBox(new DhApiVec3d(box.x0(), box.bottom(), box.z0()),
+                        new DhApiVec3d(box.x1(), box.top(), box.z1()), colour, EDhApiBlockMaterial.UNKNOWN));
+            }
+            return boxes;
+        }
+
+        /** Moves the boxes with the wind (render thread, every frame): boxes are relative to their sky's centre. */
         static void place(float partialTick) {
             ClientLevel level = Minecraft.getInstance().level;
-            CloudModel.Sky s = sky;
+            CloudSky.Sky s = shownSky;
             Weather.Side side = Weather.client();
             if (level == null || s == null || side == null || group == null) return;
             long time = level.getGameTime();
@@ -125,22 +164,7 @@ public final class DhClouds {
             double offX = Mth.lerp(partialTick, now[0], next[0]), offZ = Mth.lerp(partialTick, now[1], next[1]);
             float height = level.effects().getCloudHeight();
             if (Float.isNaN(height)) height = 192;
-            group.setOriginBlockPos(new DhApiVec3d(offX, height, offZ));
-        }
-
-        /** The sky as boxes (joined cells and heap cubes). Colour: vanilla's day cloud colour times the box's grey. */
-        static void fill(ClientLevel level, CloudModel.Sky s) {
-            float[] day = CloudRenderer.dayColor(level, 1);
-            List<DhApiRenderableBox> boxes = new ArrayList<>();
-            for (CloudMesher.Box box : CloudMesher.boxes(s)) {
-                float g = box.grey();
-                Color c = new Color(Mth.clamp(day[0] * g, 0, 1), Mth.clamp(day[1] * g, 0, 1), Mth.clamp(day[2] * g, 0, 1), box.alpha());
-                boxes.add(new DhApiRenderableBox(new DhApiVec3d(box.x0(), box.bottom(), box.z0()),
-                        new DhApiVec3d(box.x1(), box.top(), box.z1()), c, EDhApiBlockMaterial.UNKNOWN));
-            }
-            group.clear();
-            group.addAll(boxes);
-            group.triggerBoxChange();
+            group.setOriginBlockPos(new DhApiVec3d(s.centerX() + offX, height, s.centerZ() + offZ));
         }
 
         static void remove() {
@@ -153,8 +177,12 @@ public final class DhClouds {
             }
             group = null;
             wrapper = null;
-            sky = null;
+            filledSky = shownSky = null;
+            pending = null;
             drawing = false;
+        }
+
+        static void restoreDh() {
             if (dhCloudsOff) {
                 IDhApiConfig configs = DhApi.Delayed.configs;
                 if (configs != null) configs.graphics().genericRendering().cloudRenderingEnabled().clearValue();

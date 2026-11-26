@@ -1,0 +1,104 @@
+// Pass 2: the faces of a chunk's cloud cubes where the neighbour is empty, with the light baked in per face:
+// sun through the cloud (a short march toward the sun), sky from above, openness, a small tone per cube.
+// Vertices in the game's cloud format (position, texture, colour, normal): the texture is a palette (light across,
+// storm grey down), the colour carries the face shading and the alpha.
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+layout(std430, binding = 2) readonly buffer Grid { uint grid[]; };
+layout(std430, binding = 3) buffer Out { uint faceCount; uint pad0; uint pad1; uint pad2; uint verts[]; };
+
+uniform vec3 uChunk;
+uniform ivec3 uChunkCell;
+uniform int uLayers;
+uniform float uBottom;
+uniform vec3 uSun;         // toward the sun (the moon at night)
+uniform int uLight;        // 1 full (sun through the cloud), 0 simple
+uniform uint uMaxFaces;
+uniform vec2 uPalette;     // palette size (texels)
+
+const ivec3 DIRS[6] = ivec3[6](ivec3(0, 1, 0), ivec3(0, -1, 0), ivec3(-1, 0, 0), ivec3(1, 0, 0), ivec3(0, 0, -1), ivec3(0, 0, 1));
+const float SHADE[6] = float[6](1.0, 0.7, 0.9, 0.9, 0.8, 0.8);
+// corners of each face (0/1 per axis), in the game's cloud winding
+const vec3 CORNERS[24] = vec3[24](
+    vec3(0, 1, 0), vec3(0, 1, 1), vec3(1, 1, 1), vec3(1, 1, 0),
+    vec3(0, 0, 0), vec3(1, 0, 0), vec3(1, 0, 1), vec3(0, 0, 1),
+    vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 1), vec3(0, 1, 0),
+    vec3(1, 0, 1), vec3(1, 0, 0), vec3(1, 1, 0), vec3(1, 1, 1),
+    vec3(1, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0), vec3(1, 1, 0),
+    vec3(0, 0, 1), vec3(1, 0, 1), vec3(1, 1, 1), vec3(0, 1, 1));
+
+uint at(ivec3 g) {
+    return grid[uint((g.y * 34 + g.z) * 34 + g.x)];
+}
+
+void main() {
+    ivec3 c = ivec3(gl_GlobalInvocationID);
+    if (c.x >= 32 || c.z >= 32 || c.y >= uLayers) return;
+    ivec3 g = c + 1;
+    uint here = at(g);
+    if ((here & 1u) == 0u) return;
+    uint open = 0u;
+    int count = 0;
+    for (int i = 0; i < 6; i++) {
+        if ((at(g + DIRS[i]) & 1u) == 0u) {
+            open |= 1u << uint(i);
+            count++;
+        }
+    }
+    if (count == 0) return;
+
+    float s = float(uCube);
+    vec3 p = uChunk + vec3((float(c.x) + 0.5) * s, uBottom + (float(c.y) + 0.5) * s, (float(c.z) + 0.5) * s);
+    float storm = float((here >> 8) & 255u) / 100.0;
+    uint kind = (here >> 16) & 3u;
+
+    // sky from above: cubes over this one in the column
+    int above = 0;
+    for (int k = 1; k <= 6; k++) if (g.y + k <= uLayers && (at(g + ivec3(0, k, 0)) & 1u) != 0u) above++;
+    float sky = 1.0 - float(above) / 6.0;
+    float through;
+    if (uLight == 1) {
+        float inside = 0.0, last = 0.0;
+        for (int k = 1; k <= 8; k++) {
+            float d = 72.0 * pow(float(k) / 8.0, 1.5);
+            vec3 q = p + uSun * d;
+            if (q.y > 220.0) break;
+            if (density(q, absBlock(q)).x > 0.0) inside += d - last;
+            last = d;
+        }
+        through = exp(-0.045 * inside);
+    } else {
+        through = sky;
+    }
+    float tone = (u01(hash3(uChunkCell + c, 9u)) - 0.5) * 0.06;
+    float openness = float(count) / 6.0;
+    float alpha = kind == 2u ? 0.55 : kind == 1u ? 0.85 : 1.0;
+    float v = (clamp(storm * 0.5, 0.0, 1.0) * (uPalette.y - 1.0) + 0.5) / uPalette.y;
+
+    uint first = atomicAdd(faceCount, uint(count));
+    uint slot = first;
+    vec3 corner = vec3(float(c.x) * s, uBottom + float(c.y) * s, float(c.z) * s);
+    for (int i = 0; i < 6; i++) {
+        if ((open & (1u << uint(i))) == 0u) continue;
+        if (slot >= uMaxFaces) return;
+        vec3 n = vec3(DIRS[i]);
+        float facing = max(dot(n, uSun), 0.0);
+        float light = clamp(0.22 * sky + 0.12 * openness + 0.66 * through * (0.3 + 0.7 * facing) + tone, 0.0, 1.0);
+        float u = (light * (uPalette.x - 1.0) + 0.5) / uPalette.x;
+        uint uvU = floatBitsToUint(u), uvV = floatBitsToUint(v);
+        uint colour = packUnorm4x8(vec4(SHADE[i], SHADE[i], SHADE[i], alpha));
+        uint normal = packSnorm4x8(vec4(n, 0.0));
+        uint o = slot * 28u;
+        for (int k = 0; k < 4; k++) {
+            vec3 pos = corner + CORNERS[i * 4 + k] * s;
+            uint b = o + uint(k) * 7u;
+            verts[b] = floatBitsToUint(pos.x);
+            verts[b + 1u] = floatBitsToUint(pos.y);
+            verts[b + 2u] = floatBitsToUint(pos.z);
+            verts[b + 3u] = uvU;
+            verts[b + 4u] = uvV;
+            verts[b + 5u] = colour;
+            verts[b + 6u] = normal;
+        }
+        slot++;
+    }
+}

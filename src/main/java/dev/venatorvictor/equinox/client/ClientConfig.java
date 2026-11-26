@@ -30,6 +30,14 @@ public final class ClientConfig {
     public static final ModConfigSpec.EnumValue<HudPosition> HUD_POSITION;
     public static final ModConfigSpec.BooleanValue STORM_CLOUDS;
     public static final ModConfigSpec.IntValue CLOUD_DISTANCE;
+    public static final ModConfigSpec.IntValue CLOUD_CUBE;
+    public static final ModConfigSpec.EnumValue<CloudDetail> CLOUD_DETAIL;
+    public static final ModConfigSpec.EnumValue<CloudLighting> CLOUD_LIGHTING;
+    public static final ModConfigSpec.BooleanValue CLOUD_SHADOWS;
+    public static final ModConfigSpec.BooleanValue DISTANT_RAIN;
+    public static final ModConfigSpec.DoubleValue CLOUD_AMOUNT;
+    public static final ModConfigSpec.IntValue CLOUD_UPDATES;
+    public static final ModConfigSpec.BooleanValue DH_CLOUDS;
 
     /**
      * Tree colors: REPLACE = each tree's own colors and timing, mixed over the original; FILTER = the same, keeping
@@ -42,6 +50,12 @@ public final class ClientConfig {
 
     /** Where the held calendar's date box sits on the screen. */
     public enum HudPosition { TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, ABOVE_HOTBAR }
+
+    /** How far the small near cubes reach: LOW 128 blocks, MEDIUM 256, HIGH 384 (then cubes twice as big to 3 times that). */
+    public enum CloudDetail { LOW, MEDIUM, HIGH }
+
+    /** FULL: sunlight through the cloud (thick parts shade the rest); SIMPLE: lighter from above only. */
+    public enum CloudLighting { FULL, SIMPLE }
 
     /** Colors of crops that don't grow. BEIGE_ORANGE: winter beige and autumn dry orange. */
     public enum CropColors { DEFAULT, BEIGE_ORANGE }
@@ -113,13 +127,35 @@ public final class ClientConfig {
                         "frozen open water, and snow/ice saved while it was cold removed once it's warm.")
                 .define("snow_and_ice", true);
         BUILDER.pop().push("clouds");
-        STORM_CLOUDS = BUILDER.comment("With weather per region: clouds drawn from the storms, so clouds are where the rain is. Vanilla's cloud",
-                        "layer grows and darkens where a storm comes; in warm weather white heaps gather and climb into thunderstorm",
-                        "towers; rain fronts come with high streaks and middle clouds first. Follows the game's Clouds option",
-                        "(off: none, fast: one pass); with Distant Horizons it draws them instead. false: vanilla clouds.")
+        STORM_CLOUDS = BUILDER.comment("With weather per region: 3D block clouds drawn from the storms, so clouds are where the rain is. Fair",
+                        "days have small and big heaps that form and dissolve; a coming front brings high streaks, then middle bands,",
+                        "then a closing grey deck; thunderstorms gather heaps that climb into a tower (it reaches its top as the rain",
+                        "starts) and spread an anvil. Lit by the sun through the cloud. Made on the graphics card (needs OpenGL 4.3;",
+                        "without it vanilla clouds stay). Follows the game's Clouds option (off: none, fast: one pass). false: vanilla clouds.")
                 .define("storm_clouds", true);
         CLOUD_DISTANCE = BUILDER.comment("How far the clouds reach, in blocks (they fade out toward it).")
                 .defineInRange("cloud_distance", 768, 384, 2304);
+        CLOUD_CUBE = BUILDER.comment("Size of the cubes near you, in blocks: 4 (finer) or 8 (lighter). Farther away they are twice and four",
+                        "times as big (at most 16).")
+                .defineInRange("cube_size", 4, 4, 8);
+        CLOUD_DETAIL = BUILDER.comment("How far the near cubes reach: LOW 128 blocks, MEDIUM 256, HIGH 384; the next size reaches three times as far.")
+                .defineEnum("detail", CloudDetail.MEDIUM);
+        CLOUD_LIGHTING = BUILDER.comment("FULL: sunlight goes through the cloud, so thick parts shade the rest and storm bases are dark.",
+                        "SIMPLE: lighter from above only (cheaper).")
+                .defineEnum("lighting", CloudLighting.FULL);
+        CLOUD_SHADOWS = BUILDER.comment("Cloud shadows on the ground. Not with a shader pack (it does its own) or Fabulous graphics.")
+                .define("shadows", true);
+        DISTANT_RAIN = BUILDER.comment("Grey veils of rain under far raining clouds (near you the game's own rain falls).")
+                .define("distant_rain", true);
+        CLOUD_AMOUNT = BUILDER.comment("How many fair-weather clouds (heaps and high streaks): 1 = normal, 0 = none, 2 = twice as many.",
+                        "Storm clouds always come with their storms.")
+                .defineInRange("fair_amount", 1.0, 0.0, 2.0);
+        CLOUD_UPDATES = BUILDER.comment("Cloud pieces remade per frame as the sky changes. Higher = clouds follow the weather sooner, more work",
+                        "for the graphics card.")
+                .defineInRange("updates_per_frame", 2, 1, 8);
+        DH_CLOUDS = BUILDER.comment("With Distant Horizons: the far clouds are drawn by it, so they sit behind far terrain (the near ones",
+                        "are drawn the normal way). false: all clouds the normal way (far ones may show over far mountains).")
+                .define("distant_horizons_far_clouds", true);
         BUILDER.pop().push("calendar");
         HUD_POSITION = BUILDER.comment("Where the date box shows while you hold a calendar: TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT,",
                         "BOTTOM_RIGHT, or ABOVE_HOTBAR (centered just above the health and food bars).")

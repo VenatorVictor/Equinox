@@ -16,7 +16,9 @@ public final class ClientWeather {
     /** Rain level per tick toward the storm's (vanilla fades 0.01 a tick). */
     private static final float FADE = 0.0125F;
     /** Full rain level from this storm strength on (the ragged edge is below). */
-    private static final float FULL_RAIN = 0.25F;
+    private static final float FULL_RAIN = 0.3F;
+    /** The rain level comes from the storm around you: the middle and 8 points this far out (blocks). */
+    private static final int AREA = 24;
     /** Rain level (sky and cloud darkening) when the clouds have gathered but no rain falls yet. */
     private static final float GATHER_DARK = 0.5F;
 
@@ -37,16 +39,23 @@ public final class ClientWeather {
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
         if (mc.player != null && camera.equals(Vec3.ZERO)) camera = mc.player.position();
         int x = Mth.floor(camera.x), z = Mth.floor(camera.z);
-        float strength = Weather.strength(level, x, z);
-        float rainTarget = Mth.clamp(strength / FULL_RAIN, 0, 1);
-        // A storm coming or gathering overhead: the sky and the clouds darken first (vanilla darkens them by the rain
-        // level; no rain falls here, the columns stay dry), up to GATHER_DARK just before it rains.
-        if (strength <= 0) {
-            Weather.Side sky = Weather.client();
-            long time = level.getGameTime();
-            rainTarget = GATHER_DARK * sky.cloudiness(camera.x, camera.z, time, sky.field.offset(time));
+        // The storm around you, not one column: at a storm's ragged edge the level stays steady while you walk.
+        float strength = 2 * Weather.strength(level, x, z), peak = 0;
+        for (int k = 0; k < 8; k++) {
+            float a = k * Mth.TWO_PI / 8;
+            float s = Weather.strength(level, x + Math.round(Mth.cos(a) * AREA), z + Math.round(Mth.sin(a) * AREA));
+            strength += s;
+            peak = Math.max(peak, s);
         }
-        float thunderTarget = Mth.clamp((strength - (1 - Weather.THUNDER_SHARE)) / 0.02F, 0, 1);
+        strength /= 10;
+        // A storm coming or gathering overhead: the sky and the clouds darken first (vanilla darkens them by the rain
+        // level; no rain falls where the columns stay dry), up to GATHER_DARK just before it rains; then the rain level
+        // rises from there (no jump between the two).
+        Weather.Side sky = Weather.client();
+        long time = level.getGameTime();
+        float gather = GATHER_DARK * Math.min(1, sky.cloudiness(camera.x, camera.z, time, sky.field.offset(time)));
+        float rainTarget = Math.max(gather, Mth.clamp(strength / FULL_RAIN, 0, 1));
+        float thunderTarget = Mth.clamp((Math.max(strength, peak * 0.8F) - (1 - Weather.THUNDER_SHARE)) / 0.02F, 0, 1);
         if (managed != level) {
             // A new level (join, back from another dimension): start from the storm, no fade from vanilla's.
             managed = level;
