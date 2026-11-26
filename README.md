@@ -86,8 +86,6 @@ you can pick and plant. No library mods are needed.
 
 ![Oak through the year: leaves, catkins, flowers and acorns, and the acorn](docs/images/oak-year.png)
 
-![Spruce through the year: pollen cones, seed cones, and the spruce cone](docs/images/spruce-year.png)
-
 ### More
 - Distant Horizons: far terrain follows the colors and the snow.
 - A config screen with tabs, descriptions and the performance cost of each setting.
