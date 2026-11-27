@@ -31,10 +31,13 @@ import java.util.UUID;
  * (saved), and the climate grid streamed to players around them, nearest tiles first, within a time budget.
  */
 public final class ServerWeather {
-    /** Tiles (512 blocks) sent around each player: out to 2048 blocks, for far clouds. */
-    private static final int SEND_RADIUS = 4;
+    /**
+     * Tiles (512 blocks) sent around each player, nearest first: out to 6656 blocks, for the clouds at the farthest
+     * cloud distance (4096 blocks, plus the storm sites around them and the look 1600 blocks upwind for coming fronts).
+     */
+    private static final int SEND_RADIUS = 13;
     /** Tiles a client keeps around itself (ClientWeather trims past this). */
-    public static final int KEEP_RADIUS = 6;
+    public static final int KEEP_RADIUS = 15;
     private static final int BATCH = 16;
     private static final long BUDGET_NANOS = 2_000_000L;
 
