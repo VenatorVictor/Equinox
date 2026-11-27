@@ -174,7 +174,7 @@ public final class CloudSky {
         double raw = Math.floorMod((long) Math.floor(angle / (Math.PI * 2) * 16 * 1000), 16000) / 1000.0;
         if (patternAngle < 0 || Math.abs(Math.floorMod((long) Math.round((raw - patternAngle) * 1000) + 8000, 16000) - 8000) / 1000.0 > 0.75)
             patternAngle = (int) Math.round(raw) & 15;
-        float pwx = (float) Math.cos(patternAngle * Math.PI * 2 / 16), pwz = (float) Math.sin(patternAngle * Math.PI * 2 / 16);
+        float pwx = wx, pwz = wz;
         it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> keep = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         boolean testLog = Boolean.getBoolean("equinox.cloudTest");
         int refreshed = 0;
@@ -402,8 +402,9 @@ public final class CloudSky {
                 warm = Mth.clamp((warm - 0.25F) / 0.75F, 0, 1);
                 float presence = (big ? 0.25F + 0.55F * warm : 0.3F + 0.4F * warm) * amount
                         * (1 - smooth(0.4F, 0.85F, deck)) * (1 - smooth(0.35F, 0.6F, thunder));
-                float gate = smooth(0, 0.12F, presence - hash01(si, sj, salt + 2));
-                if (gate < 0.05F) continue;
+                // there or not, always at its own full size (it never shrinks or grows with the weather)
+                if (presence <= hash01(si, sj, salt + 2)) continue;
+                float gate = 1;
                 float base = 4 * hash01(si, sj, salt + 5);
                 if (big) {
                     float tall = 1 + 1.6F * warm * smooth(0.3F, 0.9F, c);
