@@ -4,7 +4,7 @@
 // storm grey down), the colour carries the face shading and the alpha.
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(std430, binding = 2) readonly buffer Grid { uint grid[]; };
-layout(std430, binding = 3) buffer Out { uint faceCount; uint pad0; uint pad1; uint pad2; uint verts[]; };
+layout(std430, binding = 3) buffer Out { uint faceCount; uint pad0; uint pad1; uint pad2; uint verts[]; }; // pad2: see-through faces
 layout(std430, binding = 4) readonly buffer Old { uint old[]; }; // this chunk's cubes last time
 
 uniform vec3 uChunk;
@@ -121,6 +121,8 @@ void main() {
         }
     }
 
+    // see-through faces (middle and high clouds) need the depth pass first; a chunk without any skips it
+    if (kind != 0u) atomicAdd(pad2, uint(count));
     uint first = atomicAdd(faceCount, uint(count));
     uint slot = first;
     vec3 corner = vec3(float(c.x) * s, uBottom + float(c.y) * s, float(c.z) * s);

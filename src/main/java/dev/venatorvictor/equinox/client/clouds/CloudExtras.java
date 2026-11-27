@@ -193,17 +193,37 @@ public final class CloudExtras {
     public static void rain(CloudSky.Sky sky, Matrix4f view, double offX, double offZ, double camX, double camY, double camZ,
                             float height, float ground, float near, float reach, float timeOfDay) {
         float day = Mth.clamp(Mth.cos(timeOfDay * Mth.TWO_PI) * 2 + 0.5F, 0, 1) * 0.85F + 0.15F;
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         int n = sky.mapSize();
-        float half = CloudSky.MAP_CELL * 0.9F;
-        float bottom = (float) (ground - camY);
-        for (int j = 0; j < n; j++) {
-            for (int i = 0; i < n; i++) {
-                int o = (j * n + i) * 4;
+        // the raining spots, found once per sky (not every frame)
+        if (rainSky != sky) {
+            rainSky = sky;
+            it.unimi.dsi.fastutil.ints.IntArrayList list = new it.unimi.dsi.fastutil.ints.IntArrayList();
+            for (int k = 0; k < n * n; k++) if (sky.map0()[k * 4 + 3] >= 1.05F) list.add(k);
+            rainSpots = list.toIntArray();
+            rainBuilt = null;
+        }
+        if (rainSpots.length == 0) return;
+        // The veils are made around an anchor (the camera in wind space when made) and kept while the camera stays
+        // near it and the light is the same; each frame they are only moved by the wind and the camera.
+        double ax = camX - offX, az = camZ - offZ;
+        if (rainBuilt != sky || Math.abs(ax - rainX) > 16 || Math.abs(az - rainZ) > 16 || Math.abs(camY - rainY) > 8
+                || Math.abs(day - rainDay) > 0.02F || height != rainHeight || ground != rainGround) {
+            rainBuilt = sky;
+            rainX = ax;
+            rainZ = az;
+            rainY = camY;
+            rainDay = day;
+            rainHeight = height;
+            rainGround = ground;
+            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+            float half = CloudSky.MAP_CELL * 0.9F;
+            float bottom = (float) (ground - camY);
+            for (int spot : rainSpots) {
+                int i = spot % n, j = spot / n;
+                int o = spot * 4;
                 float storm = sky.map0()[o + 3];
-                if (storm < 1.05F) continue;
-                float x = (float) (sky.centerX() + sky.mapX0() + (i + 0.5) * CloudSky.MAP_CELL + offX - camX);
-                float z = (float) (sky.centerZ() + sky.mapZ0() + (j + 0.5) * CloudSky.MAP_CELL + offZ - camZ);
+                float x = (float) (sky.centerX() + sky.mapX0() + (i + 0.5) * CloudSky.MAP_CELL - ax);
+                float z = (float) (sky.centerZ() + sky.mapZ0() + (j + 0.5) * CloudSky.MAP_CELL - az);
                 float dist = Mth.sqrt(x * x + z * z);
                 float fade = smooth(near, near + 100, dist) * (1 - smooth(reach * 0.7F, reach, dist));
                 if (fade <= 0.01F) continue;
@@ -220,27 +240,38 @@ public final class CloudExtras {
                 veil(builder, x, z, sx, sz, top, mid, r, gg, b, 0, alpha);
                 veil(builder, x, z, sx, sz, mid, bottom, r, gg, b, alpha, alpha * 0.3F);
             }
+            MeshData mesh = builder.build();
+            if (rainBuffer == null) rainBuffer = new com.mojang.blaze3d.vertex.VertexBuffer(com.mojang.blaze3d.vertex.VertexBuffer.Usage.STATIC);
+            rainEmpty = mesh == null;
+            if (mesh != null) {
+                rainBuffer.bind();
+                rainBuffer.upload(mesh);
+                com.mojang.blaze3d.vertex.VertexBuffer.unbind();
+            }
         }
-        MeshData mesh = builder.build();
-        if (mesh == null) return;
-        Matrix4fStack stack = RenderSystem.getModelViewStack();
-        stack.pushMatrix();
-        stack.identity();
-        stack.mul(view);
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        if (rainEmpty) return;
+        Matrix4f pose = new Matrix4f(view).translate((float) (ax + offX - camX), (float) (rainY - camY), (float) (az + offZ - camZ));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
-        BufferUploader.drawWithShader(mesh);
+        rainBuffer.bind();
+        rainBuffer.drawWithShader(pose, RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorShader());
+        com.mojang.blaze3d.vertex.VertexBuffer.unbind();
         RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
-        stack.popMatrix();
-        RenderSystem.applyModelViewMatrix();
     }
+
+    private static CloudSky.Sky rainBuilt;
+    private static double rainX, rainZ, rainY;
+    private static float rainDay, rainHeight, rainGround;
+    private static com.mojang.blaze3d.vertex.VertexBuffer rainBuffer;
+    private static boolean rainEmpty = true;
+
+    private static CloudSky.Sky rainSky;
+    private static int[] rainSpots = new int[0];
 
     /** Distant rain: how see-through at most, its colour (times the day light). */
     private static final float ALPHA = 0.24F;
@@ -262,6 +293,7 @@ public final class CloudExtras {
     /** Everything dropped (leaving a world). */
     public static void clear() {
         shadowSky = null;
+        rainSky = rainBuilt = null;
     }
 
     private CloudExtras() {

@@ -9,6 +9,7 @@ import dev.venatorvictor.equinox.client.clouds.CloudExtras;
 import dev.venatorvictor.equinox.client.clouds.CloudField;
 import dev.venatorvictor.equinox.client.clouds.CloudGpu;
 import dev.venatorvictor.equinox.client.clouds.CloudSky;
+import dev.venatorvictor.equinox.client.clouds.CloudTimer;
 import dev.venatorvictor.equinox.client.dh.DhClouds;
 import dev.venatorvictor.equinox.weather.Weather;
 import net.minecraft.client.CloudStatus;
@@ -256,6 +257,8 @@ public final class CloudRenderer {
         boolean pack = shaderPack();
         // cubes grow and shrink with our shader; under a shader pack the pack's own cloud shader draws them (no growing)
         float animSeconds = pack || growing == null ? 0 : ClientConfig.CLOUD_ANIMATION.get().floatValue();
+        CloudTimer.start();
+        CloudTimer.mark(0);
         CloudGpu.update(camX - offX, camZ - offZ, reach, ClientConfig.CLOUD_CUBE.get(), rings(), ClientConfig.CLOUD_UPDATES.get(),
                 sun, ClientConfig.CLOUD_LIGHTING.get() == ClientConfig.CloudLighting.FULL, (int) (time / 2 & 1023), animSeconds);
         float animTime = (float) ((time / 2 & 1023) + ((time & 1) + partialTick) / 2);
@@ -265,6 +268,7 @@ public final class CloudRenderer {
         }
 
         // ground shadows first (they darken the picture under the clouds), only without a shader pack
+        CloudTimer.mark(1);
         if (ClientConfig.CLOUD_SHADOWS.get() && !Minecraft.useShaderTransparency() && !pack) {
             float[] toward = {-Mth.sin(timeOfDay * Mth.TWO_PI), Mth.cos(timeOfDay * Mth.TWO_PI), 0};
             float rainy = 1 - 0.6F * level.getRainLevel(partialTick);
@@ -283,35 +287,34 @@ public final class CloudRenderer {
         RenderSystem.setShaderFogShape(FogShape.CYLINDER);
         float glowUp = smooth(-0.05F, 0.2F, Mth.cos(timeOfDay * Mth.TWO_PI));
         float[] toSun = {-Mth.sin(timeOfDay * Mth.TWO_PI), Mth.cos(timeOfDay * Mth.TWO_PI), 0};
-        ShaderInstance[] used = new ShaderInstance[1];
-        CloudGpu.Tint tint = (x, y, z, cube) -> {
-            if (used[0] == growing && growing != null) {
-                growing.safeGetUniform("AnimTime").set(animTime);
-                growing.safeGetUniform("AnimLength").set(Math.max(0.5F, animSeconds * 10));
-                growing.safeGetUniform("Cube").set((float) cube);
-            }
-            // light through the clouds toward the sun: brighter looking toward it
+        // light through the clouds toward the sun: brighter looking toward it
+        CloudGpu.Tint tint = (x, y, z) -> {
             float len = Mth.sqrt(x * x + y * y + z * z);
             float facing = len < 1 ? 0 : Math.max(0, (x * toSun[0] + y * toSun[1] + z * toSun[2]) / len);
-            float glow = 1 + 0.18F * glowUp * (float) Math.pow(facing, 6);
-            RenderSystem.setShaderColor(glow, glow, glow * 0.97F, 1);
+            return 1 + 0.18F * glowUp * (float) Math.pow(facing, 6);
         };
 
         CloudStatus status = mc.options.getCloudsType();
         for (int pass = status == CloudStatus.FANCY ? 0 : 1; pass < 2; pass++) {
+            CloudTimer.mark(pass == 0 ? 2 : 3);
             RenderType type = pass == 0 ? RenderType.cloudsDepthOnly() : RenderType.clouds();
             type.setupRenderState();
             if (animSeconds > 0) RenderSystem.setShader(() -> growing);
             RenderSystem.setShaderTexture(0, CloudExtras.PALETTE);
             ShaderInstance shader = RenderSystem.getShader();
-            used[0] = shader;
-            if (shader != null) CloudGpu.draw(frustumMatrix, projectionMatrix, camX, camY, camZ, offX, offZ, height, shader, tint);
+            if (shader == growing && growing != null) {
+                growing.safeGetUniform("AnimTime").set(animTime);
+                growing.safeGetUniform("AnimLength").set(Math.max(0.5F, animSeconds * 10));
+            }
+            if (shader != null) CloudGpu.draw(frustumMatrix, projectionMatrix, camX, camY, camZ, offX, offZ, height, shader, tint, pass == 0);
             type.clearRenderState();
         }
         RenderSystem.setShaderColor(1, 1, 1, 1);
 
+        CloudTimer.mark(4);
         if (ClientConfig.DISTANT_RAIN.get())
             CloudExtras.rain(s, frustumMatrix, offX, offZ, camX, camY, camZ, height, level.getSeaLevel() - 2, 96, reach, timeOfDay);
+        CloudTimer.end();
 
         RenderSystem.setShaderFogStart(fogStart);
         RenderSystem.setShaderFogEnd(fogEnd);

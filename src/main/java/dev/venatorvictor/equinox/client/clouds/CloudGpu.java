@@ -61,6 +61,8 @@ public final class CloudGpu {
         int vbo, vao, old, faces = -1;
         /** hasOld: its last cubes are kept (to grow the ones that come and shrink the ones that go). */
         boolean hasOld;
+        /** Has see-through faces (middle or high clouds): drawn in the depth pass too. */
+        boolean seeThrough;
         /** What its part of the sky looked like at its last make (domes, map, sun). */
         long signature;
         long made;
@@ -546,10 +548,11 @@ public final class CloudGpu {
             chunk.building = false;
             int count;
             try (MemoryStack stack = MemoryStack.stackPush()) {
-                IntBuffer n = stack.mallocInt(3);
+                IntBuffer n = stack.mallocInt(4);
                 glBindBuffer(GL_COPY_READ_BUFFER, slot.out);
                 glGetBufferSubData(GL_COPY_READ_BUFFER, 0, n);
                 count = n.get(0);
+                chunk.seeThrough = n.get(3) > 0;
                 if (chunk.hasOld) {
                     testCame += n.get(1);
                     testWent += n.get(2);
@@ -608,35 +611,59 @@ public final class CloudGpu {
 
     // ---- drawing
 
-    /** Something to know per chunk while drawing: its corner relative to the camera (blocks). */
+    /** The brightness of a chunk whose middle is at this camera-relative position (glow toward the sun). */
     public interface Tint {
-        /** Sets the shader colour and uniforms for a chunk whose middle is at this camera-relative position. */
-        void apply(float x, float y, float z, int cube);
+        float glow(float x, float y, float z);
     }
 
     /**
      * Draws the ready chunks with the current shader (the render type is set up). offX, offZ: the wind's offset now;
-     * height: the cloud height.
+     * height: the cloud height. The shader is applied once; per chunk only its position, brightness and cube size are
+     * sent (applying a shader sends everything again, which cost far more than the drawing itself). seeThroughOnly:
+     * only chunks with see-through faces (the depth pass: solid clouds don't need it).
      */
     public static void draw(Matrix4f view, Matrix4f projection, double camX, double camY, double camZ, double offX, double offZ,
-                            float height, ShaderInstance shader, Tint tint) {
+                            float height, ShaderInstance shader, Tint tint, boolean seeThroughOnly) {
         FrustumIntersection frustum = new FrustumIntersection(new Matrix4f(projection).mul(view));
-        RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
         float y0 = (float) (height + CloudSky.BOTTOM - camY), y1 = (float) (height + CloudSky.TOP - camY);
+        List<Chunk> shown = new ArrayList<>();
+        int most = 0;
         for (Chunk c : CHUNKS.values()) {
-            if (!c.ready() || c.faces <= 0) continue;
+            if (!c.ready() || c.faces <= 0 || seeThroughOnly && !c.seeThrough) continue;
             float x = (float) (c.x0() + offX - camX), z = (float) (c.z0() + offZ - camZ);
             if (!frustum.testAab(x, y0, z, x + c.span(), y1, z + c.span())) continue;
-            tint.apply(x + c.span() * 0.5F, (y0 + y1) * 0.5F, z + c.span() * 0.5F, c.cube);
-            Matrix4f pose = new Matrix4f(view).translate(x, (float) (height - camY), z);
-            shader.setDefaultUniforms(VertexFormat.Mode.QUADS, pose, projection, Minecraft.getInstance().getWindow());
-            shader.apply();
-            BufferUploader.invalidate();
-            GlStateManager._glBindVertexArray(c.vao);
-            indices.bind(c.faces * 6);
-            RenderSystem.drawElements(VertexFormat.Mode.QUADS.asGLMode, c.faces * 6, indices.type().asGLType);
-            shader.clear();
+            shown.add(c);
+            most = Math.max(most, c.faces);
         }
+        if (shown.isEmpty()) return;
+        RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+        shader.setDefaultUniforms(VertexFormat.Mode.QUADS, view, projection, Minecraft.getInstance().getWindow());
+        shader.apply();
+        com.mojang.blaze3d.shaders.Uniform pose = shader.MODEL_VIEW_MATRIX, colour = shader.COLOR_MODULATOR, size = shader.getUniform("Cube");
+        Matrix4f m = new Matrix4f();
+        int lastCube = -1;
+        BufferUploader.invalidate();
+        for (Chunk c : shown) {
+            float x = (float) (c.x0() + offX - camX), z = (float) (c.z0() + offZ - camZ);
+            if (pose != null) {
+                pose.set(m.set(view).translate(x, (float) (height - camY), z));
+                pose.upload();
+            }
+            if (colour != null) {
+                float g = tint.glow(x + c.span() * 0.5F, (y0 + y1) * 0.5F, z + c.span() * 0.5F);
+                colour.set(g, g, g * 0.97F, 1);
+                colour.upload();
+            }
+            if (size != null && c.cube != lastCube) {
+                lastCube = c.cube;
+                size.set((float) c.cube);
+                size.upload();
+            }
+            GlStateManager._glBindVertexArray(c.vao);
+            indices.bind(most * 6);
+            RenderSystem.drawElements(VertexFormat.Mode.QUADS.asGLMode, c.faces * 6, indices.type().asGLType);
+        }
+        shader.clear();
         VertexBuffer.unbind();
     }
 
