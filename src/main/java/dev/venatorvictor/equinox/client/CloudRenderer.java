@@ -86,7 +86,7 @@ public final class CloudRenderer {
 
     /** How far the clouds reach (blocks). */
     public static int reach() {
-        return ClientConfig.CLOUD_DISTANCE.get();
+        return ClientConfig.CLOUD_RANGE.get().reach;
     }
 
     /** How far the clouds drawn here reach: all of them, or with Distant Horizons drawing the far ones, the game's view. */
@@ -100,13 +100,16 @@ public final class CloudRenderer {
         return sky;
     }
 
-    /** Near cubes, rings of detail (blocks the near cubes reach), from the settings. */
-    private static int ring() {
-        return switch (ClientConfig.CLOUD_DETAIL.get()) {
-            case LOW -> 192;
-            case MEDIUM -> 384;
-            case HIGH -> 576;
-        };
+    /** Where the 4-block and the 8-block cubes end (blocks), from the cloud distance setting. */
+    private static int[] rings() {
+        ClientConfig.CloudRange range = ClientConfig.CLOUD_RANGE.get();
+        return new int[] {range.cube4, range.cube8};
+    }
+
+    /** Fair-weather cloud life and storm timing (ticks), from the settings. */
+    static CloudSky.Timing timing() {
+        return new CloudSky.Timing((int) (ClientConfig.CLOUD_LIFE.get() * 1200), (int) (ClientConfig.CLOUD_FADE.get() * 1200),
+                (int) (ClientConfig.STORM_FORM.get() * 1200), (int) (ClientConfig.STORM_FADE.get() * 1200));
     }
 
     /** Starts a background sky build when one is due. */
@@ -130,8 +133,9 @@ public final class CloudRenderer {
         long dayTime = level.getDayTime();
         float amount = ClientConfig.CLOUD_AMOUNT.get().floatValue();
         int cube = ClientConfig.CLOUD_CUBE.get();
+        CloudSky.Timing timing = timing();
         pending = CompletableFuture.supplyAsync(() -> {
-            CloudSky.Sky built = m.build(side, time, now, wx, wz, reach, summer, dayTime, amount);
+            CloudSky.Sky built = m.build(side, time, now, wx, wz, reach, summer, dayTime, amount, timing);
             return new Built(built, new CloudField(built, cube, reach));
         }, BUILDER);
     }
@@ -234,7 +238,7 @@ public final class CloudRenderer {
         double[] now = side.field.offset(time), next = side.field.offset(time + 1);
         double offX = Mth.lerp(partialTick, now[0], next[0]), offZ = Mth.lerp(partialTick, now[1], next[1]);
 
-        String settings = ClientConfig.CLOUD_CUBE.get() + "/" + ClientConfig.CLOUD_DETAIL.get() + "/" + ClientConfig.CLOUD_LIGHTING.get();
+        String settings = ClientConfig.CLOUD_CUBE.get() + "/" + ClientConfig.CLOUD_RANGE.get() + "/" + ClientConfig.CLOUD_LIGHTING.get();
         if (!settings.equals(shownSettings)) {
             CloudGpu.clear();
             shownSettings = settings;
@@ -252,7 +256,7 @@ public final class CloudRenderer {
         boolean pack = shaderPack();
         // cubes grow and shrink with our shader; under a shader pack the pack's own cloud shader draws them (no growing)
         float animSeconds = pack || growing == null ? 0 : ClientConfig.CLOUD_ANIMATION.get().floatValue();
-        CloudGpu.update(camX - offX, camZ - offZ, reach, ClientConfig.CLOUD_CUBE.get(), ring(), ClientConfig.CLOUD_UPDATES.get(),
+        CloudGpu.update(camX - offX, camZ - offZ, reach, ClientConfig.CLOUD_CUBE.get(), rings(), ClientConfig.CLOUD_UPDATES.get(),
                 sun, ClientConfig.CLOUD_LIGHTING.get() == ClientConfig.CloudLighting.FULL, (int) (time / 2 & 1023), animSeconds);
         float animTime = (float) ((time / 2 & 1023) + ((time & 1) + partialTick) / 2);
         if (time - paletteTime >= 10 || time < paletteTime) {

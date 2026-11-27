@@ -29,9 +29,9 @@ public final class ClientConfig {
     public static final ModConfigSpec.IntValue REDRAW_SECONDS;
     public static final ModConfigSpec.EnumValue<HudPosition> HUD_POSITION;
     public static final ModConfigSpec.BooleanValue STORM_CLOUDS;
-    public static final ModConfigSpec.IntValue CLOUD_DISTANCE;
+    public static final ModConfigSpec.EnumValue<CloudRange> CLOUD_RANGE;
     public static final ModConfigSpec.IntValue CLOUD_CUBE;
-    public static final ModConfigSpec.EnumValue<CloudDetail> CLOUD_DETAIL;
+    public static final ModConfigSpec.DoubleValue CLOUD_LIFE, CLOUD_FADE, STORM_FORM, STORM_FADE;
     public static final ModConfigSpec.EnumValue<CloudLighting> CLOUD_LIGHTING;
     public static final ModConfigSpec.BooleanValue CLOUD_SHADOWS;
     public static final ModConfigSpec.BooleanValue DISTANT_RAIN;
@@ -54,7 +54,21 @@ public final class ClientConfig {
     public enum HudPosition { TOP_LEFT, TOP_CENTER, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, ABOVE_HOTBAR }
 
     /** How far the small near cubes reach: LOW 128 blocks, MEDIUM 256, HIGH 384 (then cubes twice as big to 3 times that). */
-    public enum CloudDetail { LOW, MEDIUM, HIGH }
+    /**
+     * How far the clouds reach: where the 4-block cubes end, where the 8-block ones end, and the end of the 16-block
+     * ones (the clouds' edge), in blocks.
+     */
+    public enum CloudRange {
+        R256(256, 512, 1024), R384(384, 768, 1536), R512(512, 1024, 2048), R768(768, 1536, 3072), R1024(1024, 2048, 4096);
+
+        public final int cube4, cube8, reach;
+
+        CloudRange(int cube4, int cube8, int reach) {
+            this.cube4 = cube4;
+            this.cube8 = cube8;
+            this.reach = reach;
+        }
+    }
 
     /** FULL: sunlight through the cloud (thick parts shade the rest); SIMPLE: lighter from above only. */
     public enum CloudLighting { FULL, SIMPLE }
@@ -135,13 +149,22 @@ public final class ClientConfig {
                         "starts) and spread an anvil. Lit by the sun through the cloud. Made on the graphics card (needs OpenGL 4.3;",
                         "without it vanilla clouds stay). Follows the game's Clouds option (off: none, fast: one pass). false: vanilla clouds.")
                 .define("storm_clouds", true);
-        CLOUD_DISTANCE = BUILDER.comment("How far the clouds reach, in blocks (they fade out toward it).")
-                .defineInRange("cloud_distance", 768, 384, 2304);
-        CLOUD_CUBE = BUILDER.comment("Size of the cubes near you, in blocks: 4 (finer) or 8 (lighter). Farther away they are twice and four",
-                        "times as big (at most 16).")
+        CLOUD_RANGE = BUILDER.comment("How far the clouds reach: R256 = 4-block cubes out to 256 blocks, 8-block cubes to 512, 16-block cubes to",
+                        "1024 (the clouds' edge); R384 = 384 / 768 / 1536; R512 = 512 / 1024 / 2048; R768 = 768 / 1536 / 3072;",
+                        "R1024 = 1024 / 2048 / 4096.")
+                .defineEnum("cloud_range", CloudRange.R512);
+        CLOUD_CUBE = BUILDER.comment("Size of the cubes near you, in blocks: 4 (finer) or 8 (lighter: 8-block cubes start at you).")
                 .defineInRange("cube_size", 4, 4, 8);
-        CLOUD_DETAIL = BUILDER.comment("How far the near cubes reach: LOW 192 blocks, MEDIUM 384, HIGH 576; the next size reaches three times as far.")
-                .defineEnum("detail", CloudDetail.MEDIUM);
+        CLOUD_LIFE = BUILDER.comment("Fair-weather clouds live this many real minutes each, then dissolve while others form (each its own",
+                        "time, so only a few change at once). 0 = they never dissolve; the weather alone decides them.")
+                .defineInRange("cloud_life_minutes", 34.0, 0.0, 120.0);
+        CLOUD_FADE = BUILDER.comment("How many real minutes a fair-weather cloud takes to form, and again to dissolve.")
+                .defineInRange("cloud_fade_minutes", 7.0, 0.5, 30.0);
+        STORM_FORM = BUILDER.comment("Real minutes a thunderstorm takes to form: heaps gather, then the tower climbs, reaching its top as",
+                        "the rain starts.")
+                .defineInRange("storm_form_minutes", 4.5, 0.5, 15.0);
+        STORM_FADE = BUILDER.comment("Real minutes a thunderstorm's clouds take to melt away after its rain has passed.")
+                .defineInRange("storm_fade_minutes", 4.0, 0.5, 15.0);
         CLOUD_LIGHTING = BUILDER.comment("FULL: sunlight goes through the cloud, so thick parts shade the rest and storm bases are dark.",
                         "SIMPLE: lighter from above only (cheaper).")
                 .defineEnum("lighting", CloudLighting.FULL);

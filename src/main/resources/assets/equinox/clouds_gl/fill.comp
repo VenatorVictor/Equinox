@@ -4,7 +4,7 @@ layout(std430, binding = 2) writeonly buffer Grid { uint grid[]; };
 layout(std430, binding = 4) readonly buffer Old { uint old[]; }; // this chunk's cubes last time
 
 uniform vec3 uChunk;       // the chunk's corner, relative to the centre (y 0)
-uniform ivec3 uChunkCell;  // the chunk's corner in cubes, wind space (for each cube's own threshold)
+uniform ivec3 uChunkCell;  // the chunk's corner in cubes, wind space
 uniform int uLayers;
 uniform float uBottom;
 uniform int uHasOld;
@@ -21,9 +21,9 @@ void main() {
     float s = float(uCube);
     vec3 p = uChunk + vec3((float(cell.x) + 0.5) * s, uBottom + (float(cell.y) + 0.5) * s, (float(cell.z) + 0.5) * s);
     vec3 d = density(p, absBlock(p));
-    // each cube's own threshold: as a cloud grows or melts, its cubes come and go one by one (like snow)
-    float threshold = (u01(hash3(uChunkCell + cell, 11u)) - 0.5) * 0.5 * s;
-    // a cube holds on: it takes a bit more change to make it come or go than to keep it (no flicker at the edge)
+    // a cube is cloud where the density is above 0 (only the cubes at a cloud's surface change as it grows or melts);
+    // it holds on: it takes a bit more change to make it come or go than to keep it (no flicker at the edge)
+    float threshold = 0.0;
     if (uHasOld == 1) threshold += (old[index] & 1u) != 0u ? -0.25 * s : 0.25 * s;
     grid[index] = d.x > threshold ? 1u | (uint(clamp(d.y, 0.0, 2.0) * 100.0) << 8) | (uint(d.z) << 16) : 0u;
 }

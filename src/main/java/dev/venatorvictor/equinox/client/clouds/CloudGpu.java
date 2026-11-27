@@ -251,8 +251,11 @@ public final class CloudGpu {
     /** How much farther out a split chunk stays split. */
     private static final double KEEP_SPLIT = 1.35;
 
-    /** Marks the chunks wanted around the camera (wind space): a quadtree, split while nearer than the ring. */
-    private static void want(double camX, double camZ, int reach, int nearCube, int ring) {
+    /**
+     * Marks the chunks wanted around the camera (wind space): a quadtree, split while nearer than the ring where the
+     * smaller cube size ends (rings: where the 4-block and the 8-block cubes end).
+     */
+    private static void want(double camX, double camZ, int reach, int nearCube, int[] rings) {
         for (Chunk c : CHUNKS.values()) c.wanted = false;
         splitNext.clear();
         int[] sizes = cubes(nearCube);
@@ -260,24 +263,24 @@ public final class CloudGpu {
         int x0 = (int) Math.floor((camX - reach) / span), x1 = (int) Math.floor((camX + reach) / span);
         int z0 = (int) Math.floor((camZ - reach) / span), z1 = (int) Math.floor((camZ + reach) / span);
         for (int cx = x0; cx <= x1; cx++)
-            for (int cz = z0; cz <= z1; cz++) want(top, cx, cz, sizes, camX, camZ, reach, ring);
+            for (int cz = z0; cz <= z1; cz++) want(top, cx, cz, sizes, camX, camZ, reach, rings);
         var swap = split;
         split = splitNext;
         splitNext = swap;
     }
 
-    private static void want(int level, int cx, int cz, int[] sizes, double camX, double camZ, int reach, int ring) {
+    private static void want(int level, int cx, int cz, int[] sizes, double camX, double camZ, int reach, int[] rings) {
         int span = sizes[level] * CHUNK;
         long x0 = (long) cx * span, z0 = (long) cz * span;
         double d = distance(camX, camZ, x0, z0, span);
         if (d > reach) return;
-        // level L covers out to ring * 3^L blocks
+        // split into the smaller cubes while nearer than where they end
         long key = key(level, cx, cz);
-        double limit = ring * Math.pow(3, level - 1) * (split.contains(key) ? KEEP_SPLIT : 1);
+        double limit = level == 0 ? 0 : rings[sizes[level - 1] <= 4 ? 0 : 1] * (split.contains(key) ? KEEP_SPLIT : 1);
         if (level > 0 && d < limit) {
             splitNext.add(key);
             for (int i = 0; i < 2; i++)
-                for (int j = 0; j < 2; j++) want(level - 1, cx * 2 + i, cz * 2 + j, sizes, camX, camZ, reach, ring);
+                for (int j = 0; j < 2; j++) want(level - 1, cx * 2 + i, cz * 2 + j, sizes, camX, camZ, reach, rings);
             return;
         }
         Chunk c = CHUNKS.get(key);
@@ -294,12 +297,12 @@ public final class CloudGpu {
      * Once a frame: collects finished chunks, drops chunks no longer needed (once what replaces them is ready) and
      * starts making up to `budget` chunks: missing ones nearest first, then the oldest. camX, camZ: wind space.
      */
-    public static void update(double camX, double camZ, int reach, int nearCube, int ring, int budget, float[] sun, boolean full,
+    public static void update(double camX, double camZ, int reach, int nearCube, int[] rings, int budget, float[] sun, boolean full,
                               int stamp, float animSeconds) {
         if (sky == null) return;
         minAge = (long) ((Math.max(0.4F, animSeconds + 0.2F)) * 1e9);
         collect();
-        want(camX, camZ, reach, nearCube, ring);
+        want(camX, camZ, reach, nearCube, rings);
         testLog();
         boolean animate = animSeconds > 0;
         long now = System.nanoTime();

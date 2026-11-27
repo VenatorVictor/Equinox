@@ -1,6 +1,7 @@
 package dev.venatorvictor.equinox.client.clouds;
 
 import dev.venatorvictor.equinox.climate.Zone;
+import dev.venatorvictor.equinox.weather.ClimateGrid;
 import dev.venatorvictor.equinox.weather.StormField;
 import dev.venatorvictor.equinox.weather.Weather;
 import net.minecraft.util.Mth;
@@ -13,9 +14,9 @@ import net.minecraft.util.Mth;
  * Two parts, which the graphics card turns into cubes (cloud_density.glsl):
  * <ul>
  * <li>Domes: round puffs (an ellipsoid cut flat at its base). Fair-weather heaps are a few puffs each, every heap with
- * its own life (it forms, lives and dissolves); a storm that will thunder grows heaps that gather, climb into a tower
- * of stacked puffs and spread an anvil downwind. Timed like real life on the game's clock (1 game hour = 1 000 ticks):
- * the heaps gather over about 2 hours before the rain and the tower reaches its top as the rain starts.</li>
+ * its own life (it forms over minutes, lives, dissolves over minutes; each at its own time, so only a few change at
+ * once); the weather decides how many can live at a spot. A storm that will thunder grows heaps that gather, climb into
+ * a tower of stacked puffs (it reaches its top as the rain starts) and spread an anvil downwind. Times from Timing.</li>
  * <li>A map (MAP_CELL blocks a texel) of the layer clouds: the low deck that closes in and thickens before rain (lumpy
  * stratocumulus, then flat thick nimbostratus), middle clouds in rows before a front, high streaks far ahead of it,
  * and the storm level for the greys.</li>
@@ -33,10 +34,27 @@ public final class CloudSky {
     public static final float MID_LOW = 64, MID_HIGH = 72, HIGH_LOW = 150, HIGH_HIGH = 156;
     /** Storm heap sites and fair heap sites (blocks, jittered). */
     private static final int STORM_SITE = 384, BIG_SITE = 384, SMALL_SITE = 160;
-    /** Storm life (ticks): heaps gather, the tower climbs (ends as the rain starts), the anvil spreads, it melts away. */
-    public static final int GATHER = 2000, CLIMB = 1600, SPREAD = 900, MELT = 2400;
-    /** Look-ahead for a storm site: samples every AHEAD_STEP ticks from -AHEAD_BACK to +AHEAD_FORWARD. */
-    private static final int AHEAD_STEP = 300, AHEAD_BACK = 8, AHEAD_FORWARD = 12;
+    /** Ticks the anvil takes to spread once the rain has started. */
+    public static final int SPREAD = 900;
+    /** Look-ahead for a storm site: samples every AHEAD_STEP ticks, back over the melting, ahead over the forming. */
+    private static final int AHEAD_STEP = 300;
+    /** Look-ahead of the map's thunder outlook: samples every PEAK_STEP ticks from now over the forming. */
+    private static final int PEAK_STEP = 600;
+
+    /**
+     * Times (ticks): a fair-weather cloud's life (0: no life, the weather alone decides) and how long it takes to form
+     * and again to dissolve; how long a thunderstorm's clouds take to form before its rain (heaps gather for the first
+     * 5/9, the tower climbs over the last 4/9) and to melt after it.
+     */
+    public record Timing(int life, int fade, int stormForm, int stormFade) {
+        int gather() {
+            return Math.max(1, stormForm * 5 / 9);
+        }
+
+        int climb() {
+            return Math.max(1, stormForm - gather());
+        }
+    }
     /** Tower height above its base at full growth (blocks). */
     private static final float TOWER = 170;
     /** How far up- and downwind the fronts are looked for (blocks). */
@@ -68,14 +86,20 @@ public final class CloudSky {
 
     private final long seed;
     /**
-     * Fair-weather sky held per map texel (wind space): the weather under a drifting cloud changes a little all the time,
-     * and fair clouds would follow it, so their edges never stood still. They keep their weather until it has really
-     * changed (HOLD); only where rain is falling or coming (storms forming) does the sky follow the weather freely.
+     * The sky per map texel (wind space), eased: the weather under a drifting cloud changes as it drifts (over other
+     * land, a storm coming), and the clouds follow it slowly and steadily, never in jumps, so only a few cubes at a
+     * cloud's surface change at a time. EASE: ticks for a value to move by 1 (cloudiness runs 0..2).
      */
-    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> held = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
-    private static final float HOLD = 0.25F, STORM_HOLD = 0.1F;
-    /** The wind pattern angle held (one of 16), so streaks and rows don't change when the wind turns a little. */
-    private int patternAngle = -1;
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> eased = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    private static final float EASE = 2400;
+    private long easedTime = Long.MIN_VALUE;
+    /**
+     * The angle of the streak and row patterns (in 16ths of a turn), turning slowly after the wind (one 16th per
+     * TURN_TICKS at most) and kept in small steps (STEPS per 16th), so the patterns change shape slowly, not when the
+     * wind takes its next step.
+     */
+    private double patternAngle = Double.NaN;
+    private static final double TURN_TICKS = 6000, STEPS = 32;
 
     public CloudSky(long seed) {
         this.seed = seed;
@@ -166,20 +190,31 @@ public final class CloudSky {
      * the storm map's offset; summer, day: 0..1; amount: fair-weather cloud amount (1 normal).
      */
     public synchronized Sky build(Weather.Side side, long time, double[] offset, double camX, double camZ, int reach, float summer,
-                     long dayTime, float amount) {
+                     long dayTime, float amount, Timing timing) {
         StormField field = side.field;
         double angle = field.windAngle(Math.max(0, time) / StormField.STEP);
         float wx = (float) Math.cos(angle), wz = (float) Math.sin(angle);
-        // the pattern angle moves only when the wind has turned past halfway to the next of 16 angles, and then a whole step
-        double raw = Math.floorMod((long) Math.floor(angle / (Math.PI * 2) * 16 * 1000), 16000) / 1000.0;
-        if (patternAngle < 0 || Math.abs(Math.floorMod((long) Math.round((raw - patternAngle) * 1000) + 8000, 16000) - 8000) / 1000.0 > 0.75)
-            patternAngle = (int) Math.round(raw) & 15;
-        float pwx = wx, pwz = wz;
+        // ticks since the last build (the easing's step); a first build, a big jump back in time or a long gap starts
+        // fresh (the client's clock steps back a few ticks now and then when the server corrects it: no time passed)
+        long dt = easedTime == Long.MIN_VALUE || time < easedTime - 1200 || time - easedTime > 20 * 60 * 20 ? -1
+                : Math.max(0, time - easedTime);
+        easedTime = dt < 0 ? time : Math.max(easedTime, time);
+        // the pattern angle turns slowly after the wind, the shorter way round
+        double raw = angle / (Math.PI * 2) * 16;
+        if (dt < 0 || Double.isNaN(patternAngle)) patternAngle = raw;
+        else {
+            double diff = raw - patternAngle;
+            diff -= 16 * Math.floor((diff + 8) / 16);
+            patternAngle += Mth.clamp(diff, -dt / TURN_TICKS, dt / TURN_TICKS);
+        }
+        double shown = Math.round(patternAngle * STEPS) / STEPS * (Math.PI * 2) / 16;
+        float pwx = (float) Math.cos(shown), pwz = (float) Math.sin(shown);
         it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<float[]> keep = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         boolean testLog = Boolean.getBoolean("equinox.cloudTest");
         int refreshed = 0;
         int[] why = new int[5];
-        int angleBefore = patternAngle;
+        double angleBefore = raw;
+        float step = dt < 0 ? Float.MAX_VALUE : dt / EASE;
         int cx = Mth.floor(camX), cz = Mth.floor(camZ);
 
         // ---- map of the layer clouds (texel corners on a fixed wind-space lattice, so it doesn't shift as you move)
@@ -188,10 +223,11 @@ public final class CloudSky {
         int mapAbsX0 = Math.floorDiv(cx - half, MAP_CELL) * MAP_CELL, mapAbsZ0 = Math.floorDiv(cz - half, MAP_CELL) * MAP_CELL;
         float mapX0 = mapAbsX0 - cx, mapZ0 = mapAbsZ0 - cz;
         float[] map0 = new float[mapSize * mapSize * 4], map1 = new float[mapSize * mapSize * 4];
-        long[] times = new long[AHEAD_FORWARD / 2 + 1];
+        // the thunder outlook looks ahead from now over the storm's forming time (never into the past)
+        long[] times = new long[(timing.stormForm() + PEAK_STEP - 1) / PEAK_STEP + 1];
         double[][] offsets = new double[times.length][];
         for (int k = 0; k < times.length; k++) {
-            times[k] = Math.max(0, time + (long) (k * 2 - 2) * AHEAD_STEP * 2);
+            times[k] = Math.max(0, time + (long) k * PEAK_STEP);
             offsets[k] = field.offset(times[k]);
         }
         for (int j = 0; j < mapSize; j++) {
@@ -199,26 +235,33 @@ public final class CloudSky {
                 double mx = mapAbsX0 + (i + 0.5) * MAP_CELL, mz = mapAbsZ0 + (j + 0.5) * MAP_CELL;
                 double x = mx + offset[0], z = mz + offset[1];
                 float c = side.cloudiness(x, z, time, offset);
-                float near = side.cloudiness(x - wx * NEAR, z - wz * NEAR, time, offset);
-                float far = Math.max(side.cloudiness(x - wx * FAR, z - wz * FAR, time, offset), near);
+                // upwind along the slowly turning pattern direction (the real wind takes a new step every minute,
+                // which would swing these points hundreds of blocks)
+                float near = side.cloudiness(x - pwx * NEAR, z - pwz * NEAR, time, offset);
+                float far = Math.max(side.cloudiness(x - pwx * FAR, z - pwz * FAR, time, offset), near);
                 // the most this patch of sky (it moves with the wind) sees soon: thunder coming?
                 float peak = c;
                 for (int k = 0; k < times.length; k++)
                     peak = Math.max(peak, side.cloudiness(mx + offsets[k][0], mz + offsets[k][1], times[k], offsets[k]));
                 float warm = warmth(side.grid.zone(x, z), summer);
                 long key = ((long) (mapAbsX0 / MAP_CELL + i) << 32) ^ ((mapAbsZ0 / MAP_CELL + j) & 0xFFFFFFFFL);
-                float[] fresh = {c, near, far, peak, warm}, old = held.get(key);
-                // storms (rain falling or coming) follow the weather more closely, but still not every small wobble
-                boolean storming = Math.max(c, Math.max(near, peak)) > 1;
-                if (old != null) {
-                    float hold = storming ? STORM_HOLD : HOLD;
-                    boolean same = true;
-                    for (int q = 0; q < fresh.length; q++) same &= Math.abs(fresh[q] - old[q]) <= hold;
-                    if (same) fresh = old;
-                    else if (testLog) {
-                        refreshed++;
-                        for (int q = 0; q < 5; q++) if (Math.abs(fresh[q] - old[q]) > hold) why[q]++;
+                // whether the climate under this spot is known yet (its tile came from the server); until then the
+                // weather reads as dry, so a spot whose climate just came takes it at once instead of easing to it
+                float known = side.grid.has(ClimateGrid.tileKey(ClimateGrid.tileOf(Mth.floor(x / ClimateGrid.CELL)),
+                        ClimateGrid.tileOf(Mth.floor(z / ClimateGrid.CELL)))) ? 1 : 0;
+                float[] fresh = {c, near, far, peak, warm, known}, old = eased.get(key);
+                // the sky here moves toward the weather at a steady, slow rate
+                if (old != null && old[5] >= known) {
+                    boolean limited = false;
+                    for (int q = 0; q < 5; q++) {
+                        float d = fresh[q] - old[q];
+                        if (Math.abs(d) > step) {
+                            limited = true;
+                            if (testLog) why[q]++;
+                        }
+                        fresh[q] = old[q] + Mth.clamp(d, -step, step);
                     }
+                    if (limited && testLog) refreshed++;
                 }
                 keep.put(key, fresh);
                 c = fresh[0];
@@ -247,16 +290,16 @@ public final class CloudSky {
                 map1[o + 3] = thunder;
             }
         }
-        held.clear();
-        held.putAll(keep);
+        eased.clear();
+        eased.putAll(keep);
         Sky partial = new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, new float[0], 0, 0, 0, 0, new float[0], pwx, pwz);
 
         // ---- domes
         Domes domes = new Domes();
-        stormSites(side, time, cx, cz, reach, wx, wz, partial, domes);
+        stormSites(side, time, cx, cz, reach, wx, wz, partial, domes, timing);
         int stormDomes = domes.count;
-        fairSites(cx, cz, reach, amount, partial, domes, BIG_SITE, 7, true);
-        fairSites(cx, cz, reach, amount, partial, domes, SMALL_SITE, 8, false);
+        fairSites(cx, cz, reach, amount, partial, domes, BIG_SITE, 7, true, time, timing);
+        fairSites(cx, cz, reach, amount, partial, domes, SMALL_SITE, 8, false, time, timing);
 
         // ---- ground shadows
         int shadowReach = Math.min(reach, SHADOW_REACH);
@@ -266,11 +309,11 @@ public final class CloudSky {
 
         if (testLog) {
             float maxC = 0, maxPeak = 0;
-            for (float[] v : held.values()) {
+            for (float[] v : eased.values()) {
                 maxC = Math.max(maxC, v[0]);
                 maxPeak = Math.max(maxPeak, v[3]);
             }
-            dev.venatorvictor.equinox.Equinox.LOGGER.info("CLOUDTEST sky: {} spots refreshed (c {} near {} far {} peak {} warm {}), angle {} -> {}, override {} from {} now {}, max c {} max peak {}, storm domes {} all domes {}",
+            dev.venatorvictor.equinox.Equinox.LOGGER.info("CLOUDTEST sky: {} spots eased (c {} near {} far {} peak {} warm {}), wind angle {} pattern {}, override {} from {} now {}, max c {} max peak {}, storm domes {} all domes {}",
                     refreshed, why[0], why[1], why[2], why[3], why[4], angleBefore, patternAngle, side.overrideAt(time), side.overrideFrom(), time, maxC, maxPeak, stormDomes, domes.count);
         }
         return new Sky(time, cx, cz, mapSize, mapX0, mapZ0, map0, map1, java.util.Arrays.copyOf(domes.data, domes.count * DOME_FLOATS),
@@ -278,20 +321,23 @@ public final class CloudSky {
     }
 
     /** Thunderstorm heaps: where the look-ahead says it will thunder, timed by when the rain comes to the site. */
-    private void stormSites(Weather.Side side, long time, int cx, int cz, int reach, float wx, float wz, Sky map, Domes out) {
+    private void stormSites(Weather.Side side, long time, int cx, int cz, int reach, float wx, float wz, Sky map, Domes out,
+                            Timing timing) {
+        int gatherTicks = timing.gather(), climbTicks = timing.climb(), meltTicks = timing.stormFade();
+        int back = (meltTicks + AHEAD_STEP - 1) / AHEAD_STEP + 1, forward = (timing.stormForm() + AHEAD_STEP - 1) / AHEAD_STEP + 1;
         int s0x = Math.floorDiv(cx - reach - STORM_SITE, STORM_SITE), s1x = Math.floorDiv(cx + reach + STORM_SITE, STORM_SITE);
         int s0z = Math.floorDiv(cz - reach - STORM_SITE, STORM_SITE), s1z = Math.floorDiv(cz + reach + STORM_SITE, STORM_SITE);
         // Look-ahead samples on a fixed time grid (so they don't jump as time goes on), plus now itself.
         long grid = Math.floorDiv(time, AHEAD_STEP) * AHEAD_STEP;
-        int n = AHEAD_BACK + AHEAD_FORWARD + 2;
+        int n = back + forward + 2;
         long[] times = new long[n];
         double[][] offsets = new double[n][];
         for (int k = 0; k < n; k++) {
-            times[k] = k == AHEAD_BACK + 1 ? time : grid + (long) (k <= AHEAD_BACK ? k - AHEAD_BACK : k - AHEAD_BACK - 1) * AHEAD_STEP;
+            times[k] = k == back + 1 ? time : grid + (long) (k <= back ? k - back : k - back - 1) * AHEAD_STEP;
             times[k] = Math.max(0, times[k]);
             offsets[k] = side.field.offset(times[k]);
         }
-        int now = AHEAD_BACK + 1;
+        int now = back + 1;
         float[] c = new float[n];
         for (int si = s0x; si <= s1x; si++) {
             for (int sj = s0z; sj <= s1z; sj++) {
@@ -325,12 +371,12 @@ public final class CloudSky {
                     }
                     if (until <= since) {
                         // gathering: heaps over GATHER ticks, the tower's climb ends as the rain starts
-                        gather = 1 - smooth(0, GATHER, until - CLIMB);
-                        climb = 1 - smooth(0, CLIMB, until);
+                        gather = 1 - smooth(0, gatherTicks, until - climbTicks);
+                        climb = 1 - smooth(0, climbTicks, until);
                         spread = melt = 0;
                     } else {
                         gather = climb = spread = 1;
-                        melt = smooth(0, MELT, since);
+                        melt = smooth(0, meltTicks, since);
                     }
                 }
                 // fades with the thunder outlook instead of vanishing
@@ -383,10 +429,12 @@ public final class CloudSky {
     }
 
     /**
-     * Fair-weather heaps at jittered sites: each lives its own life (forms, lives, dissolves), more on warm summer days,
-     * fewer as a deck closes in. big: cumulus (taller, congestus, where it's damp and warm); else small humilis.
+     * Fair-weather heaps at jittered sites: each lives its own life (forms, lives, dissolves, at its own time), more on
+     * warm summer days, fewer as a deck closes in. big: cumulus (taller, congestus, where it's damp and warm); else small
+     * humilis.
      */
-    private void fairSites(int cx, int cz, int reach, float amount, Sky map, Domes out, int site, long salt, boolean big) {
+    private void fairSites(int cx, int cz, int reach, float amount, Sky map, Domes out, int site, long salt, boolean big,
+                           long time, Timing timing) {
         if (amount <= 0) return;
         int s0x = Math.floorDiv(cx - reach - site, site), s1x = Math.floorDiv(cx + reach + site, site);
         int s0z = Math.floorDiv(cz - reach - site, site), s1z = Math.floorDiv(cz + reach + site, site);
@@ -394,25 +442,33 @@ public final class CloudSky {
             for (int sj = s0z; sj <= s1z; sj++) {
                 double ax = (si + 0.15 + 0.7 * hash01(si, sj, salt)) * site, az = (sj + 0.15 + 0.7 * hash01(si, sj, salt + 1)) * site;
                 float x = (float) (ax - cx), z = (float) (az - cz);
-                // A fair-weather heap keeps its shape: it only drifts with the wind. Whether it's there and how big comes
-                // from the held sky at its spot (which only changes when the weather there really changes, i.e. rain or
-                // a storm coming), not from a timer or the time of day.
+                // How many heaps the sky at this spot holds (it changes slowly with the weather); each heap grows in
+                // as the weather lets it and as its life begins, shrinks away as either ends.
                 float deck = map.map(map.map0(), 0, x, z), thunder = map.map(map.map1(), 3, x, z), c = map.map(map.map0(), 3, x, z);
                 float warm = map.map(map.map1(), 2, x, z) / Math.max(1e-3F, 1 - Mth.clamp(c - 1, 0, 1));
                 warm = Mth.clamp((warm - 0.25F) / 0.75F, 0, 1);
                 float presence = (big ? 0.25F + 0.55F * warm : 0.3F + 0.4F * warm) * amount
                         * (1 - smooth(0.4F, 0.85F, deck)) * (1 - smooth(0.35F, 0.6F, thunder));
-                // there or not, always at its own full size (it never shrinks or grows with the weather)
-                if (presence <= hash01(si, sj, salt + 2)) continue;
-                float gate = 1;
+                float at = hash01(si, sj, salt + 2);
+                float gate = smooth(at, at + 0.12F, presence);
+                if (gate <= 0) continue;
+                if (timing.life() > 0) {
+                    double life = hash01(si, sj, salt + 3) + (double) time / timing.life();
+                    float t = (float) (life - Math.floor(life)), f = Math.min(0.45F, timing.fade() / (float) timing.life());
+                    gate *= smooth(0, f, t) * (1 - smooth(1 - f, 1, t));
+                }
+                if (gate < 0.05F) continue;
+                float grown = 0.35F + 0.65F * gate;
                 float base = 4 * hash01(si, sj, salt + 5);
                 if (big) {
                     float tall = 1 + 1.6F * warm * smooth(0.3F, 0.9F, c);
-                    float r = (55 + 45 * hash01(si, sj, salt + 6)) * gate;
-                    heap(si, sj, salt, x, z, base, r, r * (0.7F + 0.4F * hash01(si, sj, salt + 7)) * tall, 9, 0.9F, 0, c * 0.5F, out);
+                    float full = 55 + 45 * hash01(si, sj, salt + 6), r = full * gate;
+                    if (r < 6) continue;
+                    heap(si, sj, salt, x, z, base, r, full * (0.7F + 0.4F * hash01(si, sj, salt + 7)) * tall * grown, 9, 0.9F, 0, c * 0.5F, out);
                 } else {
                     float r = (26 + 22 * hash01(si, sj, salt + 6)) * gate;
-                    heap(si, sj, salt, x, z, base, r, (14 + 12 * hash01(si, sj, salt + 7)) * gate, 4, 0.7F, 0.3F, c * 0.5F, out);
+                    if (r < 6) continue;
+                    heap(si, sj, salt, x, z, base, r, (14 + 12 * hash01(si, sj, salt + 7)) * grown, 4, 0.7F, 0.3F, c * 0.5F, out);
                 }
             }
         }

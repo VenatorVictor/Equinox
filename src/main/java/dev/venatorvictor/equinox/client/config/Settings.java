@@ -46,6 +46,10 @@ final class Settings {
         return u(days == 1 ? "day" : "days", Setting.trim(days));
     }
 
+    private static String minutes(double v) {
+        return u("minutes", v == Math.rint(v) ? String.valueOf((int) v) : String.format(Locale.ROOT, "%.1f", v));
+    }
+
     private static String off(double v, String label) {
         return v == 0 ? u("off") : label;
     }
@@ -101,8 +105,19 @@ final class Settings {
                 .cost(Cost.NONE));
         all.add(client(ClientConfig.STORM_CLOUDS, "storm_clouds").tab(CLIMATE, "clouds")
                 .cost(Cost.MEDIUM));
-        all.add(client(ClientConfig.CLOUD_DISTANCE, "cloud_distance").tab(CLIMATE, null)
-                .cost(Cost.MEDIUM).range(384, 2304, 96).label((v, x) -> u("blocks", (int) v)));
+        all.add(client(ClientConfig.CLOUD_RANGE, "cloud_range").tab(CLIMATE, null)
+                .choice(ClientConfig.CloudRange.R256, "r256").choice(ClientConfig.CloudRange.R384, "r384")
+                .choice(ClientConfig.CloudRange.R512, "r512").choice(ClientConfig.CloudRange.R768, "r768")
+                .choice(ClientConfig.CloudRange.R1024, "r1024")
+                .cost(Cost.HIGH));
+        all.add(client(ClientConfig.CLOUD_LIFE, "cloud_life").tab(CLIMATE, null)
+                .cost(Cost.NONE).range(0, 120, 1).label((v, x) -> off(v, minutes(v))));
+        all.add(client(ClientConfig.CLOUD_FADE, "cloud_fade").tab(CLIMATE, null)
+                .cost(Cost.NONE).range(0.5, 30, 0.5).label((v, x) -> minutes(v)));
+        all.add(client(ClientConfig.STORM_FORM, "storm_form").tab(CLIMATE, null)
+                .cost(Cost.NONE).range(0.5, 15, 0.5).label((v, x) -> minutes(v)));
+        all.add(client(ClientConfig.STORM_FADE, "storm_fade").tab(CLIMATE, null)
+                .cost(Cost.NONE).range(0.5, 15, 0.5).label((v, x) -> minutes(v)));
         all.add(client(ClientConfig.CLOUD_AMOUNT, "cloud_amount").tab(CLIMATE, null)
                 .cost(Cost.LOW).scale(100).range(0, 200, 10).label((v, x) -> off(v, (int) v + "%")));
         all.add(client(ClientConfig.CLOUD_SHADOWS, "cloud_shadows").tab(CLIMATE, null)
@@ -245,10 +260,6 @@ final class Settings {
                 .range(4, 256, 4).label((v, x) -> u("blocks", (int) v)));
         all.add(client(ClientConfig.CLOUD_CUBE, "cloud_cube").tab(PERFORMANCE, "clouds")
                 .choice(4, "4_blocks").choice(8, "8_blocks")
-                .cost(Cost.HIGH));
-        all.add(client(ClientConfig.CLOUD_DETAIL, "cloud_detail").tab(PERFORMANCE, null)
-                .choice(ClientConfig.CloudDetail.LOW, "low").choice(ClientConfig.CloudDetail.MEDIUM, "medium")
-                .choice(ClientConfig.CloudDetail.HIGH, "high")
                 .cost(Cost.HIGH));
         all.add(client(ClientConfig.CLOUD_LIGHTING, "cloud_lighting").tab(PERFORMANCE, null)
                 .choice(ClientConfig.CloudLighting.FULL, "full").choice(ClientConfig.CloudLighting.SIMPLE, "simple")
